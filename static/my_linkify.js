@@ -15,7 +15,7 @@ function myLinkify(inputText) {
 
     // t.me, vk.com, facebook.com, tlg.wtf, instagram.com links
     replacePattern4 = /(^|[^\/\.])((t.me|vk.com|facebook.com|tlg.wtf|instagram.com)\/[\S]+(\b|$))/gim;
-    replacedText = replacedText.replace(replacePattern2, '$1<a href="http://$2" target="_blank">$2</a>');
+    replacedText = replacedText.replace(replacePattern4, '$1<a href="http://$2" target="_blank">$2</a>');
 
     // indirect links to the social networks
 
