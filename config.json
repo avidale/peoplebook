@@ -1,0 +1,11 @@
+{
+  "sheet_id": "1srgTgCU1mhOiqV90DVb8_GVi0GBTivbhuj21jxr65Pk",
+  "sheet_range": "Ответы на форму (1)!A2:F",
+  "fields": {
+    "name": 1,
+    "knowledge": 3,
+    "occupation": 2,
+    "photo": 4,
+    "profiles": 5
+  }
+}

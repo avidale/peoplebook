@@ -1,4 +1,5 @@
 from __future__ import print_function
+import json
 import pickle
 import os.path
 from googleapiclient.discovery import build
@@ -11,6 +12,16 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 # The ID and range of a sample spreadsheet.
 SAMPLE_SPREADSHEET_ID = '1srgTgCU1mhOiqV90DVb8_GVi0GBTivbhuj21jxr65Pk'
 SAMPLE_RANGE_NAME = 'Ответы на форму (1)!A2:F'
+
+
+def rows_to_json(config, rows):
+    result = []
+    for row in rows:
+        person = dict()
+        for field_name, field_index in config['fields'].items():
+            person[field_name] = row[field_index] if len(row) > field_index else ''
+        result.append(person)
+    return result
 
 
 def get_creds():
@@ -51,13 +62,8 @@ def main():
 
     values = get_rows(creds, SAMPLE_SPREADSHEET_ID, SAMPLE_RANGE_NAME)
 
-    if not values:
-        print('No data found.')
-    else:
-        print('Name, Major:')
-        for row in values:
-            # Print columns A and F, which correspond to indices 0 and 5.
-            print('%s, %s' % (row[1], row[4]))
+    print('\n'.join(['<div>{}</div>'.format(row[1]) for row in values]))
+
 
 
 if __name__ == '__main__':
