@@ -5,10 +5,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Peoplebook встречи Каппа Веди</title>
+  <title>Пиплбук встречи Каппа Веди {{ period_text }}</title>
   <link rel="stylesheet" href="/static/App.css">
   <link rel="stylesheet" href="/static/index.css">
-  <script type="text/javascript" src="/static/feb2019.js" charset="UTF-8"></script>
+  <script type="text/javascript" src="/static/{{ period }}.js" charset="UTF-8"></script>
   <script type="text/javascript" src="/static/my_linkify.js" charset="UTF-8"></script>
   <!-- Import the React, React-Dom and Babel libraries from unpkg -->
   <script type="application/javascript" src="https://unpkg.com/react@16.0.0/umd/react.production.min.js"></script>
@@ -28,7 +28,7 @@
     function App(){
       return(
       <div>
-        <PeopleBookApp2 name="Пиплбук" people={people}/>
+        <PeopleBookApp2 name="Пиплбук встречи {{ period_text }}" people={people}/>
       </div>
       )
     }
@@ -38,6 +38,10 @@
       rootElement
     )
   </script>
+  <div id="footer">
+      Если вы изменили свою анкету, но она не обновляется больше минуты, сбросьте кэш браузера.
+      Windows: ctrl + F5. Mac/Apple: Apple + R or command + R. Linux: F5
+  </div>
 </body>
 
 </html>
