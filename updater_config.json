@@ -7,5 +7,6 @@
     "occupation": 2,
     "photo": 4,
     "profiles": 5
-  }
+  },
+  "data_filename": "data_feb.js"
 }

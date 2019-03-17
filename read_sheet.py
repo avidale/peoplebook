@@ -1,6 +1,8 @@
 from __future__ import print_function
+import copy
 import json
 import pickle
+import re
 import os.path
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -54,6 +56,38 @@ def get_rows(creds, sheet_id, range_name):
     return values
 
 
+def update_fields_with_default(
+        people, defauld_filename='default_people_data.json', columns_to_update=None, key_columns=None
+):
+    if columns_to_update is None:
+        columns_to_update = ['photo']
+    if key_columns is None:
+        key_columns = ['name']
+    result = copy.deepcopy(people)
+    with open(defauld_filename, 'r', encoding='utf-8') as f:
+        default = json.load(f)
+    dicts = {
+        key_column: {
+            person[key_column]: person
+            for person in default
+        }
+        for key_column in key_columns
+    }
+    for person in result:
+        for target_column in columns_to_update:
+            # these are custom rules that invalidate some fields - specifically, photo
+            if target_column == 'photo':
+                if not re.match('^.*\.(jpg|jpeg|png|gif)$', person[target_column]):
+                    person[target_column] = ''
+            for key_column in key_columns:
+                if person[target_column] != '':
+                    break
+                if person[key_column] not in dicts[key_column]:
+                    continue
+                person[target_column] = dicts[key_column][person[key_column]][target_column]
+    return result
+
+
 def main():
     """Shows basic usage of the Sheets API.
     Prints values from a sample spreadsheet.
@@ -63,7 +97,6 @@ def main():
     values = get_rows(creds, SAMPLE_SPREADSHEET_ID, SAMPLE_RANGE_NAME)
 
     print('\n'.join(['<div>{}</div>'.format(row[1]) for row in values]))
-
 
 
 if __name__ == '__main__':
