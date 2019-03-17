@@ -1,0 +1,113 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-size: 15px;
+    line-height: 1.4em;
+}
+
+.title {
+    font-size: 4em;
+    line-height: 1em;
+    font-weight: 900;
+    background: #000;
+    color: #fff;
+    padding: 0 10px;
+}
+
+.toc {
+    display: flex;
+    margin: 20px 0; 
+    text-align: center;
+    width: 100%;
+    overflow-x: scroll;
+}
+
+.toc__person {
+    color: #000;
+    text-decoration: none;
+    font-weight: bold;
+    padding: 5px 5px 0 10px;
+}
+
+.photo--small {
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #00f;
+    cursor: pointer;
+    object-fit: cover;
+}
+
+.photo--small:hover {
+    box-shadow: 0 0 0 2px #000;
+}
+
+.people {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, auto));
+    grid-gap: 30px;
+    justify-content: space-between;
+}
+
+.photo--large {
+    width: 100%;
+    height: 450px;
+    object-fit: cover;
+    filter: brightness(0.9);
+}
+
+.name--full {
+    font-size: 2em;
+    line-height: 1em;
+    font-weight: 900;
+    margin: 10px;
+    position: absolute;
+    color: #fff;
+    text-shadow: 0 4px 5px rgba(0, 0, 0, .4);
+    z-index: 10;
+}
+
+.label {
+    font-weight: bold;
+    font-size: 1em;
+    margin: .75em 0 .25em;
+    padding: 0 5px;
+}
+
+.answer {
+    margin: 0 0 1em;
+    padding: 0 5px;
+    white-space: pre-line;
+}
+
+.answer-chunk {
+  padding-bottom: 1em;
+}
+
+.person {
+    position: relative;
+}
+
+a:hover {
+  color: #000;
+}
+
+@media screen and (min-width: 800px) {
+    .name--full {
+        margin: 10px;
+    }
+
+    .people {
+        padding: 0 20px;
+    }
+
+    .photo--large {
+        height: 350px;
+    }
+}
+

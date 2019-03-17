@@ -1,12 +1,73 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <script type="text/javascript" src="data.js" charset="UTF-8"></script>
-    <script type="text/javascript" src="common.js" charset="UTF-8"></script>
-    <link rel="stylesheet" href="style.css">
-    <title>Peoplebook встречи Каппа Веди</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Peoplebook встречи Каппа Веди</title>
+  <link rel="stylesheet" href="App.css">
+  <link rel="stylesheet" href="index.css">
+  <script type="text/javascript" src="data.js" charset="UTF-8"></script>
+  <script type="text/javascript" src="my_linkify.js" charset="UTF-8"></script>
+  <!-- Import the React, React-Dom and Babel libraries from unpkg -->
+  <script type="application/javascript" src="https://unpkg.com/react@16.0.0/umd/react.production.min.js"></script>
+  <script type="application/javascript" src="https://unpkg.com/react-dom@16.0.0/umd/react-dom.production.min.js"></script>
+  <script type="application/javascript" src="https://unpkg.com/babel-standalone@6.26.0/babel.js"></script>
 </head>
+
 <body>
-Здесь будет стоять город!
+  <div id="root"></div>
+
+<script type="text/babel">
+
+    // Obtain the root
+    const rootElement = document.getElementById('root')
+
+    // Create a ES6 class component
+    class PBApp extends React.Component {
+      render() {
+        return (
+          <div className="App">
+            <div class="title">Пиплбук</div>
+            <div className="toc">
+                {people.map(row => <a href={"#" + row.name} class="toc__person">
+                    <img src={row.photo} className="photo photo--small" />
+                    <div class="name name--brief">{row.name.split(' ')[0]}</div>
+                </a>)}
+            </div>
+            2 + 3  = {people[0].name}
+            <div class="people">
+            {people.map(row => <div class="person" id={row.name}>
+              <div class="name name--full">{row.name}</div>
+              <img class="photo photo--large" src={row.photo} />
+              <div class="label">Чем занимаюсь</div>
+              <div class="answer">{row.occupation.split(/\n+/).map(paragraph => <div class="answer-chunk">{paragraph}</div>)}</div>
+              <div class="label">О чем могу рассказать</div>
+              <div class="answer">{row.knowledge}</div>
+              <div class="label">Контакты</div>
+              <div class="answer" dangerouslySetInnerHTML={{__html: myLinkify(row.profiles)}}></div>
+              </div>)}
+            </div>
+          </div>
+        );
+      }
+    }
+    // Create a function to wrap up your component
+    function App(){
+      return(
+      <div>
+        <PBApp name="ololololo"/>
+      </div>
+      )
+    }
+    // Use the ReactDOM.render to show your component on the browser
+    ReactDOM.render(
+      <App />,
+      rootElement
+    )
+</script>
+
 </body>
+
 </html>
