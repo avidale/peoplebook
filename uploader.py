@@ -39,14 +39,14 @@ def update_people(people_filename=None):
         people_filename = os.path.join('static', config['data_filename'])
     creds = get_creds()
     rows = get_rows(creds, config['sheet_id'], config['sheet_range'])
-    result = rows_to_json(config, rows)
+    parse_message, result = rows_to_json(config, rows)
     result = update_fields_with_default(result)
     with open(people_filename, 'w', encoding='utf-8') as f:
         f.write('var people = ')
         json.dump(result, f, ensure_ascii=False, indent=2)
         f.write(';\n')
     # todo: optionally, validate the sheet and print the warnings (especially in the web mode)
-    message = 'Parsed successfully!'
+    message = parse_message + 'Parsed successfully!'
     return message
 
 

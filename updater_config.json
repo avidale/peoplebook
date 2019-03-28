@@ -1,6 +1,6 @@
 {
   "sheet_id": "1LetZFiMgWtrb0CcMMnXWGnGwA1SQWeN46WjntDHfMOQ",
-  "sheet_range": "Ответы на форму (1)!A2:F",
+  "sheet_range": "Ответы на форму (1)!A2:G",
   "fields": {
     "name": 1,
     "knowledge": 3,
@@ -8,5 +8,6 @@
     "photo": 4,
     "profiles": 5
   },
-  "data_filename": "march2019.js"
+  "data_filename": "march2019.js",
+  "filter_field": 6
 }

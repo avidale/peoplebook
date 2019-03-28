@@ -17,13 +17,21 @@ SAMPLE_RANGE_NAME = 'Ответы на форму (1)!A2:F'
 
 
 def rows_to_json(config, rows):
+    message = ''
     result = []
     for row in rows:
         person = dict()
         for field_name, field_index in config['fields'].items():
             person[field_name] = row[field_index] if len(row) > field_index else ''
+        if ('filter_field' in config
+                and len(row) > config['filter_field']
+                and row[config['filter_field']].strip() in {'0'}
+                or len(row) < 2):
+            message += '<div>row {} skipped</div>'.format(row)
+            continue
+        message += '<div>row {} added\n</div>'.format(row)
         result.append(person)
-    return result
+    return message, result
 
 
 def get_creds():
