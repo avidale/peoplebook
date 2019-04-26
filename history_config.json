@@ -1,7 +1,8 @@
 {
-  "current": "feb2019",
-  "current_text": "2 марта 2019",
+  "current": "april2019",
+  "current_text": "27 апреля 2019",
   "history": {
+    "april2019": "27 апреля 2019",
     "march2019": "30 марта 2019",
     "feb2019": "2 марта 2019"
   }
