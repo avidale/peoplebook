@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title> {{ profile.first_name}} {{ profile.last_name }} </title>
+  <link rel="stylesheet" href="/static/App.css">
+  <link rel="stylesheet" href="/static/index.css">
+</head>
+
+<body>
+  <div id="root">
+    <div class="people">
+      <div class="person" id="{{ profile.username }}"> {# todo: reuse the single-person template #}
+        <div class="name name--full">{{ profile.first_name}} {{ profile.last_name }}</div>
+        <img class="photo photo--large" src="{{ profile.photo }}" />
+        <div class="label">Чем занимаюсь</div>
+        <div class="answer"> {{ profile.activity }} </div> {# todo: split into chunks #}
+        <div class="label">О чем могу рассказать</div>
+        <div class="answer">{{ profile.topics }}</div>
+        <div class="label">Контакты</div>
+        <div class="answer"> {{ profile.contacts }} </div> {# todo: linkify #}
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

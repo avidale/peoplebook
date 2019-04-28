@@ -91,6 +91,7 @@ body {
 
 .person {
     position: relative;
+    max-width: 600px;
 }
 
 a:hover {
