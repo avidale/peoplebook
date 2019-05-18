@@ -56,7 +56,7 @@ def peoplebook_for_event(event_code):
                 'as': 'profiles'
             }
         }, {
-            '$match': {'code': event_code, 'engaged': True}
+            '$match': {'code': event_code, 'status': 'ACCEPT'}
         }
     ]))
     profiles = [p for rp in raw_profiles for p in rp.get('profiles', [])]
