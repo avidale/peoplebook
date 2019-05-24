@@ -89,6 +89,25 @@ def peoplebook_for_all_members():
         profiles=profiles
     )
 
+@app.route('/members_and_guests')
+def peoplebook_for_all_members_and_guests():
+    raw_profiles = list(mongo_membership.aggregate([
+        {
+            '$lookup': {
+                'from': 'peoplebook',
+                'localField': 'username',
+                'foreignField': 'username',
+                'as': 'profiles'
+            }
+        }
+    ]))
+    profiles = [p for rp in raw_profiles for p in rp.get('profiles', [])]
+    return render_template(
+        'backend_peoplebook.html',
+        title='Члены клуба Каппа Веди и его гости',
+        profiles=profiles
+    )
+
 
 @app.route('/person/<username>')
 def peoplebook_for_person(username):
