@@ -16,6 +16,7 @@ mongo_db = mongo_client.get_default_database()
 mongo_events = mongo_db.get_collection('events')
 mongo_participations = mongo_db.get_collection('event_participations')
 mongo_peoplebook = mongo_db.get_collection('peoplebook')
+mongo_membership = mongo_db.get_collection('membership')
 
 
 @app.route('/')
@@ -58,6 +59,47 @@ def peoplebook_for_event(event_code):
     return render_template(
         'backend_peoplebook.html',
         title=the_event.get('title', 'Пиплбук встречи'),
+        profiles=profiles
+    )
+
+
+@app.route('/members')
+def peoplebook_for_all_members():
+    raw_profiles = list(mongo_membership.aggregate([
+        {
+            '$lookup': {
+                'from': 'peoplebook',
+                'localField': 'username',
+                'foreignField': 'username',
+                'as': 'profiles'
+            }
+        }, {
+            '$match': {'is_member': True}
+        }
+    ]))
+    profiles = [p for rp in raw_profiles for p in rp.get('profiles', [])]
+    return render_template(
+        'backend_peoplebook.html',
+        title='Члены клуба Каппа Веди',
+        profiles=profiles
+    )
+
+@app.route('/members_and_guests')
+def peoplebook_for_all_members_and_guests():
+    raw_profiles = list(mongo_membership.aggregate([
+        {
+            '$lookup': {
+                'from': 'peoplebook',
+                'localField': 'username',
+                'foreignField': 'username',
+                'as': 'profiles'
+            }
+        }
+    ]))
+    profiles = [p for rp in raw_profiles for p in rp.get('profiles', [])]
+    return render_template(
+        'backend_peoplebook.html',
+        title='Члены клуба Каппа Веди и его гости',
         profiles=profiles
     )
 
