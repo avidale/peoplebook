@@ -3,7 +3,6 @@ import os
 import pymongo
 
 from flask import Flask, render_template, abort
-from uploader import update_people, update_if_needed
 
 app = Flask(__name__)
 
@@ -19,25 +18,21 @@ mongo_participations = mongo_db.get_collection('event_participations')
 mongo_peoplebook = mongo_db.get_collection('peoplebook')
 
 
-
 @app.route('/')
 def home():
-    update_if_needed()
+    all_events = mongo_events.find().sort('date', pymongo.DESCENDING)
+    for event in all_events:
+        who_comes = list(mongo_participations.find({'code': event['code'], 'status': 'ACCEPT'}))
+        if len(who_comes) >= 10:
+            return peoplebook_for_event(event['code'])
     return render_template(
         'peoplebook.html', period=history_config['current'], period_text=history_config['current_text']
     )
 
 
-@app.route('/updater')
-def updater():
-    message = update_people()
-    return message
-
-
 @app.route('/history/<period>')
 def history(period):
     if period in history_config['history']:
-        update_if_needed()
         return render_template('peoplebook.html', period=period, period_text=history_config['history'][period])
     abort(404)
 
