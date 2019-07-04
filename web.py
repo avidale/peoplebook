@@ -2,6 +2,8 @@ import json
 import os
 import pymongo
 
+from autolink import linkify
+
 from flask import Flask, render_template, abort
 
 app = Flask(__name__)
@@ -17,6 +19,11 @@ mongo_events = mongo_db.get_collection('events')
 mongo_participations = mongo_db.get_collection('event_participations')
 mongo_peoplebook = mongo_db.get_collection('peoplebook')
 mongo_membership = mongo_db.get_collection('membership')
+
+
+@app.template_filter('linkify_filter')
+def linkify_filter(s):
+    return linkify(s)
 
 
 @app.route('/')
