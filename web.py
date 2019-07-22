@@ -31,7 +31,7 @@ def home():
     all_events = mongo_events.find().sort('date', pymongo.DESCENDING)
     for event in all_events:
         who_comes = list(mongo_participations.find({'code': event['code'], 'status': 'ACCEPT'}))
-        if len(who_comes) >= 10:
+        if len(who_comes) >= 1: # one participant is enough to show the event - but this may be revised
             return peoplebook_for_event(event['code'])
     return render_template(
         'peoplebook.html', period=history_config['current'], period_text=history_config['current_text']
