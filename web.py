@@ -91,6 +91,7 @@ def peoplebook_for_all_members():
         profiles=profiles
     )
 
+
 @app.route('/members_and_guests')
 def peoplebook_for_all_members_and_guests():
     raw_profiles = list(mongo_membership.aggregate([
