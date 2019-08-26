@@ -18,7 +18,7 @@
       {% for profile in profiles %}
         <a href="#{{ profile.username }}" class="toc__person">
           <img src="{{ get_photo_url(profile) }}" class="photo photo--small" />
-          <div class="name name--brief">{{ profile.first_name }}</div>
+          <div class="name name--brief">{{ profile.first_name or profile.username }}</div>
         </a>
       {% endfor %}
     </div>

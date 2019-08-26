@@ -15,10 +15,26 @@
     {% endif %}
 {%- endmacro %}
 
+{% macro get_person_title(profile) -%}
+    {% if profile.first_name == undefined %}
+        {% if profile.last_name == undefined %}
+            @{{ profile.username }}
+        {% else %}
+            {{ profile.last_name }}
+        {% endif %}
+    {% else %}
+        {% if profile.last_name == undefined %}
+            {{ profile.first_name }}
+        {% else %}
+            {{ profile.first_name }} {{ profile.last_name }}
+        {% endif %}
+    {% endif %}
+{%- endmacro %}
+
 {% macro peoplebook_profile(profile) %}
     {% set photo_url = get_photo_url(profile) %}
         <div class="person" id="{{ profile.username }}">
-          <div class="name name--full">{{ profile.first_name}} {{ profile.last_name }}</div>
+          <div class="name name--full">{{ get_person_title(profile) }}</div>
           <img class="photo photo--large" src="{{ photo_url }}" />
           <div class="label">Чем занимаюсь</div>
           <div class="answer"> {{ profile.activity  | linkify_filter | safe }} </div> {# todo: split into chunks #}
