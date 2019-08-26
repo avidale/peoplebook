@@ -1,7 +1,25 @@
+{% macro get_photo_url(profile) -%}
+    {% if profile.photo == undefined %}
+        {# todo: instead of these simple rules, use some model to predict gender #}
+        {% if profile.last_name == undefined%}
+            https://i.ibb.co/FWvgTMK/SS-Ideas-Icon.png
+        {% elif profile.last_name.endswith('ов') or profile.last_name.endswith('ев') %}
+            https://i.ibb.co/5Kt9cZJ/bb87c06b8cb8fad5ffe9abab11679fae.jpg
+        {% elif profile.last_name.endswith('ова') or profile.last_name.endswith('ева')%}
+            https://i.ibb.co/8zLjcGL/teacher.png
+        {% else %}
+            https://i.ibb.co/FWvgTMK/SS-Ideas-Icon.png
+        {% endif %}
+    {% else %}
+        {{ profile.photo }}
+    {% endif %}
+{%- endmacro %}
+
 {% macro peoplebook_profile(profile) %}
+    {% set photo_url = get_photo_url(profile) %}
         <div class="person" id="{{ profile.username }}">
           <div class="name name--full">{{ profile.first_name}} {{ profile.last_name }}</div>
-          <img class="photo photo--large" src="{{ profile.photo }}" />
+          <img class="photo photo--large" src="{{ photo_url }}" />
           <div class="label">Чем занимаюсь</div>
           <div class="answer"> {{ profile.activity  | linkify_filter | safe }} </div> {# todo: split into chunks #}
           <div class="label">О чем могу рассказать</div>

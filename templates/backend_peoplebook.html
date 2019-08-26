@@ -1,4 +1,4 @@
-{% from 'macros.html' import peoplebook_profile %}
+{% from 'macros.html' import peoplebook_profile, get_photo_url %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -17,7 +17,7 @@
     <div class="toc">
       {% for profile in profiles %}
         <a href="#{{ profile.username }}" class="toc__person">
-          <img src="{{profile.photo}}" class="photo photo--small" />
+          <img src="{{ get_photo_url(profile) }}" class="photo photo--small" />
           <div class="name name--brief">{{ profile.first_name }}</div>
         </a>
       {% endfor %}
