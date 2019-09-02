@@ -111,7 +111,7 @@ def peoplebook_for_all_members_and_guests():
     random.shuffle(profiles)
     return render_template(
         'backend_peoplebook.html',
-        title='Члены клуба Каппа Веди и его гости',
+        title='Сообщество Каппа Веди',
         profiles=profiles
     )
 
