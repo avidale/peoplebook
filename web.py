@@ -1,6 +1,7 @@
 import json
 import os
 import pymongo
+import random
 
 from autolink import linkify
 
@@ -63,6 +64,7 @@ def peoplebook_for_event(event_code):
         }
     ]))
     profiles = [p for rp in raw_profiles for p in rp.get('profiles', [])]
+    random.shuffle(profiles)
     return render_template(
         'backend_peoplebook.html',
         title=the_event.get('title', 'Пиплбук встречи'),
@@ -85,6 +87,7 @@ def peoplebook_for_all_members():
         }
     ]))
     profiles = [p for rp in raw_profiles for p in rp.get('profiles', [])]
+    random.shuffle(profiles)
     return render_template(
         'backend_peoplebook.html',
         title='Члены клуба Каппа Веди',
@@ -104,6 +107,7 @@ def peoplebook_for_all_members_and_guests():
             }
         }
     ]))
+    random.shuffle(profiles)
     profiles = [p for rp in raw_profiles for p in rp.get('profiles', [])]
     return render_template(
         'backend_peoplebook.html',
