@@ -107,8 +107,8 @@ def peoplebook_for_all_members_and_guests():
             }
         }
     ]))
-    random.shuffle(profiles)
     profiles = [p for rp in raw_profiles for p in rp.get('profiles', [])]
+    random.shuffle(profiles)
     return render_template(
         'backend_peoplebook.html',
         title='Члены клуба Каппа Веди и его гости',
