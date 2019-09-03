@@ -27,6 +27,17 @@ def linkify_filter(s):
     return linkify(s)
 
 
+MEANINGFUL_FIELDS = {'first_name', 'last_name', 'photo', 'activity', 'topics', 'contacts'}
+
+
+@app.template_filter('preprocess_profiles')
+def preprocess_profiles(profiles):
+    # we omit the profiles with too few fields set
+    filtered = [p for p in profiles if len(set(p.keys()).intersection(MEANINGFUL_FIELDS)) >= 3]
+    random.shuffle(filtered)
+    return filtered
+
+
 @app.route('/')
 def home():
     all_events = mongo_events.find().sort('date', pymongo.DESCENDING)
@@ -64,7 +75,6 @@ def peoplebook_for_event(event_code):
         }
     ]))
     profiles = [p for rp in raw_profiles for p in rp.get('profiles', [])]
-    random.shuffle(profiles)
     return render_template(
         'backend_peoplebook.html',
         title=the_event.get('title', 'Пиплбук встречи'),
@@ -87,12 +97,12 @@ def peoplebook_for_all_members():
         }
     ]))
     profiles = [p for rp in raw_profiles for p in rp.get('profiles', [])]
-    random.shuffle(profiles)
     return render_template(
         'backend_peoplebook.html',
         title='Члены клуба Каппа Веди',
         profiles=profiles
     )
+
 
 @app.route('/members_and_guests')
 @app.route('/all')
@@ -108,7 +118,6 @@ def peoplebook_for_all_members_and_guests():
         }
     ]))
     profiles = [p for rp in raw_profiles for p in rp.get('profiles', [])]
-    random.shuffle(profiles)
     return render_template(
         'backend_peoplebook.html',
         title='Сообщество Каппа Веди',
