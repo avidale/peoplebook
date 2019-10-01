@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Войти</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css">
+  <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+</head>
+
+<section class="hero is-fullheight">
+  <div class="hero-body">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-5-tablet is-4-desktop is-3-widescreen">
+          {% with messages = get_flashed_messages() %}
+            {% if messages %}
+              <div class="notification">
+                  {{ messages[0] }}
+              </div>
+            {% endif %}
+          {% endwith %}
+          <form action="/login" method="POST">
+            <div class="field has-addons">
+              <div class="control has-icons-left">
+                <input type="password" placeholder="Введите пароль" class="input" name="password" required>
+                <span class="icon is-small is-left">
+                  <i class="fa fa-lock"></i>
+                </span>
+              </div>
+              <div class="field">
+                <button class="button is-black">
+                  Войти
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

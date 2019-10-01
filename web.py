@@ -2,12 +2,13 @@ import json
 import os
 import pymongo
 import random
-
+from auth import login_required
 from autolink import linkify
 
-from flask import Flask, render_template, abort
+from flask import Flask, render_template, abort, request, flash, session, redirect
 
 app = Flask(__name__)
+app.secret_key = os.urandom(12)
 
 with open('history_config.json', 'r', encoding='utf-8') as f:
     history_config = json.load(f)
@@ -39,7 +40,10 @@ def preprocess_profiles(profiles):
 
 
 @app.route('/')
+@login_required
 def home():
+    if not session.get('logged_in'):
+        return render_template('login.html')
     all_events = mongo_events.find().sort('date', pymongo.DESCENDING)
     for event in all_events:
         who_comes = list(mongo_participations.find({'code': event['code'], 'status': 'ACCEPT'}))
@@ -51,6 +55,7 @@ def home():
 
 
 @app.route('/history/<period>')
+@login_required
 def history(period):
     if period in history_config['history']:
         return render_template('peoplebook.html', period=period, period_text=history_config['history'][period])
@@ -58,6 +63,7 @@ def history(period):
 
 
 @app.route('/event/<event_code>')
+@login_required
 def peoplebook_for_event(event_code):
     the_event = mongo_events.find_one({'code': event_code})
     if the_event is None:
@@ -83,6 +89,7 @@ def peoplebook_for_event(event_code):
 
 
 @app.route('/members')
+@login_required
 def peoplebook_for_all_members():
     raw_profiles = list(mongo_membership.aggregate([
         {
@@ -106,6 +113,7 @@ def peoplebook_for_all_members():
 
 @app.route('/members_and_guests')
 @app.route('/all')
+@login_required
 def peoplebook_for_all_members_and_guests():
     raw_profiles = list(mongo_membership.aggregate([
         {
@@ -126,8 +134,18 @@ def peoplebook_for_all_members_and_guests():
 
 
 @app.route('/person/<username>')
+@login_required
 def peoplebook_for_person(username):
     the_profile = mongo_peoplebook.find_one({'username': username})
     if the_profile is None:
         return 'Такого профиля не найдено!'
     return render_template('single_person.html', profile=the_profile)
+
+
+@app.route('/login', methods=['POST'])
+def do_login():
+    if request.form['password'] == os.environ.get('AUTH_PASSWORD'):
+        session['logged_in'] = True
+    else:
+        flash('Неправильный пароль!')
+    return redirect(request.referrer)
