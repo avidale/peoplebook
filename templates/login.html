@@ -21,10 +21,10 @@
               </div>
             {% endif %}
           {% endwith %}
-          <form action="/login" method="POST">
+          <form action="{{ url_for('login', next=request.args.get('next')) }}" method="POST">
             <div class="field has-addons">
               <div class="control has-icons-left">
-                <input type="password" placeholder="Введите пароль" class="input" name="password" required>
+                <input type="text" placeholder="Твой телеграм логин" class="input" name="username" required>
                 <span class="icon is-small is-left">
                   <i class="fa fa-lock"></i>
                 </span>

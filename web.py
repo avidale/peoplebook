@@ -2,13 +2,20 @@ import json
 import os
 import pymongo
 import random
-from auth import login_required
 from autolink import linkify
+from models import User
 
-from flask import Flask, render_template, abort, request, flash, session, redirect
+from flask import Flask, render_template, abort, request, flash, redirect
+from flask_login import LoginManager, login_required, login_user, logout_user
 
 app = Flask(__name__)
 app.secret_key = os.urandom(12)
+
+# flask-login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
+login_manager.login_message = None
 
 with open('history_config.json', 'r', encoding='utf-8') as f:
     history_config = json.load(f)
@@ -21,6 +28,9 @@ mongo_events = mongo_db.get_collection('events')
 mongo_participations = mongo_db.get_collection('event_participations')
 mongo_peoplebook = mongo_db.get_collection('peoplebook')
 mongo_membership = mongo_db.get_collection('membership')
+
+user_list = [document['username'] for document in mongo_peoplebook.find({})]
+users = [User(document) for document in user_list]
 
 
 @app.template_filter('linkify_filter')
@@ -42,8 +52,6 @@ def preprocess_profiles(profiles):
 @app.route('/')
 @login_required
 def home():
-    if not session.get('logged_in'):
-        return render_template('login.html')
     all_events = mongo_events.find().sort('date', pymongo.DESCENDING)
     for event in all_events:
         who_comes = list(mongo_participations.find({'code': event['code'], 'status': 'ACCEPT'}))
@@ -142,10 +150,41 @@ def peoplebook_for_person(username):
     return render_template('single_person.html', profile=the_profile)
 
 
-@app.route('/login', methods=['POST'])
-def do_login():
-    if request.form['password'] == os.environ.get('AUTH_PASSWORD'):
-        session['logged_in'] = True
+# вход по ссылке
+@app.route("/login_link")
+def login_link():
+    if request.args.get('bot_info').split('/')[0] in user_list:
+        user = User(request.args.get('bot_info').split('/')[0])
+        login_user(user, remember=True)
+        if request.args.get('next'):
+            return redirect(request.args.get('next'))
+        else:
+            return 'Вход выполнен'
+
+
+# проверяет, что такой логин есть в базе Монго и выполняет вход
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == 'POST':
+        id = request.form['username']
+        if id in user_list:
+            user = User(id)
+            login_user(user, remember=True)
+            return redirect(request.args.get('next'))
+        else:
+            flash('Такого логина нет')
+            return render_template('login.html')
     else:
-        flash('Неправильный пароль!')
+        return render_template('login.html')
+
+
+@app.route("/logout")
+def logout():
+    logout_user()
     return redirect(request.referrer)
+
+
+# используется для перезаписи объекта идентификатора пользователя сессии
+@login_manager.user_loader
+def load_user(userid):
+    return User(userid)
