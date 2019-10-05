@@ -153,8 +153,9 @@ def peoplebook_for_person(username):
 # вход по ссылке
 @app.route("/login_link")
 def login_link():
-    if request.args.get('bot_info').split('/')[0] in user_list:
-        user = User(request.args.get('bot_info').split('/')[0])
+    user_id = request.args.get('bot_info').split('/')[0]
+    if user_id in user_list:
+        user = User(user_id)
         login_user(user, remember=True)
         if request.args.get('next'):
             return redirect(request.args.get('next'))
