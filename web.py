@@ -6,7 +6,7 @@ from autolink import linkify
 from models import User
 import hashlib
 
-from flask import Flask, render_template, abort, request, flash, redirect
+from flask import Flask, render_template, abort, request, redirect
 from flask_login import LoginManager, login_required, login_user, logout_user
 
 app = Flask(__name__)
