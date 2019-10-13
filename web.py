@@ -21,8 +21,7 @@ login_manager.login_message = None
 with open('history_config.json', 'r', encoding='utf-8') as f:
     history_config = json.load(f)
 
-os.environ["login_salt"] = "notasecret"
-MONGO_URL = "mongodb://heroku_2p65mrwx:rudr809n06qem62uvdc8rjl0cg@ds117200.mlab.com:17200/heroku_2p65mrwx"
+MONGO_URL = os.environ.get('MONGODB_URI')
 mongo_client = pymongo.MongoClient(MONGO_URL)
 mongo_db = mongo_client.get_default_database()
 mongo_events = mongo_db.get_collection('events')
@@ -33,7 +32,8 @@ mongo_peoplebook_users = mongo_db.get_collection('users')
 
 user_list = [document['tg_id'] for document in mongo_peoplebook_users.find({})]
 users = [User(document) for document in user_list]
-users_hshd_dict = {hashlib.md5((str(x) + os.environ.get('login_salt')).encode('utf-8')): x for x in user_list}
+users_hshd_dict = {hashlib.md5((str(x) +
+                                os.environ.get('login_salt')).encode('utf-8')).hexdigest(): x for x in user_list}
 
 
 @app.template_filter('linkify_filter')
@@ -186,5 +186,3 @@ def logout():
 def load_user(userid):
     return User(userid)
 
-
-app.run()
