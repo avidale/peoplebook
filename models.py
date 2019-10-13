@@ -1,5 +1,4 @@
 from flask_login import UserMixin
-import hashlib
 
 
 # silly user model
@@ -10,5 +9,5 @@ class User(UserMixin):
         self.password = str(self.id) + "_secret"
 
     def __repr__(self):
-        return hashlib.md5(self.id.encode('utf-8'))
+        return self.id
 
