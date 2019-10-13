@@ -4,6 +4,7 @@ import pymongo
 import random
 from autolink import linkify
 from models import User
+import hashlib
 
 from flask import Flask, render_template, abort, request, flash, redirect
 from flask_login import LoginManager, login_required, login_user, logout_user
@@ -20,17 +21,19 @@ login_manager.login_message = None
 with open('history_config.json', 'r', encoding='utf-8') as f:
     history_config = json.load(f)
 
-
-MONGO_URL = os.environ.get('MONGODB_URI')
+os.environ["login_salt"] = "notasecret"
+MONGO_URL = "mongodb://heroku_2p65mrwx:rudr809n06qem62uvdc8rjl0cg@ds117200.mlab.com:17200/heroku_2p65mrwx"
 mongo_client = pymongo.MongoClient(MONGO_URL)
 mongo_db = mongo_client.get_default_database()
 mongo_events = mongo_db.get_collection('events')
 mongo_participations = mongo_db.get_collection('event_participations')
 mongo_peoplebook = mongo_db.get_collection('peoplebook')
 mongo_membership = mongo_db.get_collection('membership')
+mongo_peoplebook_users = mongo_db.get_collection('users')
 
-user_list = [document['username'] for document in mongo_peoplebook.find({})]
+user_list = [document['tg_id'] for document in mongo_peoplebook_users.find({})]
 users = [User(document) for document in user_list]
+users_hshd_dict = {hashlib.md5((str(x) + os.environ.get('login_salt')).encode('utf-8')): x for x in user_list}
 
 
 @app.template_filter('linkify_filter')
@@ -153,30 +156,23 @@ def peoplebook_for_person(username):
 # вход по ссылке
 @app.route("/login_link")
 def login_link():
-    user_id = request.args.get('bot_info').split('/')[0]
-    if user_id in user_list:
-        user = User(user_id)
-        login_user(user, remember=True)
-        if request.args.get('next'):
-            return redirect(request.args.get('next'))
-        else:
-            return 'Вход выполнен'
+    try:
+        user_id = users_hshd_dict[request.args.get('bot_info')]
+    except KeyError:
+        return 'Создайте профиль пиплбуке'
 
-
-# проверяет, что такой логин есть в базе Монго и выполняет вход
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == 'POST':
-        id = request.form['username']
-        if id in user_list:
-            user = User(id)
-            login_user(user, remember=True)
-            return redirect(request.args.get('next'))
-        else:
-            flash('Такого логина нет')
-            return render_template('login.html')
+    user = User(user_id)
+    login_user(user, remember=True)
+    if request.args.get('next'):
+        return redirect(request.args.get('next'))
     else:
-        return render_template('login.html')
+        return 'Вход выполнен'
+
+
+# заглушка для неавторизавнных пользователей
+@app.route("/login")
+def login():
+    return render_template('login.html')
 
 
 @app.route("/logout")
@@ -189,3 +185,6 @@ def logout():
 @login_manager.user_loader
 def load_user(userid):
     return User(userid)
+
+
+app.run()

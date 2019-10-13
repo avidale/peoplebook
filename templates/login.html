@@ -13,31 +13,12 @@
   <div class="hero-body">
     <div class="container">
       <div class="columns is-centered">
-        <div class="column is-5-tablet is-4-desktop is-3-widescreen">
-          {% with messages = get_flashed_messages() %}
-            {% if messages %}
-              <div class="notification">
-                  {{ messages[0] }}
-              </div>
-            {% endif %}
-          {% endwith %}
-          <form action="{{ url_for('login', next=request.args.get('next')) }}" method="POST">
-            <div class="field has-addons">
-              <div class="control has-icons-left">
-                <input type="text" placeholder="Твой телеграм логин" class="input" name="username" required>
-                <span class="icon is-small is-left">
-                  <i class="fa fa-lock"></i>
-                </span>
-              </div>
-              <div class="field">
-                <button class="button is-black">
-                  Войти
-                </button>
-              </div>
-            </div>
-          </form>
+          <div class="field">
+            <p class="subtitle">
+              Для входа надо пройти по ссылке "Авторизоваться" из раздела Мой Профиль в КВ-Боте
+            </p>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 </section>
