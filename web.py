@@ -10,7 +10,7 @@ from flask import Flask, render_template, abort, request, redirect
 from flask_login import LoginManager, login_required, login_user, logout_user
 
 app = Flask(__name__)
-app.secret_key = os.urandom(12)
+app.secret_key = os.environ.get('APP_KEY')
 
 # flask-login
 login_manager = LoginManager()
