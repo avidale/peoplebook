@@ -7,7 +7,7 @@ from models import User
 import hashlib
 
 from flask import Flask, render_template, abort, request, redirect
-from flask_login import LoginManager, login_required, login_user, logout_user
+from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('APP_KEY')
@@ -172,7 +172,10 @@ def login_link():
 # заглушка для неавторизавнных пользователей
 @app.route("/login")
 def login():
-    return render_template('login.html')
+    if not current_user.is_authenticated:
+        return render_template('login.html')
+    else:
+        return redirect(request.args.get('next'))
 
 
 @app.route("/logout")
