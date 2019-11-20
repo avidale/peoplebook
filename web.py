@@ -200,5 +200,3 @@ def get_users():
 
 
 get_users()
-
-
