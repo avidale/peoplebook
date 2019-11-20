@@ -157,7 +157,7 @@ def peoplebook_for_person(username):
 @app.route("/login_link")
 def login_link():
     try:
-        user_id = users_hshd_dict[request.args.get('bot_info')]
+        user_id = get_users()[1][request.args.get('bot_info')]
     except KeyError:
         return 'Создайте профиль пиплбуке'
 
@@ -188,4 +188,17 @@ def logout():
 @login_manager.user_loader
 def load_user(userid):
     return User(userid)
+
+
+def get_users():
+    user_list = [document['tg_id'] for document in mongo_peoplebook_users.find({})]
+    global users
+    users = [User(document) for document in user_list]
+    users_hshd_dict = {hashlib.md5((str(x) +
+                                    os.environ.get('login_salt')).encode('utf-8')).hexdigest(): x for x in user_list}
+    return user_list, users_hshd_dict
+
+
+get_users()
+
 
