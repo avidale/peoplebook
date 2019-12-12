@@ -1,8 +1,12 @@
 flask
 gunicorn
-google-api-python-client
-google-auth-httplib2
-google-auth-oauthlib
+# google-api-python-client
+# google-auth-httplib2
+# google-auth-oauthlib
 pymongo==3.4.0
 autolink
 flask-login
+
+textdistance
+pymorphy2
+pymorphy2-dicts

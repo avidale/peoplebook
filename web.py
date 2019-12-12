@@ -9,6 +9,8 @@ import hashlib
 from flask import Flask, render_template, abort, request, redirect
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 
+from similarity import matchers, basic_nlu
+
 app = Flask(__name__)
 app.secret_key = os.environ.get('APP_KEY')
 
@@ -197,6 +199,66 @@ def get_users():
     users_hshd_dict = {hashlib.md5((str(x) +
                                     os.environ.get('login_salt')).encode('utf-8')).hexdigest(): x for x in user_list}
     return user_list, users_hshd_dict
+
+
+pb_list = list(mongo_peoplebook.find({}))
+matcher = matchers.TFIDFMatcher(text_normalization='fast_lemmatize_filter_pos')
+texts = [p.get('activity', '') + '\n' + p.get('topics', '') for p in pb_list]
+texts = [t for text in texts for t in basic_nlu.split(text)]
+matcher.fit(texts, ['' for _ in texts])
+
+
+def deduplicate(facts):
+    lhs = set()
+    rhs = set()
+    facts = sorted(facts, key=lambda x: x['score'], reverse=True)
+    result = []
+    for fact in facts:
+        if fact['first'] not in lhs and fact['second'] not in rhs:
+            result.append(fact)
+        lhs.add(fact['first'])
+        rhs.add(fact['second'])
+    return result
+
+
+@app.route('/similarity', methods=['POST', 'GET'])
+#@login_required
+def similarity_page():
+    pb_list = list(mongo_peoplebook.find({}))
+    p1 = {}
+    p2 = {}
+    if request.form and request.form.get('first') and request.form.get('second'):
+        u1 = request.form['first']
+        u2 = request.form['second']
+        for u in pb_list:
+            if u['username'] == u1:
+                p1 = u
+            if u['username'] == u2:
+                p2 = u
+
+        text1 = basic_nlu.split(p1.get('topics', '')) + basic_nlu.split(p1.get('activity', ''))
+        text2 = basic_nlu.split(p2.get('topics', '')) + basic_nlu.split(p2.get('activity', ''))
+
+        results = []
+        for i, c1 in enumerate(text1):
+            for j, c2 in enumerate(text2):
+                score = matcher.compare_two(c1, c2)
+                if score > 0.05:
+                    results.append({'score': round(score, 2), 'first': text1[i], 'second': text2[j]})
+        results = deduplicate(results)
+    else:
+        u1 = random.choice(pb_list)['username']
+        u2 = random.choice(pb_list)['username']
+        results = None
+    return render_template(
+        'similarity.html',
+        persons = pb_list,
+        results=results,
+        first_default=u1,
+        second_default=u2,
+        first_person=p1,
+        second_person=p2,
+    )
 
 
 get_users()

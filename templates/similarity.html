@@ -1,0 +1,47 @@
+
+{% macro dropdown(name, values, default_value) %}
+    <select name="{{name}}"  form="persons">
+    {% for person in values %}
+        <option value="{{person.username}}" {% if person.username==default_value %} selected="selected" {% endif %}>
+            {{person.first_name}} {{person.last_name}}
+        </option>"
+    {% endfor %}
+    </select>
+{% endmacro %}
+
+{% macro person_href(person) %}
+    <a href="http://kv-peoplebook.herokuapp.com/person/{{person.username}}">
+        {{person.first_name}} {{person.last_name}}
+    </a>
+{% endmacro %}
+
+
+
+<form method="POST" id="persons">
+    {{ dropdown('first', persons, first_default) }}
+    {{ dropdown('second', persons, second_default) }}
+    <input type="submit">
+</form>
+
+
+
+
+{% if results %}
+    {% for result in results %}
+        <div> Сходство: {{ result.score }}.
+            <ul>
+                <li> {{first_person.first_name}} - {{ result.first }} </li>
+                <li> {{second_person.first_name}} - {{ result.second }} </li>
+            </ul>
+        </div>
+    {% endfor %}
+{% elif results is not none %}
+    <div> Увы, пока сходства найти не получилось. Но это ещё наши алгоритмы тупенькие. Попробуйте другие пары! </div>
+{% else %}
+    <div> Выберите людей, сходство которых хотите найти, и нажмите "Отправить". </div>
+{% endif %}
+
+{% if results is not none %}
+    <div>Смотреть пиплбук: {{ person_href(first_person) }} и {{ person_href(second_person) }} </div>
+    <div> <a href=""> Другая пара </div>
+{% endif %}
