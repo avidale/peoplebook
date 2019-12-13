@@ -223,8 +223,9 @@ def deduplicate(facts):
 
 @app.route('/similarity', methods=['POST', 'GET'])
 #@login_required
-def similarity_page():
+def similarity_page(one=None, another=None):
     pb_list = list(mongo_peoplebook.find({}))
+    pb_set = {p['username'] for p in pb_list if p['username']}
     p1 = {}
     p2 = {}
     if request.form and request.form.get('first') and request.form.get('second'):
@@ -247,8 +248,14 @@ def similarity_page():
                     results.append({'score': round(score, 2), 'first': text1[i], 'second': text2[j]})
         results = deduplicate(results)
     else:
-        u1 = random.choice(pb_list)['username']
-        u2 = random.choice(pb_list)['username']
+        if one and one in pb_set:
+            u1 = one
+        else:
+            u1 = random.choice(pb_list)['username']
+        if another and another in pb_set:
+            u2 = another
+        else:
+            u2 = random.choice(pb_list)['username']
         results = None
     return render_template(
         'similarity.html',
@@ -260,5 +267,10 @@ def similarity_page():
         second_person=p2,
     )
 
+
+@app.route('/similarity/<one>/<another>', methods=['POST', 'GET'])
+#@login_required
+def similarity_page_parametrized(one, another):
+    return similarity_page(one=one, another=another)
 
 get_users()
