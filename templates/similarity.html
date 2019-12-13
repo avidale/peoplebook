@@ -17,7 +17,7 @@
 
 
 
-<form method="POST" id="persons">
+<form method="POST" id="persons" action="/similarity">
     {{ dropdown('first', persons, first_default) }}
     {{ dropdown('second', persons, second_default) }}
     <input type="submit">
@@ -44,4 +44,8 @@
 {% if results is not none %}
     <div>Смотреть пиплбук: {{ person_href(first_person) }} и {{ person_href(second_person) }} </div>
     <div> <a href=""> Другая пара </div>
+    <div> <a href="http://kv-peoplebook.herokuapp.com/similarity/{{first_person.username}}/{{second_person.username}}">
+        Ссылка на этот результат
+    </a> </div>
 {% endif %}
+
