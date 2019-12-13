@@ -228,9 +228,15 @@ def similarity_page(one=None, another=None):
     pb_set = {p['username'] for p in pb_list if p['username']}
     p1 = {}
     p2 = {}
+    u1, u2 = None, None
     if request.form and request.form.get('first') and request.form.get('second'):
         u1 = request.form['first']
         u2 = request.form['second']
+    if one and one in pb_set:
+        u1 = one
+    if another and another in pb_set:
+        u2 = another
+    if u1 and u2:
         for u in pb_list:
             if u['username'] == u1:
                 p1 = u
@@ -248,13 +254,9 @@ def similarity_page(one=None, another=None):
                     results.append({'score': round(score, 2), 'first': text1[i], 'second': text2[j]})
         results = deduplicate(results)
     else:
-        if one and one in pb_set:
-            u1 = one
-        else:
+        if not u1:
             u1 = random.choice(pb_list)['username']
-        if another and another in pb_set:
-            u2 = another
-        else:
+        if not u2:
             u2 = random.choice(pb_list)['username']
         results = None
     return render_template(
