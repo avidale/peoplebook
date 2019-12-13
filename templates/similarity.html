@@ -10,7 +10,7 @@
 {% endmacro %}
 
 {% macro person_href(person) %}
-    <a href="http://kv-peoplebook.herokuapp.com/person/{{person.username}}">
+    <a href="/person/{{person.username}}">
         {{person.first_name}} {{person.last_name}}
     </a>
 {% endmacro %}
@@ -43,8 +43,8 @@
 
 {% if results is not none %}
     <div>Смотреть пиплбук: {{ person_href(first_person) }} и {{ person_href(second_person) }} </div>
-    <div> <a href=""> Другая пара </div>
-    <div> <a href="http://kv-peoplebook.herokuapp.com/similarity/{{first_person.username}}/{{second_person.username}}">
+    <div> <a href="/similarity"> Другая пара </div>
+    <div> <a href="/similarity/{{first_person.username}}/{{second_person.username}}">
         Ссылка на этот результат
     </a> </div>
 {% endif %}
