@@ -232,9 +232,9 @@ def similarity_page(one=None, another=None):
     if request.form and request.form.get('first') and request.form.get('second'):
         u1 = request.form['first']
         u2 = request.form['second']
-    if one and one in pb_set:
+    if not u1 and one and one in pb_set:
         u1 = one
-    if another and another in pb_set:
+    if not u2 and another and another in pb_set:
         u2 = another
     if u1 and u2:
         for u in pb_list:
