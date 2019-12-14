@@ -9,7 +9,7 @@ import hashlib
 from flask import Flask, render_template, abort, request, redirect
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 
-from similarity import matchers, basic_nlu
+from similarity import matchers, basic_nlu, similarity_tools
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('APP_KEY')
@@ -214,19 +214,6 @@ texts = [t for text in texts for t in basic_nlu.split(text)]
 matcher.fit(texts, ['' for _ in texts])
 
 
-def deduplicate(facts):
-    lhs = set()
-    rhs = set()
-    facts = sorted(facts, key=lambda x: x['score'], reverse=True)
-    result = []
-    for fact in facts:
-        if fact['first'] not in lhs and fact['second'] not in rhs:
-            result.append(fact)
-        lhs.add(fact['first'])
-        rhs.add(fact['second'])
-    return result
-
-
 @app.route('/similarity', methods=['POST', 'GET'])
 #@login_required
 def similarity_page(one=None, another=None):
@@ -256,9 +243,8 @@ def similarity_page(one=None, another=None):
         for i, c1 in enumerate(text1):
             for j, c2 in enumerate(text2):
                 score = matcher.compare_two(c1, c2)
-                if score > 0.5:  # 0.05 for tfidf
-                    results.append({'score': round(score, 2), 'first': text1[i], 'second': text2[j]})
-        results = deduplicate(results)
+                results.append({'score': round(score, 2), 'first': text1[i], 'second': text2[j]})
+        results = similarity_tools.deduplicate(results, threshold=0.3)  # 0.05 for tfidf
     else:
         if not u1:
             u1 = random.choice(pb_list)['username']
