@@ -9,6 +9,7 @@ import hashlib
 from flask import Flask, render_template, abort, request, redirect
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 
+import numpy as np
 from similarity import matchers, basic_nlu, similarity_tools
 
 app = Flask(__name__)
@@ -278,7 +279,7 @@ w2vmatcher = matchers.W2VMatcher(w2v=w2v, weighter=weighter, text_normalization=
 def text2vec(t):
     v = w2vmatcher.preprocess(t)
     if v is None:
-        return [0.0] * 300
+        return np.zeros(300)
     return v
 
 
