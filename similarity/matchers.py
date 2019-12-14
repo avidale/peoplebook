@@ -224,10 +224,11 @@ class TFIDFMatcher(PairwiseMatcher):
 
 class W2VMatcher(PairwiseMatcher):
     """ Compare texts by cosine similarity of their mean word vectors """
-    def __init__(self, w2v, normalize_word_vec=True, **kwargs):
+    def __init__(self, w2v, normalize_word_vec=True, weighter=None, **kwargs):
         super(W2VMatcher, self).__init__(**kwargs)
         self.w2v = w2v
         self.normalize_word_vec = normalize_word_vec
+        self.weighter = weighter
 
     def vec_from_word(self, word):
         vec = self.w2v[word]
@@ -238,9 +239,14 @@ class W2VMatcher(PairwiseMatcher):
     def preprocess(self, text):
         text = super(W2VMatcher, self).preprocess(text)
         tokens = text.split()
-        vecs = [self.vec_from_word(t) for t in tokens if t in self.w2v]
-        if len(vecs) == 0:
+        valid_tokens = [t for t in tokens if t in self.w2v]
+        if len(valid_tokens) == 0:
             return None
+        if self.weighter:
+            weights = self.weighter(valid_tokens)
+        else:
+            weights = [1.0] * len(valid_tokens)
+        vecs = [self.vec_from_word(t) * w for t, w in zip(valid_tokens, weights)]
         result = sum(vecs)
         result = result / sum(result**2)**0.5
         return result

@@ -1,0 +1,20 @@
+
+<form method="POST" id="search_form" action="/search">
+    <input type="text" name="req_text">
+    <input type="submit" value="Найти">
+</form>
+
+
+{% if results is not none %}
+    <div>{{req_text}}</div>
+{% endif %}
+
+{% if results is not none %}
+    <div> Вот что нашлось: </div>
+    {% for result in results %}
+        <div style="margin:10px">
+            <a href="/person/{{result.username}}">@{{result.username}}</a>
+            <div>{{ result.text }}</div>
+        </div>
+    {% endfor %}
+{% endif %}

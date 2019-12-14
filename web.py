@@ -218,7 +218,10 @@ matcher.fit(texts, ['' for _ in texts])
 @app.route('/similarity', methods=['POST', 'GET'])
 #@login_required
 def similarity_page(one=None, another=None):
-    pb_list = list(mongo_peoplebook.find({}))
+    pb_list = sorted(
+        list(mongo_peoplebook.find({})),
+        key=lambda x: '{}_{}'.format(x.get('first_name'), x.get('last_name'))
+    )
     pb_set = {p['username'] for p in pb_list if p['username']}
     p1 = {}
     p2 = {}
@@ -267,5 +270,39 @@ def similarity_page(one=None, another=None):
 #@login_required
 def similarity_page_parametrized(one, another):
     return similarity_page(one=one, another=another)
+
+
+w2vmatcher = matchers.W2VMatcher(w2v=w2v, weighter=weighter, text_normalization='fast_lemmatize_filter_pos')
+
+
+def text2vec(t):
+    v = w2vmatcher.preprocess(t)
+    if v is None:
+        return [0.0] * 300
+    return v
+
+
+
+from similarity.semantic_search import  SemanticSearcher
+
+with open('similarity/searcher_data.pkl', 'rb') as f:
+    searcher = SemanticSearcher()
+    searcher.setup(**pickle.load(f), vectorizer=text2vec)
+
+
+@app.route('/search', methods=['POST', 'GET'])
+#@login_required
+def search_page(text=None):
+    if request.form and request.form.get('req_text'):
+        req_text = request.form['req_text']
+        results = searcher.lookup(req_text)
+    else:
+        req_text = None
+        results = None
+    return render_template(
+        'search.html',
+        req_text=req_text,
+        results=results,
+    )
 
 get_users()
