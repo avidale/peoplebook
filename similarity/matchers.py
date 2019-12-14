@@ -269,7 +269,7 @@ class WMDMatcher(PairwiseMatcher):
         .. Matt Kusner et al. "From Word Embeddings To Document Distances".
     """
 
-    def __init__(self, w2v, normalize_word_vec=True, **kwargs):
+    def __init__(self, w2v, normalize_word_vec=True, weighter=None, **kwargs):
         if not IMPORTED_NUMPY:
             raise ImportError('When using WMDMatcher, numpy should be installed')
         if not IMPORTED_EMD:
@@ -277,6 +277,7 @@ class WMDMatcher(PairwiseMatcher):
         super(WMDMatcher, self).__init__(**kwargs)
         self.w2v = w2v
         self.normalize_word_vec = normalize_word_vec
+        self.weighter = weighter
 
     def vec_from_word(self, word):
         vec = self.w2v[word]
@@ -291,14 +292,21 @@ class WMDMatcher(PairwiseMatcher):
         if len(valid_tokens) == 0:
             return None
         vecs = [self.vec_from_word(t) for t in valid_tokens]
-        weights = []
+        if self.weighter:
+            weights = self.weighter(valid_tokens)
+        else:
+            weights = [1.0] * len(valid_tokens)
         return WMDDocument(text, valid_tokens, vecs, weights)
 
-    def text2bow(self, tokens, word2idx):
+    def text2bow(self, tokens, word2idx, weights=None):
         bow = np.zeros(len(word2idx), dtype=np.double)
         n = len(tokens)
-        for t in tokens:
-            bow[word2idx[t]] += 1.0 / n
+        for i, t in enumerate(tokens):
+            if weights is None:
+                w = 1.0
+            else:
+                w = weights[i]
+            bow[word2idx[t]] += w / n
         return bow
 
     def compare(self, one, another):
@@ -320,8 +328,8 @@ class WMDMatcher(PairwiseMatcher):
                 # Compute Euclidean distance between word vectors.
                 distance_matrix[i, j] = np.sqrt(np.sum((word2vec[t1] - word2vec[t2]) ** 2))
 
-        d1 = self.text2bow(one.tokens, word2idx)
-        d2 = self.text2bow(another.tokens, word2idx)
+        d1 = self.text2bow(one.tokens, word2idx, weights=one.weights)
+        d2 = self.text2bow(another.tokens, word2idx, weights=another.weights)
 
         wmd = emd(d1, d2, distance_matrix)
         # because we use unit vectors, this transformation mimics cosine distance

@@ -202,7 +202,13 @@ def get_users():
 
 
 pb_list = list(mongo_peoplebook.find({}))
-matcher = matchers.TFIDFMatcher(text_normalization='fast_lemmatize_filter_pos')
+#matcher = matchers.TFIDFMatcher(text_normalization='fast_lemmatize_filter_pos')
+
+import pickle
+with open('similarity/fasttext_extract.pkl', 'rb') as f:
+    w2v = pickle.load(f)
+
+matcher = matchers.WMDMatcher(text_normalization='fast_lemmatize_filter_pos', w2v=w2v)
 texts = [p.get('activity', '') + '\n' + p.get('topics', '') for p in pb_list]
 texts = [t for text in texts for t in basic_nlu.split(text)]
 matcher.fit(texts, ['' for _ in texts])
@@ -250,7 +256,7 @@ def similarity_page(one=None, another=None):
         for i, c1 in enumerate(text1):
             for j, c2 in enumerate(text2):
                 score = matcher.compare_two(c1, c2)
-                if score > 0.05:
+                if score > 0.5:  # 0.05 for tfidf
                     results.append({'score': round(score, 2), 'first': text1[i], 'second': text2[j]})
         results = deduplicate(results)
     else:
