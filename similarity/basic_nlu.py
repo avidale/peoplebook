@@ -49,7 +49,10 @@ class Weighter:
         self.default_weight = default_weight
         self.custom_weights = custom_weights or {}
 
-    def __call__(self, word):
+    def __call__(self, words):
+        return [self[word] for word in words]
+
+    def __getitem__(self, word):
         if word in self.custom_weights:
             return self.custom_weights[word]
         if self.pos_weights:
@@ -61,3 +64,11 @@ class Weighter:
                 if tag.POS in self.pos_weights:
                     return self.pos_weights[tag.POS]
         return self.default_weight
+
+
+NOISE_WORDS = {
+    'сейчас', 'работать', 'заниматься', 'мочь', 'рассказать', 'проект', 'раньше', 'делать', 'работа',
+    'интересоваться', 'увлекаться', 'быть',
+}
+
+NOISE_WORDS = {word2lemma(w): 0.2 for w in NOISE_WORDS}

@@ -208,7 +208,8 @@ import pickle
 with open('similarity/fasttext_extract.pkl', 'rb') as f:
     w2v = pickle.load(f)
 
-matcher = matchers.WMDMatcher(text_normalization='fast_lemmatize_filter_pos', w2v=w2v)
+weighter = basic_nlu.Weighter(custom_weights=basic_nlu.NOISE_WORDS)
+matcher = matchers.WMDMatcher(text_normalization='fast_lemmatize_filter_pos', w2v=w2v, weighter=weighter)
 texts = [p.get('activity', '') + '\n' + p.get('topics', '') for p in pb_list]
 texts = [t for text in texts for t in basic_nlu.split(text)]
 matcher.fit(texts, ['' for _ in texts])
