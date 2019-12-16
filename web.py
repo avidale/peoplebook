@@ -166,7 +166,7 @@ def login_link():
     user = User(user_id)
     login_user(user, remember=True)
     if request.args.get('next'):
-        return redirect('{}??bot_info={}'.format(request.args.get('next'), request.args.get('bot_info')))
+        return redirect('{}?bot_info={}'.format(request.args.get('next'), request.args.get('bot_info')))
     else:
         return 'Вход выполнен'
 
