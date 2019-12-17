@@ -1,3 +1,15 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title> Каппа Веди Айтиндер </title>
+  <link rel="stylesheet" href="/static/App.css">
+  <link rel="stylesheet" href="/static/index.css">
+</head>
+
 
 {% macro dropdown(name, values, default_value) %}
     <select name="{{name}}"  form="persons">
@@ -16,20 +28,36 @@
 {% endmacro %}
 
 
+<body>
+  <div class="similarity-root">
 
 <form method="POST" id="persons" action="/similarity">
     {{ dropdown('first', persons, first_default) }}
     {{ dropdown('second', persons, second_default) }}
-    <input type="submit">
+    <input type="submit" value="Вычислить сходство">
 </form>
 
 
+{% macro person_photo_href(person) %}
+    <a href="/person/{{person.username}}">
+        <img class="photo photo--small" src="{{ person.photo }}"/>
+    </a>
+{% endmacro %}
 
+{% if results is not none %}
+    <table style="max-width:500px;margin:10px;padding:10px">
+        <tr>
+            <td>{{person_photo_href(first_person)}}</td>
+            <td> </td>
+            <td>{{person_photo_href(second_person)}}</td>
+        </tr>
+    </table>
+{% endif %}
 
 {% if results %}
     {% for result in results %}
         <div> Сходство: {{ result.score }}.
-            <ul>
+            <ul class="similarity-list">
                 <li> {{first_person.first_name}} - {{ result.first }} </li>
                 <li> {{second_person.first_name}} - {{ result.second }} </li>
             </ul>
@@ -49,3 +77,6 @@
     </a> </div>
 {% endif %}
 
+</div>
+</body>
+</html>
