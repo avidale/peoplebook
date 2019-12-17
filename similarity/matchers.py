@@ -224,11 +224,10 @@ class TFIDFMatcher(PairwiseMatcher):
 
 class W2VMatcher(PairwiseMatcher):
     """ Compare texts by cosine similarity of their mean word vectors """
-    def __init__(self, w2v, normalize_word_vec=True, weighter=None, **kwargs):
+    def __init__(self, w2v, normalize_word_vec=True, **kwargs):
         super(W2VMatcher, self).__init__(**kwargs)
         self.w2v = w2v
         self.normalize_word_vec = normalize_word_vec
-        self.weighter = weighter
 
     def vec_from_word(self, word):
         vec = self.w2v[word]
@@ -239,14 +238,9 @@ class W2VMatcher(PairwiseMatcher):
     def preprocess(self, text):
         text = super(W2VMatcher, self).preprocess(text)
         tokens = text.split()
-        valid_tokens = [t for t in tokens if t in self.w2v]
-        if len(valid_tokens) == 0:
+        vecs = [self.vec_from_word(t) for t in tokens if t in self.w2v]
+        if len(vecs) == 0:
             return None
-        if self.weighter:
-            weights = self.weighter(valid_tokens)
-        else:
-            weights = [1.0] * len(valid_tokens)
-        vecs = [self.vec_from_word(t) * w for t, w in zip(valid_tokens, weights)]
         result = sum(vecs)
         result = result / sum(result**2)**0.5
         return result
@@ -275,7 +269,7 @@ class WMDMatcher(PairwiseMatcher):
         .. Matt Kusner et al. "From Word Embeddings To Document Distances".
     """
 
-    def __init__(self, w2v, normalize_word_vec=True, weighter=None, **kwargs):
+    def __init__(self, w2v, normalize_word_vec=True, **kwargs):
         if not IMPORTED_NUMPY:
             raise ImportError('When using WMDMatcher, numpy should be installed')
         if not IMPORTED_EMD:
@@ -283,7 +277,6 @@ class WMDMatcher(PairwiseMatcher):
         super(WMDMatcher, self).__init__(**kwargs)
         self.w2v = w2v
         self.normalize_word_vec = normalize_word_vec
-        self.weighter = weighter
 
     def vec_from_word(self, word):
         vec = self.w2v[word]
@@ -298,21 +291,14 @@ class WMDMatcher(PairwiseMatcher):
         if len(valid_tokens) == 0:
             return None
         vecs = [self.vec_from_word(t) for t in valid_tokens]
-        if self.weighter:
-            weights = self.weighter(valid_tokens)
-        else:
-            weights = [1.0] * len(valid_tokens)
+        weights = []
         return WMDDocument(text, valid_tokens, vecs, weights)
 
-    def text2bow(self, tokens, word2idx, weights=None):
+    def text2bow(self, tokens, word2idx):
         bow = np.zeros(len(word2idx), dtype=np.double)
         n = len(tokens)
-        for i, t in enumerate(tokens):
-            if weights is None:
-                w = 1.0
-            else:
-                w = weights[i]
-            bow[word2idx[t]] += w / n
+        for t in tokens:
+            bow[word2idx[t]] += 1.0 / n
         return bow
 
     def compare(self, one, another):
@@ -334,8 +320,8 @@ class WMDMatcher(PairwiseMatcher):
                 # Compute Euclidean distance between word vectors.
                 distance_matrix[i, j] = np.sqrt(np.sum((word2vec[t1] - word2vec[t2]) ** 2))
 
-        d1 = self.text2bow(one.tokens, word2idx, weights=one.weights)
-        d2 = self.text2bow(another.tokens, word2idx, weights=another.weights)
+        d1 = self.text2bow(one.tokens, word2idx)
+        d2 = self.text2bow(another.tokens, word2idx)
 
         wmd = emd(d1, d2, distance_matrix)
         # because we use unit vectors, this transformation mimics cosine distance

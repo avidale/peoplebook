@@ -10,6 +10,3 @@ flask-login
 textdistance
 pymorphy2
 pymorphy2-dicts
-numpy
-pyemd
-scikit-learn

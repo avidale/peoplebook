@@ -20,7 +20,7 @@ body {
 
 .toc {
     display: flex;
-    margin: 20px 0;
+    margin: 20px 0; 
     text-align: center;
     width: 100%;
     overflow-x: scroll;
@@ -113,12 +113,3 @@ a:hover {
     }
 }
 
-.similarity-root {
-    margin: 10px;
-}
-
-
-.similarity-list {
-    margin-left: 0px;
-    padding-left: 30px;
-}

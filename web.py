@@ -9,8 +9,7 @@ import hashlib
 from flask import Flask, render_template, abort, request, redirect
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 
-import numpy as np
-from similarity import matchers, basic_nlu, similarity_tools
+from similarity import matchers, basic_nlu
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('APP_KEY')
@@ -203,26 +202,29 @@ def get_users():
 
 
 pb_list = list(mongo_peoplebook.find({}))
-#matcher = matchers.TFIDFMatcher(text_normalization='fast_lemmatize_filter_pos')
-
-import pickle
-with open('similarity/fasttext_extract.pkl', 'rb') as f:
-    w2v = pickle.load(f)
-
-weighter = basic_nlu.Weighter(custom_weights=basic_nlu.NOISE_WORDS)
-matcher = matchers.WMDMatcher(text_normalization='fast_lemmatize_filter_pos', w2v=w2v, weighter=weighter)
+matcher = matchers.TFIDFMatcher(text_normalization='fast_lemmatize_filter_pos')
 texts = [p.get('activity', '') + '\n' + p.get('topics', '') for p in pb_list]
 texts = [t for text in texts for t in basic_nlu.split(text)]
 matcher.fit(texts, ['' for _ in texts])
 
 
+def deduplicate(facts):
+    lhs = set()
+    rhs = set()
+    facts = sorted(facts, key=lambda x: x['score'], reverse=True)
+    result = []
+    for fact in facts:
+        if fact['first'] not in lhs and fact['second'] not in rhs:
+            result.append(fact)
+        lhs.add(fact['first'])
+        rhs.add(fact['second'])
+    return result
+
+
 @app.route('/similarity', methods=['POST', 'GET'])
 #@login_required
 def similarity_page(one=None, another=None):
-    pb_list = sorted(
-        list(mongo_peoplebook.find({})),
-        key=lambda x: '{}_{}'.format(x.get('first_name'), x.get('last_name'))
-    )
+    pb_list = list(mongo_peoplebook.find({}))
     pb_set = {p['username'] for p in pb_list if p['username']}
     p1 = {}
     p2 = {}
@@ -248,8 +250,9 @@ def similarity_page(one=None, another=None):
         for i, c1 in enumerate(text1):
             for j, c2 in enumerate(text2):
                 score = matcher.compare_two(c1, c2)
-                results.append({'score': round(score, 2), 'first': text1[i], 'second': text2[j]})
-        results = similarity_tools.deduplicate(results, threshold=0.3)  # 0.05 for tfidf
+                if score > 0.05:
+                    results.append({'score': round(score, 2), 'first': text1[i], 'second': text2[j]})
+        results = deduplicate(results)
     else:
         if not u1:
             u1 = random.choice(pb_list)['username']
@@ -271,39 +274,5 @@ def similarity_page(one=None, another=None):
 #@login_required
 def similarity_page_parametrized(one, another):
     return similarity_page(one=one, another=another)
-
-
-w2vmatcher = matchers.W2VMatcher(w2v=w2v, weighter=weighter, text_normalization='fast_lemmatize_filter_pos')
-
-
-def text2vec(t):
-    v = w2vmatcher.preprocess(t)
-    if v is None:
-        return np.zeros(300)
-    return v
-
-
-
-from similarity.semantic_search import  SemanticSearcher
-
-with open('similarity/searcher_data.pkl', 'rb') as f:
-    searcher = SemanticSearcher()
-    searcher.setup(**pickle.load(f), vectorizer=text2vec)
-
-
-@app.route('/search', methods=['POST', 'GET'])
-#@login_required
-def search_page(text=None):
-    if request.form and request.form.get('req_text'):
-        req_text = request.form['req_text']
-        results = searcher.lookup(req_text)
-    else:
-        req_text = None
-        results = None
-    return render_template(
-        'search.html',
-        req_text=req_text,
-        results=results,
-    )
 
 get_users()

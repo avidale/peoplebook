@@ -4,24 +4,19 @@ import re
 from functools import lru_cache
 
 MEANINGFUL_POS =  {
-    'NOUN', 'ADJF', 'VERB', 'ADJS', 'ADVB', 'INFN', 'PRTS', 'PRTF', 'COMP', 'NUMR', 'PRED', 'GRND',
+    'NOUN', 'ADJF', 'VERB', 'ADJS', 'ADVB', 'INFN', 'PRTS', 'PRTF', 'COMP', 'NUMR', 'PRED', 'GRND'
 }
 
 PYMORPHY = pymorphy2.MorphAnalyzer()
 
 
-@lru_cache(maxsize=10000)
-def pymorphy_parse(word):
-    return PYMORPHY.parse(word)
-
-
+@lru_cache(maxsize=16384)
 def word2lemma(word, filter_pos=False):
-    hypotheses = pymorphy_parse(word)
+    hypotheses = PYMORPHY.parse(word)
     if len(hypotheses) == 0:
         return word
     if filter_pos and hypotheses[0].tag.POS not in MEANINGFUL_POS:
-        if str(hypotheses[0].tag) != 'LATN':
-            return ''
+        return ''
     return hypotheses[0].normal_form
 
 
@@ -41,34 +36,3 @@ def split(text):
     result = [r.strip() for r in result]
     result = [r for r in result if r]
     return result
-
-
-class Weighter:
-    def __init__(self, pos_weights=None, default_weight=1, custom_weights=None):
-        self.pos_weights = pos_weights or {}
-        self.default_weight = default_weight
-        self.custom_weights = custom_weights or {}
-
-    def __call__(self, words):
-        return [self[word] for word in words]
-
-    def __getitem__(self, word):
-        if word in self.custom_weights:
-            return self.custom_weights[word]
-        if self.pos_weights:
-            hypotheses = pymorphy_parse(word)
-            if hypotheses:
-                tag = hypotheses[0].tag
-                if str(tag) == 'LATN' and 'LATN' in self.pos_weights:
-                    return self.pos_weights['LATN']
-                if tag.POS in self.pos_weights:
-                    return self.pos_weights[tag.POS]
-        return self.default_weight
-
-
-NOISE_WORDS = {
-    'сейчас', 'работать', 'заниматься', 'мочь', 'рассказать', 'проект', 'раньше', 'делать', 'работа',
-    'интересоваться', 'увлекаться', 'быть',
-}
-
-NOISE_WORDS = {word2lemma(w): 0.2 for w in NOISE_WORDS}
