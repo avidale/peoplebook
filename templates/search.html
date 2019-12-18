@@ -1,20 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Каппа Веди Айтиндер</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+</head>
 
-<form method="POST" id="search_form" action="/search">
-    <input type="text" name="req_text">
-    <input type="submit" value="Найти">
-</form>
+<body>
+<section class="section">
+
+    <div class="container">
+        <h1 class="title">Новогодняя встреча сообщества Каппа Веди</h1>
+        <p class="subtitle">Введи интересующую тебя тему или человека</p>
+    </div>
 
 
-{% if results is not none %}
-    <div>{{req_text}}</div>
-{% endif %}
-
-{% if results is not none %}
-    <div> Вот что нашлось: </div>
-    {% for result in results %}
-        <div style="margin:10px">
-            <a href="/person/{{result.username}}">@{{result.username}}</a>
-            <div>{{ result.text }}</div>
+    <div class="container">
+        <form method="POST" id="search_form" action="/search">
+        <div class="field has-addons">
+            <div class="control">
+                <input class="input has-text-grey" type="text" name="req_text" placeholder="Консталтинг">
+            </div>
+            <div class="control">
+                <a class="button is-link" type="submit">
+                  Найти
+                </a>
+            </div>
         </div>
-    {% endfor %}
-{% endif %}
+        </form>
+    </div>
+    <br>
+    <div class="container">
+
+        {% if results is not none %}
+            <div> Вот что нашлось по запросу "{{req_text}}"</div>
+            {% for result in results %}
+            <div class="card">
+
+                <div class="card-content">
+                    <div class="media">
+
+                        <div class="media-left">
+                        <figure class="image is-48x48">
+                          <img src="https://bulma.io/images/placeholders/96x96.png" alt="Placeholder image">
+                        </figure>
+                        </div>
+
+                        <div class="content">
+                            <p class="subtitle has-text-weight-bold">Имя Фамилия
+                                <a class="subtitle has-text-link" href="/person/{{result.username}}">@{{result.username}}</a>
+                            </p>
+                            <p>{{ result.text }}</p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+</section>
+</body>
