@@ -13,7 +13,7 @@
     <div> Вот что нашлось: </div>
     {% for result in results %}
         <div style="margin:10px">
-            <a href="/person/{{result.username}}">@{{result.username}}</a>
+            <a href="/person/{{result.username}}">@{{result.username}}</a> {{result.profile.first_name}}
             <div>{{ result.text }}</div>
         </div>
     {% endfor %}
