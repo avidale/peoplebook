@@ -8,17 +8,21 @@
   <title> Каппа Веди Айтиндер </title>
   <link rel="stylesheet" href="/static/App.css">
   <link rel="stylesheet" href="/static/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
+  <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
 </head>
 
 
 {% macro dropdown(name, values, default_value) %}
-    <select name="{{name}}"  form="persons">
-    {% for person in values %}
-        <option value="{{person.username}}" {% if person.username==default_value %} selected="selected" {% endif %}>
-            {{person.first_name}} {{person.last_name}}
-        </option>"
-    {% endfor %}
-    </select>
+    <div class="select is-medium is-half" style="padding:10px">
+        <select name="{{name}}"  form="persons">
+        {% for person in values %}
+            <option value="{{person.username}}" {% if person.username==default_value %} selected="selected" {% endif %}>
+                {{person.first_name}} {{person.last_name}}
+            </option>"
+        {% endfor %}
+        </select>
+    </div>
 {% endmacro %}
 
 {% macro person_href(person) %}
@@ -29,54 +33,76 @@
 
 
 <body>
-  <div class="similarity-root">
+<section class="section">
 
-<form method="POST" id="persons" action="/similarity">
-    {{ dropdown('first', persons, first_default) }}
-    {{ dropdown('second', persons, second_default) }}
-    <input type="submit" value="Вычислить сходство">
-</form>
+    <div class="container">
+        <h1 class="title" style="background-color:white; margin-left:0px">Новогодняя встреча сообщества Каппа Веди</h1>
+        <p class="subtitle" style="margin-left:10px">Тут собралось много интересных людей. Пора знакомиться!</p>
+    </div>
 
+<div class="similarity-root">
 
-{% macro person_photo_href(person) %}
-    <a href="/person/{{person.username}}">
-        <img class="photo photo--small" src="{{ person.photo }}"/>
-    </a>
-{% endmacro %}
-
-{% if results is not none %}
-    <table style="max-width:500px;margin:10px;padding:10px">
-        <tr>
-            <td>{{person_photo_href(first_person)}}</td>
-            <td> </td>
-            <td>{{person_photo_href(second_person)}}</td>
-        </tr>
-    </table>
-{% endif %}
-
-{% if results %}
-    {% for result in results %}
-        <div> Сходство: {{ result.score }}.
-            <ul class="similarity-list">
-                <li> {{first_person.first_name}} - {{ result.first }} </li>
-                <li> {{second_person.first_name}} - {{ result.second }} </li>
-            </ul>
+    <form method="POST" id="persons" action="/similarity">
+        <div class="container">
+            {{ dropdown('first', persons, first_default) }}
         </div>
-    {% endfor %}
-{% elif results is not none %}
-    <div> Увы, пока сходства найти не получилось. Но это ещё наши алгоритмы тупенькие. Попробуйте другие пары! </div>
-{% else %}
-    <div> Выберите людей, сходство которых хотите найти, и нажмите "Отправить". </div>
-{% endif %}
+        <div class="container">
+            {{ dropdown('second', persons, second_default) }}
+        </div>
+        <div class="container">
+            <br>
+        </div>
+        <div class="container">
+            <input class="button is-link is-medium is-half" style="margin-left:10px" type="submit" value="Подобрать тему для разговора">
+        </div>
+    </form>
 
-{% if results is not none %}
-    <div>Смотреть пиплбук: {{ person_href(first_person) }} и {{ person_href(second_person) }} </div>
-    <div> <a href="/similarity"> Другая пара </div>
-    <div> <a href="/similarity/{{first_person.username}}/{{second_person.username}}">
-        Ссылка на этот результат
-    </a> </div>
-{% endif %}
+    <div class="container">
+    <div style="margin-left:10px">
+        {% macro person_photo_href(person) %}
+            <a href="/person/{{person.username}}">
+                <img class="photo photo--small" src="{{ person.photo }}"/>
+            </a>
+        {% endmacro %}
+
+
+            {% if results is not none %}
+                <table style="max-width:500px;margin:10px;padding:10px">
+                    <tr>
+                        <td>{{person_photo_href(first_person)}}</td>
+                        <td> </td>
+                        <td>{{person_photo_href(second_person)}}</td>
+                    </tr>
+                </table>
+            {% endif %}
+
+            {% if results %}
+                {% for result in results %}
+                    <div> Сходство: {{ result.score }}.
+                        <ul class="similarity-list">
+                            <li> {{first_person.first_name}} - {{ result.first }} </li>
+                            <li> {{second_person.first_name}} - {{ result.second }} </li>
+                        </ul>
+                    </div>
+                {% endfor %}
+            {% elif results is not none %}
+                <div> Увы, пока сходства найти не получилось. Но это ещё наши алгоритмы тупенькие. Попробуйте другие пары! </div>
+            {% else %}
+                <div> Выберите людей, сходство которых хотите найти, и нажмите "Отправить". </div>
+            {% endif %}
+
+            {% if results is not none %}
+                <div>Смотреть пиплбук: {{ person_href(first_person) }} и {{ person_href(second_person) }} </div>
+                <div> <a href="/similarity"> Другая пара </div>
+                <div> <a href="/similarity/{{first_person.username}}/{{second_person.username}}">
+                    Ссылка на этот результат
+                </a> </div>
+            {% endif %}
+    </div>
+    </div>
 
 </div>
+</section>
+
 </body>
 </html>
