@@ -37,7 +37,7 @@
 
     <div class="container">
         <h1 class="title">Новогодняя встреча сообщества Каппа Веди</h1>
-        <p class="subtitle">Введи интересующую тебя тему или человека</p>
+        <p class="subtitle">Введи интересующую тебя тему</p>
     </div>
 
 
@@ -67,7 +67,9 @@
                     <div class="media">
 
                         <div class="media-left">
-                            <img class="photo photo--small" src="{{ result.profile.photo }}"/>
+                            <a href="/person/{{result.username}}">
+                                <img class="photo photo--small" src="{{ result.profile.photo }}"/>
+                            </a>
                         </div>
 
                         <div class="content">

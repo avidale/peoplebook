@@ -89,17 +89,15 @@
 
             {% if results %}
                 {% for result in results %}
-                    <div> Сходство: {{ result.score }}.
-                        <ul class="similarity-list">
-                            <li> {{first_person.first_name}} - {{ result.first }} </li>
-                            <li> {{second_person.first_name}} - {{ result.second }} </li>
-                        </ul>
+                    <p>Сходство: {{ result.score }}.</p>
+                    <div style="margin-left:10px">
+                            <p> {{first_person.first_name}} - {{ result.first }} </p>
+                            <p> {{second_person.first_name}} - {{ result.second }} </p>
                     </div>
                 {% endfor %}
             {% elif results is not none %}
                 <div> Увы, пока сходства найти не получилось. Но это ещё наши алгоритмы тупенькие. Попробуйте другие пары! </div>
             {% else %}
-                <div> Выберите людей, сходство которых хотите найти, и нажмите "Отправить". </div>
             {% endif %}
 
             {% if results is not none %}
