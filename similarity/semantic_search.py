@@ -38,6 +38,7 @@ def extract_all_chunks(df):
 
     idx = 0
     for i, row in tqdm(df.iterrows()):
+        row = row.fillna('')
         texts = basic_nlu.split(row.activity + '\n' + row.topics)
         for text in texts:
             normalized = basic_nlu.fast_normalize(text, lemmatize=True, filter_pos=True)
@@ -47,10 +48,10 @@ def extract_all_chunks(df):
                 owners.append(row.username)
                 indexes.append(idx)
                 idx += 1
-    return parts, owners, normals, indexes
+    return parts, owners, normals
 
 
-def save_searcher_data(parts, owners, vectorizer):
+def get_searcher_data(parts, owners, vectorizer):
     vecs = np.stack([vectorizer(t) for t in parts])
 
     searcher_data = {
@@ -58,6 +59,6 @@ def save_searcher_data(parts, owners, vectorizer):
         'owners': owners,
         'vectors': vecs,
     }
-
-    with open('C:/Users/ddale/YandexDisk/code/peoplebook/similarity/searcher_data.pkl', 'wb') as f:
-        pickle.dump(searcher_data, f)
+    # with open('C:/Users/ddale/YandexDisk/code/peoplebook/similarity/searcher_data.pkl', 'wb') as f:
+    #    pickle.dump(searcher_data, f)
+    return searcher_data

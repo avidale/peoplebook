@@ -11,10 +11,14 @@ from flask_login import LoginManager, login_required, login_user, logout_user, c
 
 import numpy as np
 from similarity import matchers, basic_nlu, similarity_tools
-from similarity.semantic_search import SemanticSearcher
+from similarity.semantic_search import SemanticSearcher, get_searcher_data, extract_all_chunks
 
 from tqdm.auto import tqdm
 from collections import defaultdict
+
+import time
+import pandas as pd
+
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('APP_KEY')
@@ -208,7 +212,16 @@ pb_list = list(mongo_peoplebook.find({}))
 
 import pickle
 with open('similarity/fasttext_extract.pkl', 'rb') as f:
-    w2v = pickle.load(f)
+    main_w2v = pickle.load(f)
+
+import gensim
+ft_small = gensim.models.fasttext.FastTextKeyedVectors.load(
+    'similarity/araneum_new_compressed.model'
+)
+
+
+w2v = similarity_tools.FallbackW2V(main_w2v, ft_small)
+
 
 weighter = basic_nlu.Weighter(custom_weights=basic_nlu.NOISE_WORDS)
 matcher = matchers.WMDMatcher(text_normalization='fast_lemmatize_filter_pos', w2v=w2v, weighter=weighter)
@@ -284,13 +297,6 @@ def text2vec(t):
     return v
 
 
-with open('similarity/searcher_data.pkl', 'rb') as f:
-    searcher_data = pickle.load(f)
-
-searcher = SemanticSearcher()
-searcher.setup(**searcher_data, vectorizer=text2vec)
-
-
 def get_pb_dict():
     return {p['username']: p for p in mongo_peoplebook.find({}) if p['username']}
 
@@ -299,6 +305,17 @@ def get_current_username():
     for u in users:
         if str(u.id) == str(current_user.id):
             return u.username
+
+
+t = time.time()
+print('start getting searher data')
+df = pd.DataFrame(list(get_pb_dict().values()))
+parts, owners, normals = extract_all_chunks(df)
+searcher_data = get_searcher_data(parts, owners, vectorizer=text2vec)
+print('got searcher data, spent {}'.format(time.time() - t))
+
+searcher = SemanticSearcher()
+searcher.setup(**searcher_data, vectorizer=text2vec)
 
 
 @app.route('/search', methods=['POST', 'GET'])

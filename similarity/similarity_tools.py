@@ -16,6 +16,20 @@ def deduplicate(facts, max_number=3, threshold=0.5):
     return result[:max_number]
 
 
+class FallbackW2V:
+    def __init__(self, first, second):
+        self.first = first
+        self.second = second
+
+    def __getitem__(self, item):
+        if item in self.first:
+            return self.first[item]
+        return self.second[item]
+
+    def __contains__(self, item):
+        return True
+
+
 def rank_similarities(one, owner2texts, matcher, score_decay=0.75, num_scores=3):
     # takes 3 to 20 seconds to calculate for a single person
     others = []
