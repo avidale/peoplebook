@@ -314,4 +314,10 @@ def search_page(text=None):
     )
 
 
+# @login_required
+@app.route('/itinder')
+def itinder(text=None):
+    return render_template('itinder.html')
+  
+  
 get_users()
