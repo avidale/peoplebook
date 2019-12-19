@@ -313,4 +313,5 @@ def search_page(text=None):
         results=results,
     )
 
+
 get_users()
