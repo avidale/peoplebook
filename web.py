@@ -291,12 +291,19 @@ with open('similarity/searcher_data.pkl', 'rb') as f:
     searcher.setup(**pickle.load(f), vectorizer=text2vec)
 
 
+def get_pb_dict():
+    return {p['username']: p for p in mongo_peoplebook.find({}) if p['username']}
+
+
 @app.route('/search', methods=['POST', 'GET'])
 #@login_required
 def search_page(text=None):
     if request.form and request.form.get('req_text'):
         req_text = request.form['req_text']
         results = searcher.lookup(req_text)
+        pb_dict = get_pb_dict()
+        for r in results:
+            r['profile'] = pb_dict.get(r['username'], {})
     else:
         req_text = None
         results = None
