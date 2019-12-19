@@ -320,6 +320,12 @@ def search_page(text=None):
     )
 
 
+# @login_required
+@app.route('/itinder')
+def itinder(text=None):
+    return render_template('itinder.html')
+
+
 # todo: make it updateable
 preprocessed = [matcher.preprocess(p) for p in tqdm(searcher_data['texts'])]
 owner2texts = defaultdict(list)
