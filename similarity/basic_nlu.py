@@ -67,8 +67,8 @@ class Weighter:
             hypotheses = pymorphy_parse(word)
             if hypotheses:
                 tag = hypotheses[0].tag
-                lemma = hypotheses[0].lemma
-                if self.lookup_lemma and lemma in self.custom_weights:
+                lemma = hypotheses[0].normal_form
+                if lemma and self.lookup_lemma and lemma in self.custom_weights:
                     return self.custom_weights[lemma]
                 if str(tag) == 'LATN' and 'LATN' in self.pos_weights:
                     return self.pos_weights['LATN']
