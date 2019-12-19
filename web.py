@@ -11,6 +11,10 @@ from flask_login import LoginManager, login_required, login_user, logout_user, c
 
 import numpy as np
 from similarity import matchers, basic_nlu, similarity_tools
+from similarity.semantic_search import SemanticSearcher
+
+from tqdm.auto import tqdm
+from collections import defaultdict
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('APP_KEY')
@@ -33,10 +37,7 @@ mongo_peoplebook = mongo_db.get_collection('peoplebook')
 mongo_membership = mongo_db.get_collection('membership')
 mongo_peoplebook_users = mongo_db.get_collection('users')
 
-user_list = [document['tg_id'] for document in mongo_peoplebook_users.find({})]
-users = [User(document) for document in user_list]
-users_hshd_dict = {hashlib.md5((str(x) +
-                                os.environ.get('login_salt')).encode('utf-8')).hexdigest(): x for x in user_list}
+users = []  # it will be filled in get_users() function
 
 
 @app.template_filter('linkify_filter')
@@ -61,7 +62,7 @@ def home():
     all_events = mongo_events.find().sort('date', pymongo.DESCENDING)
     for event in all_events:
         who_comes = list(mongo_participations.find({'code': event['code'], 'status': 'ACCEPT'}))
-        if len(who_comes) >= 1: # one participant is enough to show the event - but this may be revised
+        if len(who_comes) >= 1:  # one participant is enough to show the event - but this may be revised
             return peoplebook_for_event(event['code'])
     return render_template(
         'peoplebook.html', period=history_config['current'], period_text=history_config['current_text']
@@ -160,11 +161,11 @@ def peoplebook_for_person(username):
 @app.route("/login_link")
 def login_link():
     try:
-        user_id = get_users()[1][request.args.get('bot_info')]
+        user_object = get_users()[1][request.args.get('bot_info')]
     except KeyError:
-        return 'Создайте профиль пиплбуке'
+        return 'Создайте профиль в пиплбуке'
 
-    user = User(user_id)
+    user = User(id=user_object['tg_id'], data=user_object)
     login_user(user, remember=True)
     if request.args.get('next'):
         return redirect(request.args.get('next'))
@@ -194,10 +195,10 @@ def load_user(userid):
 
 
 def get_users():
-    user_list = [document['tg_id'] for document in mongo_peoplebook_users.find({})]
+    user_list = [document for document in mongo_peoplebook_users.find({})]
     global users
-    users = [User(document) for document in user_list]
-    users_hshd_dict = {hashlib.md5((str(x) +
+    users = [User(document['tg_id'], username=document.get('username'), data=document) for document in user_list]
+    users_hshd_dict = {hashlib.md5((str(x['tg_id']) +
                                     os.environ.get('login_salt')).encode('utf-8')).hexdigest(): x for x in user_list}
     return user_list, users_hshd_dict
 
@@ -283,16 +284,21 @@ def text2vec(t):
     return v
 
 
-
-from similarity.semantic_search import  SemanticSearcher
-
 with open('similarity/searcher_data.pkl', 'rb') as f:
-    searcher = SemanticSearcher()
-    searcher.setup(**pickle.load(f), vectorizer=text2vec)
+    searcher_data = pickle.load(f)
+
+searcher = SemanticSearcher()
+searcher.setup(**searcher_data, vectorizer=text2vec)
 
 
 def get_pb_dict():
     return {p['username']: p for p in mongo_peoplebook.find({}) if p['username']}
+
+
+def get_current_username():
+    for u in users:
+        if str(u.id) == str(current_user.id):
+            return u.username
 
 
 @app.route('/search', methods=['POST', 'GET'])
@@ -312,6 +318,27 @@ def search_page(text=None):
         req_text=req_text,
         results=results,
     )
+
+
+# todo: make it updateable
+preprocessed = [matcher.preprocess(p) for p in tqdm(searcher_data['texts'])]
+owner2texts = defaultdict(list)
+for prep, owner, text in zip(preprocessed, searcher_data['owners'], searcher_data['texts']):
+    owner2texts[owner].append((text, prep))
+
+
+@app.route('/most_similar', methods=['POST', 'GET'])
+@login_required
+def most_similar_page(username=None):
+    if username is None:
+        username = get_current_username()
+    rating = similarity_tools.rank_similarities(one=username, owner2texts=owner2texts, matcher=matcher)
+    top = rating.head(10).to_dict('records')
+    pb_dict = get_pb_dict()
+    for result in top:
+        result['other_profile'] = pb_dict.get(result['who'])
+    profile = pb_dict.get(username)
+    return render_template('most_similar.html', results=top, profile=profile)
 
 
 get_users()

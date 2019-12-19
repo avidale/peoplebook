@@ -13,3 +13,4 @@ pymorphy2-dicts
 numpy
 pyemd
 scikit-learn
+tqdm

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title> Каппа Веди Айтиндер </title>
+  <link rel="stylesheet" href="/static/App.css">
+  <link rel="stylesheet" href="/static/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
+  <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+</head>
+
+<body>
+<section class="section">
+
+    <div class="container">
+        <h1 class="title" style="background-color:white; margin-left:0px">Новогодняя встреча сообщества Каппа Веди</h1>
+        <p class="subtitle" style="margin-left:10px">Тут собралось много интересных людей. Пора знакомиться!</p>
+    </div>
+
+<div class="similarity-root">
+
+<p>Вот на кого вы больше всего похожи,
+    <a class="subtitle has-text-link" href="/person/{{profile.username}}">@{{profile.username}}</a>:
+</p>
+
+{% for result in results %}
+    <div class="card" >
+        <div class="card-content">
+            <div class="media">
+
+                <div class="media-left">
+                    <img class="photo photo--small" src="{{ result.other_profile.photo }}"/>
+                </div>
+
+                <div class="content">
+                    <p class="subtitle has-text-weight-bold">{{result.other_profile.first_name}} {{result.other_profile.last_name}}
+                        <a class="subtitle has-text-link" href="/person/{{result.other_profile.username}}">@{{result.other_profile.username}}</a>
+                         - <b>{{ result.score | round(2) }}</b>
+                    </p>
+                    {% for match in result.res %}
+                        <div style="margin-left:30px"> Сходство: {{ match.score }}.
+                            <ul class="similarity-list">
+                                <li> {{profile.first_name}} - {{ match.first }} </li>
+                                <li> {{result.other_profile.first_name}} - {{ match.second }} </li>
+                            </ul>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+
+
+</div>
+</section>
+
+</body>
+</html>
