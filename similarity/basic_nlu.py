@@ -44,10 +44,11 @@ def split(text):
 
 
 class Weighter:
-    def __init__(self, pos_weights=None, default_weight=1, custom_weights=None):
+    def __init__(self, pos_weights=None, default_weight=1, custom_weights=None, lookup_lemma=True):
         self.pos_weights = pos_weights or {}
         self.default_weight = default_weight
         self.custom_weights = custom_weights or {}
+        self.lookup_lemma = lookup_lemma
 
     def __call__(self, words):
         return [self[word] for word in words]
@@ -55,10 +56,13 @@ class Weighter:
     def __getitem__(self, word):
         if word in self.custom_weights:
             return self.custom_weights[word]
-        if self.pos_weights:
+        if self.pos_weights or self.lookup_lemma:
             hypotheses = pymorphy_parse(word)
             if hypotheses:
                 tag = hypotheses[0].tag
+                lemma = hypotheses[0].lemma
+                if self.lookup_lemma and lemma in self.custom_weights:
+                    return self.custom_weights[lemma]
                 if str(tag) == 'LATN' and 'LATN' in self.pos_weights:
                     return self.pos_weights['LATN']
                 if tag.POS in self.pos_weights:
@@ -68,7 +72,7 @@ class Weighter:
 
 NOISE_WORDS = {
     'сейчас', 'работать', 'заниматься', 'мочь', 'рассказать', 'проект', 'раньше', 'делать', 'работа',
-    'интересоваться', 'увлекаться', 'быть',
+    'интересоваться', 'увлекаться', 'быть', 'досуг', 'поделиться', 'могу', 'развиваю', 'бэкграунд',
 }
 
 NOISE_WORDS = {word2lemma(w): 0.2 for w in NOISE_WORDS}
