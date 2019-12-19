@@ -33,7 +33,9 @@
             <div class="media">
 
                 <div class="media-left">
-                    <img class="photo photo--small" src="{{ get_photo_url(result.other_profile) }}"/>
+                    <a href="/person/{{result.username}}">
+                        <img class="photo photo--small" src="{{ get_photo_url(result.other_profile) }}"/>
+                    </a>
                 </div>
 
                 <div class="content">
