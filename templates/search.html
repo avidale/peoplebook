@@ -6,6 +6,19 @@
     <title>Каппа Веди Айтиндер</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
     <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    <style>
+    .photo--small {
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #00f;
+    cursor: pointer;
+    object-fit: cover;}
+
+    .photo--small:hover {
+        box-shadow: 0 0 0 2px #000;}
+    </style>
 </head>
 
 <body>
@@ -37,19 +50,17 @@
         {% if results is not none %}
             <div> Вот что нашлось по запросу "{{req_text}}"</div>
             {% for result in results %}
-            <div class="card">
+            <div class="card" >
 
                 <div class="card-content">
                     <div class="media">
 
                         <div class="media-left">
-                        <figure class="image is-48x48">
-                          <img src="https://bulma.io/images/placeholders/96x96.png" alt="Placeholder image">
-                        </figure>
+                            <img class="photo photo--small" src="{{ result.profile.photo }}"/>
                         </div>
 
                         <div class="content">
-                            <p class="subtitle has-text-weight-bold">Имя Фамилия
+                            <p class="subtitle has-text-weight-bold">{{result.profile.first_name}} {{result.profile.last_name}}
                                 <a class="subtitle has-text-link" href="/person/{{result.username}}">@{{result.username}}</a>
                             </p>
                             <p>{{ result.text }}</p>
@@ -58,6 +69,7 @@
                     </div>
                 </div>
             </div>
+            <br>
             {% endfor %}
         {% endif %}
     </div>
