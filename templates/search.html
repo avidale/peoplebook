@@ -1,3 +1,5 @@
+{% from 'macros.html' import get_photo_url %}
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -68,7 +70,7 @@
 
                         <div class="media-left">
                             <a href="/person/{{result.username}}">
-                                <img class="photo photo--small" src="{{ result.profile.photo }}"/>
+                                <img class="photo photo--small" src="{{ get_photo_url(result.profile) }}"/>
                             </a>
                         </div>
 

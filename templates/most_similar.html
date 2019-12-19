@@ -1,3 +1,4 @@
+{% from 'macros.html' import get_photo_url %}
 <!DOCTYPE html>
 <html lang="ru">
 
@@ -32,7 +33,7 @@
             <div class="media">
 
                 <div class="media-left">
-                    <img class="photo photo--small" src="{{ result.other_profile.photo }}"/>
+                    <img class="photo photo--small" src="{{ get_photo_url(result.other_profile) }}"/>
                 </div>
 
                 <div class="content">
