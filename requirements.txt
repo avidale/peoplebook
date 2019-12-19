@@ -16,3 +16,4 @@ scikit-learn
 tqdm
 pandas
 gensim
+razdel

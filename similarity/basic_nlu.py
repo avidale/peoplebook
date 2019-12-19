@@ -1,11 +1,13 @@
 import pymorphy2
 import re
+import razdel
 
 from functools import lru_cache
 
 MEANINGFUL_POS =  {
     'NOUN', 'ADJF', 'VERB', 'ADJS', 'ADVB', 'INFN', 'PRTS', 'PRTF', 'COMP', 'NUMR', 'PRED', 'GRND',
 }
+HAS_ALPHA = re.compile('.*[a-zA-Zа-яА-ЯёЁ].*')
 
 PYMORPHY = pymorphy2.MorphAnalyzer()
 
@@ -36,10 +38,15 @@ def fast_normalize(text, lemmatize=False, filter_pos=False):
     return text
 
 
-def split(text):
-    result = re.split('[\.,:\n]', text)
+def split(text, need_alhpa=True, min_len=2):
+    sentences = [s.text for s in razdel.sentenize(text)]
+    result = []
+    for s in sentences:
+        result.extend(re.split('[,:\n\(\)]', s))
     result = [r.strip() for r in result]
-    result = [r for r in result if r]
+    result = [r for r in result if r and len(r) >= min_len]
+    if need_alhpa:
+        result = [r for r in result if re.match(HAS_ALPHA, r)]
     return result
 
 
