@@ -310,6 +310,8 @@ def get_current_username():
 t = time.time()
 print('start getting searher data')
 df = pd.DataFrame(list(get_pb_dict().values()))
+df.topics.fillna('', inplace=True)
+df.activity.fillna('', inplace=True)
 parts, owners, normals = extract_all_chunks(df)
 searcher_data = get_searcher_data(parts, owners, vectorizer=text2vec)
 print('got searcher data, spent {}'.format(time.time() - t))
@@ -363,5 +365,49 @@ def most_similar_page(username=None):
     profile = pb_dict.get(username)
     return render_template('most_similar.html', results=top, profile=profile)
 
+
+@app.route('/most_similar/<username>', methods=['POST', 'GET'])
+def most_similar_page_parametrized(username):
+    return most_similar_page(username=username)
+
+
+# least similar people
+df['fulltext'] = ' '
+for i, row in df.iterrows():
+    df.loc[i, 'fulltext'] = '{} {}\n{}\n{}'.format(row.first_name, row.last_name, row.activity, row.topics)
+new_matcher = matchers.W2VMatcher(w2v=w2v, weighter=weighter)
+new_matcher.fit(df.fulltext.tolist(), df.username.tolist())
+user_vecs = np.stack(new_matcher._texts)
+sims = np.dot(user_vecs, user_vecs.T)
+dissimilar_pairs = similarity_tools.assign_pairs(sims)
+
+
+@app.route('/least_similar', methods=['POST', 'GET'])
+@login_required
+def least_similar_page(username=None):
+    if username is None:
+        username = get_current_username()
+
+    for user_idx, un in enumerate(df.username):
+        if un == username:
+            break
+    who = dissimilar_pairs[user_idx]
+    how = sims[user_idx, who]
+    top = [{
+        'username': username,
+        'score': score,
+        'who': df.username.iloc[other_id],
+    } for score, other_id in zip(how, who)]
+
+    pb_dict = get_pb_dict()
+    for result in top:
+        result['other_profile'] = pb_dict.get(result['who'])
+    profile = pb_dict.get(username)
+    return render_template('least_similar.html', results=top, profile=profile)
+
+
+@app.route('/least_similar/<username>', methods=['POST', 'GET'])
+def least_similar_page_parametrized(username):
+    return least_similar_page(username=username)
 
 get_users()

@@ -17,3 +17,4 @@ tqdm
 pandas
 gensim
 razdel
+scipy

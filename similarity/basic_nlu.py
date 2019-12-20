@@ -42,7 +42,7 @@ def split(text, need_alhpa=True, min_len=2):
     sentences = [s.text for s in razdel.sentenize(text)]
     result = []
     for s in sentences:
-        result.extend(re.split('[,:\n\(\)]', s))
+        result.extend(re.split('[,:\n\(\);]', s))
     result = [r.strip() for r in result]
     result = [r for r in result if r and len(r) >= min_len]
     if need_alhpa:

@@ -23,7 +23,7 @@
 
 <div class="similarity-root">
 
-<p>Вот на кого вы больше всего похожи,
+    <p>Вот на кого вы <i>меньше</i> всего похожи,
     <a class="subtitle has-text-link" href="/person/{{profile.username}}">@{{profile.username}}</a>:
 </p>
 
@@ -43,14 +43,8 @@
                         <a class="subtitle has-text-link" href="/person/{{result.other_profile.username}}">@{{result.other_profile.username}}</a>
                          - <b>{{ result.score | round(2) }}</b>
                     </p>
-                    {% for match in result.res %}
-                        <div style="margin-left:30px"> Сходство: {{ match.score }}.
-                            <ul class="similarity-list">
-                                <li> {{profile.first_name}} - {{ match.first }} </li>
-                                <li> {{result.other_profile.first_name}} - {{ match.second }} </li>
-                            </ul>
-                        </div>
-                    {% endfor %}
+                    <div>{{result.other_profile.activity}}</div>
+                    <div>{{result.other_profile.topics}}</div>
                 </div>
             </div>
         </div>

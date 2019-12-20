@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from tqdm.auto import tqdm
+from scipy.optimize import linear_sum_assignment
 
 
 def deduplicate(facts, max_number=3, threshold=0.5):
@@ -60,3 +61,23 @@ def rank_similarities(one, owner2texts, matcher, score_decay=0.75, num_scores=3)
         {'who': others, 'score': others_scores, 'res': others_results}
     ).sort_values('score', ascending=False)
     return rating
+
+
+def assign_pairs(sims, n_pairs=10):
+    """ Take a square matrix `sims` as input;
+        for each its row returns 10 its columns in such a way that total sum of weights is minimized.
+        It's a special case of transportation problem.
+    """
+    sims = np.copy(sims)
+    for i in range(sims.shape[0]):
+        sims[i, i] = 100500
+    seconds = []
+    for k in range(n_pairs):
+        first, second = linear_sum_assignment(sims)
+        # print(sims[first, second].sum(), end=', ')
+        for i, j in enumerate(second):
+            sims[i, j] = 100500
+            sims[j, i] = 100500
+        seconds.append(second)
+    seconds = np.stack(seconds).T
+    return seconds
