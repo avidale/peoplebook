@@ -1,4 +1,5 @@
 {% from 'macros.html' import get_photo_url %}
+{% from 'itinder_macros.html' import itinder_nav, itinder_head, itinder_subhead %}
 <!DOCTYPE html>
 <html lang="ru">
 
@@ -13,13 +14,12 @@
   <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
 </head>
 
+{{ itinder_nav() }}
+
 <body>
 <section class="section">
 
-    <div class="container">
-        <h1 class="title" style="background-color:white; margin-left:0px">Новогодняя встреча сообщества Каппа Веди</h1>
-        <p class="subtitle" style="margin-left:10px">Тут собралось много интересных людей. Пора знакомиться!</p>
-    </div>
+    {{ itinder_subhead() }}
 
 <div class="similarity-root">
 

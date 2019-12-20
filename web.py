@@ -379,7 +379,7 @@ new_matcher = matchers.W2VMatcher(w2v=w2v, weighter=weighter)
 new_matcher.fit(df.fulltext.tolist(), df.username.tolist())
 user_vecs = np.stack(new_matcher._texts)
 sims = np.dot(user_vecs, user_vecs.T)
-dissimilar_pairs = similarity_tools.assign_pairs(sims)
+dissimilar_pairs = similarity_tools.assign_pairs(sims, n_pairs=20)
 
 
 @app.route('/least_similar', methods=['POST', 'GET'])
