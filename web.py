@@ -60,6 +60,23 @@ def preprocess_profiles(profiles):
     return filtered
 
 
+def get_profiles_for_event(event_code):
+    raw_profiles = list(mongo_participations.aggregate([
+        {
+            '$lookup': {
+                'from': 'peoplebook',
+                'localField': 'username',
+                'foreignField': 'username',
+                'as': 'profiles'
+            }
+        }, {
+            '$match': {'code': event_code, 'status': 'ACCEPT'}
+        }
+    ]))
+    profiles = [p for rp in raw_profiles for p in rp.get('profiles', [])]
+    return profiles
+
+
 @app.route('/')
 @login_required
 def home():
@@ -87,18 +104,7 @@ def peoplebook_for_event(event_code):
     the_event = mongo_events.find_one({'code': event_code})
     if the_event is None:
         return 'Такого события не найдено!'
-    raw_profiles = list(mongo_participations.aggregate([
-        {
-            '$lookup': {
-                'from': 'peoplebook',
-                'localField': 'username',
-                'foreignField': 'username',
-                'as': 'profiles'
-            }
-        }, {
-            '$match': {'code': event_code, 'status': 'ACCEPT'}
-        }
-    ]))
+    raw_profiles = get_profiles_for_event(event_code)
     profiles = [p for rp in raw_profiles for p in rp.get('profiles', [])]
     return render_template(
         'backend_peoplebook.html',
@@ -207,7 +213,8 @@ def get_users():
     return user_list, users_hshd_dict
 
 
-pb_list = list(mongo_peoplebook.find({}))
+CURRENT_EVENT = 'newyear2019'
+pb_list = get_profiles_for_event(CURRENT_EVENT)  # list(mongo_peoplebook.find({}))
 #matcher = matchers.TFIDFMatcher(text_normalization='fast_lemmatize_filter_pos')
 
 import pickle
@@ -234,7 +241,7 @@ matcher.fit(texts, ['' for _ in texts])
 #@login_required
 def similarity_page(one=None, another=None):
     pb_list = sorted(
-        list(mongo_peoplebook.find({})),
+        get_profiles_for_event(CURRENT_EVENT),
         key=lambda x: '{}_{}'.format(x.get('first_name'), x.get('last_name'))
     )
     pb_set = {p['username'] for p in pb_list if p['username']}
@@ -298,7 +305,7 @@ def text2vec(t):
 
 
 def get_pb_dict():
-    return {p['username']: p for p in mongo_peoplebook.find({}) if p['username']}
+    return {p['username']: p for p in get_profiles_for_event(CURRENT_EVENT) if p['username']}
 
 
 def get_current_username():
