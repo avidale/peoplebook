@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="/static/index.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
   <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+
 </head>
 
 {{ itinder_nav() }}
@@ -37,26 +38,24 @@
                         <img class="photo photo--small" src="{{ get_photo_url(result.other_profile) }}"/>
                     </a>
                 </div>
+            </div>
 
-                <div class="content">
-                    <p class="subtitle has-text-weight-bold">{{result.other_profile.first_name}} {{result.other_profile.last_name}}
-                        <a class="subtitle has-text-link" href="/person/{{result.other_profile.username}}">@{{result.other_profile.username}}</a>
-                         - <b>{{ result.score | round(2) }}</b>
+            <div class="content">
+                <p class="subtitle has-text-weight-bold">{{result.other_profile.first_name}} {{result.other_profile.last_name}}
+                    <a class="subtitle has-text-link" href="/person/{{result.other_profile.username}}">@{{result.other_profile.username}}</a>
+                     - <b>{{ result.score | round(2) }}</b>
+                </p>
+                {% for match in result.res %}
+                    <p>Сходство: {{ match.score }}.<br />
+                        <span style="margin-left:30px">{{profile.first_name}} - {{ match.first }}</span><br />
+                        <span style="margin-left:30px">{{result.other_profile.first_name}} - {{ match.second }}</span>
                     </p>
-                    {% for match in result.res %}
-                        <div style="margin-left:30px"> Сходство: {{ match.score }}.
-                            <ul class="similarity-list">
-                                <li> {{profile.first_name}} - {{ match.first }} </li>
-                                <li> {{result.other_profile.first_name}} - {{ match.second }} </li>
-                            </ul>
-                        </div>
-                    {% endfor %}
-                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
+    <br>
 {% endfor %}
-
 
 </div>
 </section>
