@@ -44,11 +44,10 @@
                          - <b>{{ result.score | round(2) }}</b>
                     </p>
                     {% for match in result.res %}
-                        <div style="margin-left:30px"> Сходство: {{ match.score }}.
-                            <ul class="similarity-list">
-                                <li> {{profile.first_name}} - {{ match.first }} </li>
-                                <li> {{result.other_profile.first_name}} - {{ match.second }} </li>
-                            </ul>
+                        <p>Сходство: {{ match.score }}.</p>
+                        <div style="margin-left:30px">
+                                <p> {{profile.first_name}} - {{ match.first }} </p>
+                                <p> {{result.other_profile.first_name}} - {{ match.second }} </p>
                         </div>
                     {% endfor %}
                 </div>
