@@ -47,19 +47,19 @@
                 </p>
                 {% for match in result.res %}
                     <p>Сходство: {{ match.score }}.<br />
-                        <span style="margin-left:30px">{{profile.first_name}} - {{ match.first }} <br />
-                        {{result.other_profile.first_name}} - {{ match.second }}
-                        </span></p>
+                        <span style="margin-left:30px">{{profile.first_name}} - {{ match.first }}</span><br />
+                        <span style="margin-left:30px">{{result.other_profile.first_name}} - {{ match.second }}</span>
+                    </p>
                     </div>
             
                 {% endfor %}
             </div>
         </div>
     </div>
+    <br>
 {% endfor %}
 
 
-</div>
 </section>
 
 </body>
