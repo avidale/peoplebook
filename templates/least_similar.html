@@ -37,15 +37,15 @@
                         <img class="photo photo--small" src="{{ get_photo_url(result.other_profile) }}"/>
                     </a>
                 </div>
+            </div>
 
-                <div class="content">
-                    <p class="subtitle has-text-weight-bold">{{result.other_profile.first_name}} {{result.other_profile.last_name}}
-                        <a class="subtitle has-text-link" href="/person/{{result.other_profile.username}}">@{{result.other_profile.username}}</a>
-                         <!---- scores for dissimilarity are not well interpretable, because they are global  - <b>{{ result.score | round(2) }}</b> ---->
-                    </p>
-                    <div>{{result.other_profile.activity}}</div>
-                    <div>{{result.other_profile.topics}}</div>
-                </div>
+            <div class="content">
+                <p class="subtitle has-text-weight-bold">{{result.other_profile.first_name}} {{result.other_profile.last_name}}
+                    <a class="subtitle has-text-link" href="/person/{{result.other_profile.username}}">@{{result.other_profile.username}}</a>
+                     <!---- scores for dissimilarity are not well interpretable, because they are global  - <b>{{ result.score | round(2) }}</b> ---->
+                </p>
+                <div>{{result.other_profile.activity}}</div>
+                <div>{{result.other_profile.topics}}</div>
             </div>
         </div>
     </div>
