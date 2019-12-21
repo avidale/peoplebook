@@ -104,8 +104,8 @@ def peoplebook_for_event(event_code):
     the_event = mongo_events.find_one({'code': event_code})
     if the_event is None:
         return 'Такого события не найдено!'
-    raw_profiles = get_profiles_for_event(event_code)
-    profiles = [p for rp in raw_profiles for p in rp.get('profiles', [])]
+    profiles = get_profiles_for_event(event_code)
+    # profiles = [p for rp in raw_profiles for p in rp.get('profiles', [])]
     return render_template(
         'backend_peoplebook.html',
         title=the_event.get('title', 'Пиплбук встречи'),
