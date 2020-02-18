@@ -1,48 +1,31 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'basic_template.html' %}
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+{% block title %}
   <title>Пиплбук встречи Каппа Веди {{ period_text }}</title>
-  <link rel="stylesheet" href="/static/App.css">
-  <link rel="stylesheet" href="/static/index.css">
-  <script type="text/javascript" src="/static/{{ period }}.js" charset="UTF-8"></script>
-  <script type="text/javascript" src="/static/my_linkify.js" charset="UTF-8"></script>
-  <!-- Import the React, React-Dom and Babel libraries from unpkg -->
-  <script type="application/javascript" src="https://unpkg.com/react@16.0.0/umd/react.production.min.js"></script>
-  <script type="application/javascript" src="https://unpkg.com/react-dom@16.0.0/umd/react-dom.production.min.js"></script>
-  <script type="application/javascript" src="https://unpkg.com/babel-standalone@6.26.0/babel.js"></script>
-  <!-- this script contains the main logic -->
-  <script type="text/babel" src="/static/app.js"></script>
-</head>
+{% endblock %}
 
-<body>
-  <div id="root"></div>
-  <script type="text/babel">
-    // Obtain the root
-    const rootElement = document.getElementById('root');
+{% block content %}
+<div id="root"></div>
+<script type="text/babel">
+  // Obtain the root
+  const rootElement = document.getElementById('root');
 
-    // Create a function to wrap up your component
-    function App(){
-      return(
-      <div>
-        <PeopleBookApp2 name="Пиплбук встречи {{ period_text }}" people={people}/>
-      </div>
-      )
-    }
-    // Use the ReactDOM.render to show your component on the browser
-    ReactDOM.render(
-      <App />,
-      rootElement
+  // Create a function to wrap up your component
+  function App(){
+    return(
+    <div>
+      <PeopleBookApp2 name="Пиплбук встречи {{ period_text }}" people={people}/>
+    </div>
     )
-  </script>
-  <div id="footer">
-      Если вы изменили свою анкету, но она не обновляется больше минуты, сбросьте кэш браузера.
-      Windows: ctrl + F5. Mac/Apple: Apple + R or command + R. Linux: F5
-  </div>
-<a href="{{ url_for('logout') }}" class="body"><center>Выйти</center></a>
-</body>
-
-</html>
+  }
+  // Use the ReactDOM.render to show your component on the browser
+  ReactDOM.render(
+    <App />,
+    rootElement
+  )
+</script>
+<div id="footer">
+    Если вы изменили свою анкету, но она не обновляется больше минуты, сбросьте кэш браузера.
+    Windows: ctrl + F5. Mac/Apple: Apple + R or command + R. Linux: F5
+</div>
+{% endblock %}

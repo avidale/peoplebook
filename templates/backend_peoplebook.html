@@ -1,36 +1,32 @@
+{% extends 'basic_template.html' %}
 {% from 'macros.html' import peoplebook_profile, get_photo_url %}
 {% set new_profiles = profiles | preprocess_profiles %}
 
-<!DOCTYPE html>
-<html lang="ru">
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+{% block title %}
   <title> {{ title }} </title>
-  <link rel="stylesheet" href="/static/App.css">
-  <link rel="stylesheet" href="/static/index.css">
-</head>
+{% endblock %}
 
-<body>
-  <div id="root">
-    <div class="title">{{ title }}</div>
-    <div class="toc">
-      {% for profile in new_profiles %}
-        <a href="#{{ profile.username }}" class="toc__person">
-          <img src="{{ get_photo_url(profile) }}" class="photo photo--small" />
-          <div class="name name--brief">{{ profile.first_name or profile.username }}</div>
-        </a>
-      {% endfor %}
-    </div>
-    <div class="people">
-      {% for profile in new_profiles %}
-        {{ peoplebook_profile(profile) }}
-      {% endfor %}
-    </div>
+
+{% block content %}
+
+<div id="root">
+  <div class="title">{{ title }}</div>
+  <div class="toc">
+    {% for profile in new_profiles %}
+      <a href="#{{ profile.username }}" class="toc__person">
+          <div style="width:80px; height:80px">
+            <img src="{{ get_photo_url(profile) }}" class="photo photo--small" />
+          </div>
+        <div class="name name--brief">{{ profile.first_name or profile.username }}</div>
+      </a>
+    {% endfor %}
   </div>
-  <a href="{{ url_for('logout') }}" class="body"><center>Выйти</center></a>
-</body>
+  <div class="people">
+    {% for profile in new_profiles %}
+      {{ peoplebook_profile(profile) }}
+    {% endfor %}
+  </div>
+</div>
 
-</html>
+{% endblock %}

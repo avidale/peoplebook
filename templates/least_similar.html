@@ -1,31 +1,28 @@
+{% extends 'basic_template.html' %}
 {% from 'macros.html' import get_photo_url %}
-{% from 'itinder_macros.html' import itinder_nav, itinder_head, itinder_subhead %}
-<!DOCTYPE html>
-<html lang="ru">
+{% from 'itinder_macros.html' import itinder_nav, itinder_head, itinder_subhead, itinder_title %}
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title> Каппа Веди Айтиндер </title>
-  <link rel="stylesheet" href="/static/App.css">
-  <link rel="stylesheet" href="/static/index.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
-  <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
-</head>
 
-{{ itinder_nav() }}
+{% block title %}
+  {{ itinder_title() }}
+{% endblock %}
 
-<body>
+
+{% block navbar %}
+  {{ itinder_nav() }}
+{% endblock %}
+
+
+{% block content %}
+
 <section class="section">
 
     {{ itinder_subhead() }}
-
 <div class="similarity-root">
 
     <p>Вот на кого вы <i>меньше</i> всего похожи,
-    <a class="subtitle has-text-link" href="/person/{{profile.username}}">@{{profile.username}}</a>:
-</p>
+        <a class="subtitle has-text-link" href="/person/{{profile.username}}">@{{profile.username}}</a>:
+    </p>
 
 {% for result in results %}
     <div class="card" >
@@ -52,9 +49,6 @@
     <br>
 {% endfor %}
 
-
 </div>
 </section>
-
-</body>
-</html>
+{% endblock %}
