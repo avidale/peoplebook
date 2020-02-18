@@ -1,29 +1,14 @@
+{% extends 'basic_template.html' %}
 {% from 'macros.html' import get_photo_url %}
+{% from 'itinder_macros.html' import itinder_nav, itinder_head, itinder_subhead, itinder_title %}
 
-<!DOCTYPE html>
-<html lang="ru">
+{% block title %}
+  {{ itinder_title() }}
+{% endblock %}
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title> Каппа Веди Айтиндер </title>
-  <link rel="stylesheet" href="/static/App.css">
-  <link rel="stylesheet" href="/static/index.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
-  <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
-</head>
-
-<nav class="bd-navbar navbar has-shadow" role="navigation" aria-label="main navigation">
-  <div class="navbar-brand">
-    <a class="navbar-item" href="/itinder">
-      <p>КВ АйТиндер</p>
-    </a>
-    <a class="navbar-item" href="/">
-      <p>Пиплбук встречи</p>
-    </a>
-  </div>
-</nav>
+{% block navbar %}
+  {{ itinder_nav() }}
+{% endblock %}
 
 
 {% macro dropdown(name, values, default_value) %}
@@ -45,13 +30,11 @@
 {% endmacro %}
 
 
-<body>
+{% block content %}
+
 <section class="section">
 
-    <div class="container">
-        <h1 class="title" style="background-color:white; margin-left:0px">Новогодняя встреча сообщества Каппа Веди 2019</h1>
-        <p class="subtitle" style="margin-left:10px">Тут собралось много интересных людей. Пора знакомиться!</p>
-    </div>
+    {{ itinder_subhead() }}
 
 <div class="similarity-root">
 
@@ -115,5 +98,4 @@
 </div>
 </section>
 
-</body>
-</html>
+{% endblock %}

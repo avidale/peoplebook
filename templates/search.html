@@ -1,18 +1,23 @@
+{% extends 'basic_template.html' %}
 {% from 'macros.html' import get_photo_url %}
-{% from 'itinder_macros.html' import itinder_nav, itinder_head, itinder_subhead %}
+{% from 'itinder_macros.html' import itinder_nav, itinder_head, itinder_subhead, itinder_title %}
 
-<!DOCTYPE html>
-<html>
-{{ itinder_head() }}
 
-{{ itinder_nav() }}
+{% block title %}
+  {{ itinder_title() }}
+{% endblock %}
 
-<body>
+
+{% block navbar %}
+  {{ itinder_nav() }}
+{% endblock %}
+
+
+{% block content %}
+
 <section class="section">
 
-    <div class="container">
-        <h1 class="title">Новогодняя встреча сообщества Каппа Веди 2019</h1>
-    </div>
+    {{ itinder_subhead() }}
     <br>
 
     <div class="container">
@@ -62,4 +67,5 @@
     </div>
 
 </section>
-</body>
+
+{% endblock %}
