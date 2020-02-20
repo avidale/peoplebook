@@ -33,15 +33,29 @@
 
 {% macro peoplebook_profile(profile) %}
     {% set photo_url = get_photo_url(profile) %}
+    <div class="card">
         <div class="person" id="{{ profile.username }}">
-          <div class="name name--full">{{ get_person_title(profile) }}</div>
-          <img class="photo photo--large" src="{{ photo_url }}" />
-          <div class="label">Чем занимаюсь</div>
-          <div class="answer"> {{ profile.activity  | linkify_filter | safe }} </div> {# todo: split into chunks #}
-          <div class="label">О чем могу рассказать</div>
-          <div class="answer">{{ profile.topics  | linkify_filter | safe }}</div>
-          <div class="label">Контакты</div>
-          <div class="answer"> {{ profile.contacts | linkify_filter | safe }} </div>
+
+            <div class="card-image">
+                <img class="photo photo--large" src="{{ photo_url }}"/>
+            </div>
+
+            <div class="container" style="margin: 0 0 1em; padding: 0 5px" >
+
+                <div class="media-content">
+                    <p class="title is-4">{{ get_person_title(profile) }}</p>
+                    <p class="subtitle is-6">
+                        <a href="https://t.me/{{ profile.username }}">@{{ profile.username }}</a>
+                    </p>
+                </div>
+
+                <div class="label">Чем занимаюсь</div>
+                <div class="answer"> {{ profile.activity  | linkify_filter | safe }} </div> {# todo: split into chunks #}
+                <div class="label">О чем могу рассказать</div>
+                <div class="answer">{{ profile.topics  | linkify_filter | safe }}</div>
+            </div>
+
         </div>
+    </div>
 {% endmacro %}
 
