@@ -44,7 +44,9 @@
 
                 <div class="media-content">
                     <p class="title is-4">{{ get_person_title(profile) }}</p>
-                    <p class="subtitle is-6">@{{ profile.username }}</p>
+                    <p class="subtitle is-6">
+                        <a href="https://t.me/{{ profile.username }}">@{{ profile.username }}</a>
+                    </p>
                 </div>
 
                 <div class="label">Чем занимаюсь</div>
