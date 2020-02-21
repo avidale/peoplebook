@@ -142,7 +142,7 @@ def similarity_page_parametrized(one, another):
     return similarity_page(one=one, another=another)
 
 
-@app.route('/search', methods=['POST', 'GET'])
+@app.route('/itinder_search', methods=['POST', 'GET'])
 @login_required
 def search_page(text=None):
     if request.form and request.form.get('req_text'):
@@ -155,7 +155,7 @@ def search_page(text=None):
         req_text = None
         results = None
     return render_template(
-        'search.html',
+        'itinder_search.html',
         req_text=req_text,
         results=results,
     )
