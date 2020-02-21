@@ -1,15 +1,15 @@
 {% extends 'basic_template.html' %}
 {% from 'macros.html' import get_photo_url %}
-{% from 'macros.html' import peoplebook_profile, get_photo_url, basic_nav, basic_subhead %}
+{% from 'itinder_macros.html' import itinder_nav, itinder_head, itinder_subhead, itinder_title %}
 
 
 {% block title %}
-  <title> {{ title }} </title>
+  {{ itinder_title() }}
 {% endblock %}
 
 
 {% block navbar %}
-  {{ basic_nav() }}
+  {{ itinder_nav() }}
 {% endblock %}
 
 
@@ -17,14 +17,14 @@
 
 <section class="section">
 
-    {{ basic_subhead() }}
+    {{ itinder_subhead() }}
     <br>
 
     <div class="container">
         <form method="POST" id="search_form" action="/search">
         <div class="field has-addons">
             <div class="control is-expanded">
-                <input class="input has-text-grey" type="text" name="req_text" placeholder="Юрист">
+                <input class="input has-text-grey" type="text" name="req_text" placeholder="Введи интересующую тебя тему">
             </div>
             <div class="control">
                 <button class="button is-link" type="submit" form="search_form">

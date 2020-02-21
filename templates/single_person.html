@@ -1,8 +1,12 @@
 {% extends 'basic_template.html' %}
-{% from 'macros.html' import peoplebook_profile %}
+{% from 'macros.html' import peoplebook_profile, basic_nav %}
 
 {% block title %}
   <title> {{ profile.first_name}} {{ profile.last_name }} </title>
+{% endblock %}
+
+{% block navbar %}
+  {{ basic_nav() }}
 {% endblock %}
 
 {% block content %}

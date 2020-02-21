@@ -8,6 +8,7 @@ from web_flask import app, get_users, get_profiles_for_event
 from web_flask import mongo_events, mongo_participations, mongo_membership, mongo_peoplebook
 from web_flask import history_config
 
+from web_itinder import get_pb_dict, searcher
 import web_itinder  # noqa: with this import the whole itinder starts working
 
 
@@ -99,6 +100,26 @@ def peoplebook_for_person(username):
     if the_profile is None:
         return 'Такого профиля не найдено!'
     return render_template('single_person.html', profile=the_profile)
+
+
+@app.route('/search', methods=['POST', 'GET'])
+@login_required
+def search():
+    if request.form and request.form.get('req_text'):
+        req_text = request.form['req_text']
+        results = searcher.lookup(req_text)
+        pb_dict = get_pb_dict()
+        for r in results:
+            r['profile'] = pb_dict.get(r['username'], {})
+    else:
+        req_text = None
+        results = None
+    return render_template(
+        'search.html',
+        req_text=req_text,
+        results=results,
+        title='',
+    )
 
 
 # вход по ссылке

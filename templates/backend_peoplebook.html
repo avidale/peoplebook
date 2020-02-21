@@ -1,5 +1,5 @@
 {% extends 'basic_template.html' %}
-{% from 'macros.html' import peoplebook_profile, get_photo_url %}
+{% from 'macros.html' import peoplebook_profile, get_photo_url, basic_nav %}
 {% set new_profiles = profiles | preprocess_profiles %}
 
 
@@ -7,6 +7,9 @@
   <title> {{ title }} </title>
 {% endblock %}
 
+{% block navbar %}
+  {{ basic_nav() }}
+{% endblock %}
 
 {% block content %}
 

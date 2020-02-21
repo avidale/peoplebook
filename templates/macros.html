@@ -59,3 +59,34 @@
     </div>
 {% endmacro %}
 
+{% macro basic_nav() %}
+    <nav class="bd-navbar navbar has-shadow" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="/members">
+              <p>Члены клуба</p>
+            </a>
+            <a class="navbar-item" href="/">
+              <p>Пиплбук встречи</p>
+            </a>
+            <a class="navbar-item" href="/search">
+              <p>Поиск</p>
+            </a>
+       </div>
+        <div class="navbar-menu">
+            <div class="navbar-end">
+                <a class="navbar-item is-right" href="{{ url_for('logout') }}" >
+                  <p>Выйти</p>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+{% endmacro %}
+
+
+{% macro basic_subhead() %}
+    <div class="container">
+        <h1 class="title" style="background-color:white; color:black; margin-left:0px"> Члены клуба Каппа Веди </h1>
+        <p class="subtitle" style="margin-left:10px">Найди человека из интересующей области</p>
+    </div>
+{% endmacro %}

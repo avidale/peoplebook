@@ -1,7 +1,12 @@
 {% extends 'basic_template.html' %}
+{% from 'macros.html' import basic_nav %}
 
 {% block title %}
   <title>Пиплбук встречи Каппа Веди {{ period_text }}</title>
+{% endblock %}
+
+{% block navbar %}
+  {{ basic_nav() }}
 {% endblock %}
 
 {% block content %}
