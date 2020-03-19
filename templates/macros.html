@@ -31,7 +31,7 @@
     {% endif %}
 {%- endmacro %}
 
-{% macro peoplebook_profile(profile) %}
+{% macro peoplebook_profile(profile, show_contacts=False) %}
     {% set photo_url = get_photo_url(profile) %}
     <div class="card">
         <div class="person" id="{{ profile.username }}">
@@ -53,6 +53,10 @@
                 <div class="answer"> {{ profile.activity  | linkify_filter | safe }} </div> {# todo: split into chunks #}
                 <div class="label">О чем могу рассказать</div>
                 <div class="answer">{{ profile.topics  | linkify_filter | safe }}</div>
+                {% if show_contacts %}
+                    <div class="label">Контакты</div>
+                    <div class="answer">{{ profile.contacts  | linkify_filter | safe }}</div>
+                {% endif %}
             </div>
 
         </div>
