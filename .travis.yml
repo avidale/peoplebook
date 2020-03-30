@@ -1,0 +1,9 @@
+language: python
+python:
+    - "3.6"
+install: 
+  - pip install -r requirements.txt
+  - pip install pep8 pytest-cov
+script:
+  - pytest --cov=peoplebot --cov=utils --cov-fail-under=39
+  - pep8 . --max-line-length 120

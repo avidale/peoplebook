@@ -1,3 +1,14 @@
+pytelegrambotapi
+pytest
+flask
+pymongo==3.4.0
+pymorphy2
+sentry-sdk==0.8.0
+pyyaml
+mongomock
+cloudinary
+pandas
+openpyxl
 flask
 gunicorn
 # google-api-python-client
@@ -18,3 +29,4 @@ pandas
 gensim
 razdel
 scipy
+requests
