@@ -7,7 +7,7 @@ import random
 import sentry_sdk
 import telebot
 
-from flask import Flask, request
+from flask import Blueprint, Flask, request
 
 from peoplebot import config
 from peoplebot.response_logic import respond
@@ -25,7 +25,7 @@ ON_HEROKU = os.environ.get('ON_HEROKU')
 TOKEN = os.environ['TOKEN']
 bot = telebot.TeleBot(TOKEN)
 
-server = Flask(__name__)
+bot_app = Blueprint('bot_app', __name__)
 
 TELEBOT_URL = 'telebot_webhook/'
 BASE_URL = os.environ.get('BASE_URL')
@@ -51,14 +51,14 @@ ALL_CONTENT_TYPES = [
 ]
 
 
-@server.route("/" + TELEBOT_URL)
+@bot_app.route("/" + TELEBOT_URL)
 def web_hook():
     bot.remove_webhook()
     bot.set_webhook(url=BASE_URL + TELEBOT_URL + TOKEN)
     return "!", 200
 
 
-@server.route("/wakeup/")
+@bot_app.route("/wakeup/")
 def wake_up():
     web_hook()
     # todo: catch exceptions
@@ -67,13 +67,13 @@ def wake_up():
     return "Маам, ну ещё пять минуточек!", 200
 
 
-@server.route("/{}/restart-coffee/".format(ADMIN_URL_PREFIX))
+@bot_app.route("/{}/restart-coffee/".format(ADMIN_URL_PREFIX))
 def force_restart_coffee():
     daily_random_coffee(database=DATABASE, sender=SENDER, force_restart=True)
     return "Кофе перезапущен!", 200
 
 
-@server.route("/send-events/")
+@bot_app.route("/send-events/")
 def do_event_management():
     daily_event_management(database=DATABASE, sender=SENDER)
     return "Сделал со встречами всё, что хотел!", 200
@@ -84,24 +84,29 @@ def process_message(msg):
     respond(message=msg, database=DATABASE, sender=SENDER, bot=bot)
 
 
-@server.route('/' + TELEBOT_URL + TOKEN, methods=['POST'])
+@bot_app.route('/' + TELEBOT_URL + TOKEN, methods=['POST'])
 def get_message():
     bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
     return "!", 200
 
 
-parser = argparse.ArgumentParser(description='Run the bot')
-parser.add_argument('--poll', action='store_true')
+def make_app():
+    app = Flask(__name__)
+    app.register_blueprint(bot_app)
+    return app
 
 
 def run_peoplebot():
+    parser = argparse.ArgumentParser(description='Run the bot')
+    parser.add_argument('--poll', action='store_true')
     args = parser.parse_args()
     if args.poll:
         bot.remove_webhook()
         bot.polling()
     else:
         web_hook()
-        server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
+        app = make_app()
+        app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
 
 
 if __name__ == '__main__':
