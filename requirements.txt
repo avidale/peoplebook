@@ -29,3 +29,4 @@ pandas
 gensim
 razdel
 scipy
+requests
