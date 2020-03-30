@@ -5,5 +5,5 @@ install:
   - pip install -r requirements.txt
   - pip install pep8 pytest-cov
 script:
-  - pytest --cov=scenarios --cov=utils --cov=response_logic --cov-fail-under=39
+  - pytest --cov=peoplebot --cov=utils --cov-fail-under=39
   - pep8 . --max-line-length 120

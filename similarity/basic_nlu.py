@@ -4,7 +4,7 @@ import razdel
 
 from functools import lru_cache
 
-MEANINGFUL_POS =  {
+MEANINGFUL_POS = {
     'NOUN', 'ADJF', 'VERB', 'ADJS', 'ADVB', 'INFN', 'PRTS', 'PRTF', 'COMP', 'NUMR', 'PRED', 'GRND',
 }
 HAS_ALPHA = re.compile('.*[a-zA-Zа-яА-ЯёЁ].*')

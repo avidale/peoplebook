@@ -127,7 +127,7 @@ def similarity_page(one=None, another=None):
         results = None
     return render_template(
         'similarity.html',
-        persons = pb_list,
+        persons=pb_list,
         results=results,
         first_default=u1,
         second_default=u2,

@@ -1,7 +1,9 @@
-# kappa-vedi-bot
-A telegram bot for Kappa Vedi community
+# peoplebook
+A telegram bot and web app for Kappa Vedi community
 
 ## Инструкция по запуску бота
+**Текущая инструкция неактуальна - бот и пиплбук переехали в одно приложение!**
+
 1. Скачать код из репозитория github.com/avidale/kappa-vedi-bot
 2. Создать MongoDB.  Доступ к продовой у @cointegrated. Тестовую можно создать самому или спросить у @akrasnow
     1. После создания тестовой MongoDB нажать Connect >> Connect your application >> Python 3.4 or later >> Скопировать ссылку. Она пригодится в пункте 7

@@ -12,4 +12,3 @@ class User(UserMixin):
 
     def __repr__(self):
         return str(self.id)
-
