@@ -4,7 +4,7 @@ from models import User
 from flask import render_template, abort, request, redirect
 from flask_login import login_required, login_user, logout_user, current_user
 
-from web_flask import app, get_users, get_profiles_for_event
+from web_flask import app, get_users, get_profiles_for_event, get_current_username
 from web_flask import mongo_events, mongo_participations, mongo_membership, mongo_peoplebook
 from web_flask import history_config
 
@@ -100,6 +100,12 @@ def peoplebook_for_person(username):
     if the_profile is None:
         return 'Такого профиля не найдено!'
     return render_template('single_person.html', profile=the_profile)
+
+
+@app.route('/me')
+@login_required
+def my_profile():
+    return peoplebook_for_person(username=get_current_username())
 
 
 @app.route('/search', methods=['POST', 'GET'])
