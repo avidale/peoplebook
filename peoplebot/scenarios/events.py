@@ -239,6 +239,7 @@ def try_event_usage(ctx: Context, database: Database):
             ctx.response = render_full_event(ctx, database, the_event)
             if database.is_admin(ctx.user_object):
                 ctx.suggests.append('Пригласить всех членов клуба')
+                ctx.suggests.append('Пригласить всех членов сообщества')
     elif event_code is not None and (
             ctx.text == '/engage' or re.match('^(участвовать|принять участие)( в этой встрече)?$', ctx.text_normalized)
     ):
@@ -456,10 +457,13 @@ def try_event_creation(ctx: Context, database: Database):
             ctx.the_update = {'$set': {'event_code': event_to_create['code']}}
             ctx.response = 'Хорошо, дата встречи будет "{}". '.format(ctx.text) + '\nВстреча успешно создана!'
             ctx.suggests.append('Пригласить всех членов клуба')
+            ctx.suggests.append('Пригласить всех членов сообщества')
     elif event_code is not None:  # this event is context-independent, triggers at any time just by text
-        if re.match('пригласить (всех|весь).*', ctx.text_normalized) or ctx.text == '/invite_everyone':
+        if re.match('пригласить (всех|весь).*', ctx.text_normalized) \
+                or ctx.text == '/invite_club' or ctx.text == '/invite_community':
             # todo: deduplicate this as well
             the_event = database.mongo_events.find_one({'code': event_code})
+            community = 'сообществ' in ctx.text_normalized or 'community' in ctx.text
             if the_event is None:
                 ctx.intent = 'EVENT_INVITE_NOT_FOUND'
                 ctx.response = 'Извините, события "{}" не найдено. Выберите другое.'.format(event_code)
@@ -467,16 +471,28 @@ def try_event_creation(ctx: Context, database: Database):
                 ctx.intent = 'EVENT_INVITE_IN_THE_PAST'
                 ctx.response = 'Событие "{}" уже состоялось, вы не можете приглашать гостей.'.format(event_code)
             else:
-                ctx.intent = 'INVITE_EVERYONE'
-                ctx.response = 'Действительно пригласить всех членов клуба на встречу "{}"?'.format(event_code)
+                ctx.intent = 'INVITE_EVERYONE_COMMUNITY' if community else 'INVITE_EVERYONE'
+                ctx.response = 'Действительно пригласить всех членов {} на встречу "{}"?'.format(
+                    'Сообщества' if community else 'Клуба',
+                    event_code,
+                )
                 ctx.suggests.extend(['Да', 'Нет'])
-        elif ctx.last_intent == 'INVITE_EVERYONE' and matchers.is_like_no(ctx.text_normalized):
+        elif ctx.last_intent in {'INVITE_EVERYONE', 'INVITE_EVERYONE_COMMUNITY'} \
+                and matchers.is_like_no(ctx.text_normalized):
             ctx.intent = 'INVITE_EVERYONE_NOT_CONFIRM'
             ctx.response = 'Ладно.'
-        elif ctx.last_intent == 'INVITE_EVERYONE' and matchers.is_like_yes(ctx.text_normalized):
+        elif ctx.last_intent in {'INVITE_EVERYONE', 'INVITE_EVERYONE_COMMUNITY'} \
+                and matchers.is_like_yes(ctx.text_normalized):
             ctx.intent = 'INVITE_EVERYONE_CONFIRM'
-            r = 'Приглашаю всех членов клуба...\n'
-            for member in database.mongo_membership.find({'is_member': True}):
+            community = (ctx.last_intent == 'INVITE_EVERYONE_COMMUNITY')
+            r = 'Приглашаю всех членов {}...\n'.format('Сообщества' if community else 'Клуба')
+            for member in database.mongo_membership.find({}):
+                if community:
+                    if not member.get('is_member') and not member.get('is_guest'):
+                        continue
+                else:
+                    if not member.get('is_member'):
+                        continue
                 # todo: deduplicate the code with single-member invitation
                 the_login = member['username']
                 the_invitation = database.mongo_participations.find_one({'username': the_login, 'code': event_code})
@@ -535,7 +551,8 @@ EVENT_EDITION_COMMANDS = '\n'.join(
     ['{} - задать {}'.format(e.command, e.name_accs) for e in EVENT_FIELDS] +
     [
         "/remove_event - удалить событие и отменить все приглашения",
-        "/invite_everyone - пригласить всех членов клуба",
+        "/invite_club - пригласить всех членов КЛУБА",
+        "/invite_community - пригласить всех членов СООБЩЕСТВА",
         "/invitation_statuses - посмотреть статусы приглашений",
         "/invitation_statuses_excel - выгрузить статусы приглашений",
         "/report_others_payment - сообщить о статусе оплаты участника",
