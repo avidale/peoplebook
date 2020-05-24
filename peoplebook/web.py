@@ -1,15 +1,14 @@
 import pymongo
-from models import User
+from peoplebook.models import User
 
 from flask import render_template, abort, request, redirect
 from flask_login import login_required, login_user, logout_user, current_user
 
-from web_flask import app, get_users, get_profiles_for_event, get_current_username
-from web_flask import mongo_events, mongo_participations, mongo_membership, mongo_peoplebook
-from web_flask import history_config
+from peoplebook.web_flask import app, get_users, get_profiles_for_event, get_current_username
+from peoplebook.web_flask import mongo_events, mongo_participations, mongo_membership, mongo_peoplebook
+from peoplebook.web_flask import history_config
 
-from web_itinder import get_pb_dict, searcher
-import web_itinder  # noqa: with this import the whole itinder starts working
+from peoplebook.web_itinder import get_pb_dict, searcher
 
 
 @app.route('/')

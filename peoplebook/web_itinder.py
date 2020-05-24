@@ -14,8 +14,8 @@ from similarity.semantic_search import SemanticSearcher, get_searcher_data, extr
 from flask import render_template, request
 from flask_login import login_required
 
-from web_flask import app, get_profiles_for_event
-from web_flask import mongo_peoplebook, get_current_username
+from peoplebook.web_flask import app, get_profiles_for_event
+from peoplebook.web_flask import mongo_peoplebook, get_current_username
 
 CURRENT_EVENT = 'newyear2019'
 pb_list = list(mongo_peoplebook.find({}))  # get_profiles_for_event(CURRENT_EVENT)

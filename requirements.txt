@@ -1,23 +1,20 @@
 pytelegrambotapi
 pytest
 flask
-pymongo==3.4.0
+pymongo
 pymorphy2
-sentry-sdk==0.8.0
+sentry-sdk
 pyyaml
 mongomock
 cloudinary
 pandas
 openpyxl
-flask
 gunicorn
 # google-api-python-client
 # google-auth-httplib2
 # google-auth-oauthlib
-pymongo==3.4.0
 autolink
 flask-login
-
 textdistance
 pymorphy2
 pymorphy2-dicts
@@ -25,7 +22,6 @@ numpy
 pyemd
 scikit-learn
 tqdm
-pandas
 gensim
 razdel
 scipy
