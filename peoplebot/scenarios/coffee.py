@@ -10,7 +10,7 @@ from utils import matchers
 from peoplebot.scenarios.coffee_match_maker import generate_good_pairs
 from peoplebot.scenarios.peoplebook_auth import make_pb_url
 
-from peoplebot.config import ADMIN_UID, BATCH_MESSAGE_TIMEOUT
+from config import ADMIN_UID, BATCH_MESSAGE_TIMEOUT, DEFAULT_SPACE
 
 import random
 import time
@@ -71,7 +71,7 @@ def remind_about_coffee(user_obj, matches, database: Database, sender: Callable,
     user_id = user_obj['tg_id']
     match_texts = []
     for m in matches:
-        in_pb = database.mongo_peoplebook.find_one({'username': m})
+        in_pb = database.mongo_peoplebook.find_one({'username': m, 'space': DEFAULT_SPACE})
         if in_pb:
             match_texts.append('@{} (<a href="{}">пиплбук</a>)'.format(m, make_pb_url('/person/' + m, user_id)))
         else:
@@ -94,7 +94,7 @@ def remind_about_coffee(user_obj, matches, database: Database, sender: Callable,
             '\nНадеюсь, вы уже договорились о встрече?	\U0001f609'
         intent = INTENT_COFFEE_PUSH_REMIND
     if response is not None:
-        user_in_pb = database.mongo_peoplebook.find_one({'username': user_obj.get('username')})
+        user_in_pb = database.mongo_peoplebook.find_one({'username': user_obj.get('username'), 'space': DEFAULT_SPACE})
         if not user_in_pb:
             response = response + '\n\nКстати, кажется, вас нет в пиплбуке, а жаль: ' \
                                   'с пиплбуком даже незнакомому собеседнику проще будет начать с вами общение.' \

@@ -1,9 +1,14 @@
 import re
+import config as cfg
+
 from utils.matchers import fast_normalize
 
 
 class Context:
-    def __init__(self, user_object=None, text=None, sender=None, message=None, bot=None):
+    def __init__(
+            self, user_object=None, text=None, sender=None, message=None, bot=None,
+            space=cfg.DEFAULT_SPACE,
+    ):
         self.user_object = user_object
         self.username = user_object.get('username', '')
         self.last_intent = user_object.get('last_intent', '')
@@ -14,6 +19,7 @@ class Context:
 
         self.message = message
         self.bot = bot
+        self.space = space
 
         self.intent = None
         self.response = None

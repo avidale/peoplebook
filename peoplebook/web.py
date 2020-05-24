@@ -1,6 +1,8 @@
 import pymongo
 from peoplebook.models import User
 
+import config as cfg
+
 from flask import render_template, abort, request, redirect
 from flask_login import login_required, login_user, logout_user, current_user
 
@@ -94,8 +96,8 @@ def peoplebook_for_all_members_and_guests():
 
 @app.route('/person/<username>')
 @login_required
-def peoplebook_for_person(username):
-    the_profile = mongo_peoplebook.find_one({'username': username})
+def peoplebook_for_person(username, space=cfg.DEFAULT_SPACE):
+    the_profile = mongo_peoplebook.find_one({'username': username, 'space': space})
     if the_profile is None:
         return 'Такого профиля не найдено!'
     return render_template('single_person.html', profile=the_profile)

@@ -55,7 +55,7 @@ def try_peoplebook_management(ctx: Context, database: Database):
                            'имя пользователя) и попробуйте снова.\nВ случае ошибки напишите @cointegrated.' \
                            '\nЕсли вы есть, будьте первыми!'
             return ctx
-        the_profile = database.mongo_peoplebook.find_one({'username': ctx.user_object['username']})
+        the_profile = database.mongo_peoplebook.find_one({'username': ctx.user_object['username'], 'space': ctx.space})
         if the_profile is None:
             ctx.intent = PB.PEOPLEBOOK_GET_FAIL
             ctx.response = 'У вас ещё нет профиля в пиплбуке. Завести?'
@@ -73,7 +73,7 @@ def try_peoplebook_management(ctx: Context, database: Database):
         if matchers.is_like_yes(ctx.text_normalized):
             ctx.intent = PB.PEOPLEBOOK_CREATE_PROFILE
             ctx.expected_intent = PB.PEOPLEBOOK_SET_FIRST_NAME
-            database.mongo_peoplebook.insert_one({'username': ctx.user_object['username']})
+            database.mongo_peoplebook.insert_one({'username': ctx.user_object['username'], 'space': ctx.space})
             ctx.the_update = {'$set': {PB.CREATING_PB_PROFILE: True}}
             ctx.response = 'Отлично! Создаём профиль в пиплбуке.'
         elif matchers.is_like_no(ctx.text_normalized):
@@ -88,7 +88,7 @@ def try_peoplebook_management(ctx: Context, database: Database):
         ctx.intent = PB.PEOPLEBOOK_SET_FIRST_NAME
         if len(ctx.text_normalized) > 0:
             database.mongo_peoplebook.update_one(
-                {'username': ctx.user_object['username']}, {'$set': {'first_name': ctx.text}}
+                {'username': ctx.user_object['username'], 'space': ctx.space}, {'$set': {'first_name': ctx.text}}
             )
             ctx.expected_intent = PB.PEOPLEBOOK_SET_LAST_NAME if within else PB.PEOPLEBOOK_SHOW_PROFILE
             ctx.response = 'Отлично!'
@@ -99,7 +99,7 @@ def try_peoplebook_management(ctx: Context, database: Database):
         ctx.intent = PB.PEOPLEBOOK_SET_LAST_NAME
         if len(ctx.text_normalized) > 0:
             database.mongo_peoplebook.update_one(
-                {'username': ctx.user_object['username']}, {'$set': {'last_name': ctx.text}}
+                {'username': ctx.user_object['username'], 'space': ctx.space}, {'$set': {'last_name': ctx.text}}
             )
             ctx.response = 'Окей.'
             ctx.expected_intent = PB.PEOPLEBOOK_SET_ACTIVITY if within else PB.PEOPLEBOOK_SHOW_PROFILE
@@ -110,7 +110,7 @@ def try_peoplebook_management(ctx: Context, database: Database):
         ctx.intent = PB.PEOPLEBOOK_SET_ACTIVITY
         if len(ctx.text) >= 4:
             database.mongo_peoplebook.update_one(
-                {'username': ctx.user_object['username']}, {'$set': {'activity': ctx.text}}
+                {'username': ctx.user_object['username'], 'space': ctx.space}, {'$set': {'activity': ctx.text}}
             )
             ctx.expected_intent = PB.PEOPLEBOOK_SET_TOPICS if within else PB.PEOPLEBOOK_SHOW_PROFILE
             ctx.response = 'Здорово!'
@@ -121,7 +121,7 @@ def try_peoplebook_management(ctx: Context, database: Database):
         ctx.intent = PB.PEOPLEBOOK_SET_TOPICS
         if len(ctx.text) >= 4:
             database.mongo_peoplebook.update_one(
-                {'username': ctx.user_object['username']}, {'$set': {'topics': ctx.text}}
+                {'username': ctx.user_object['username'], 'space': ctx.space}, {'$set': {'topics': ctx.text}}
             )
             ctx.response = random.choice([
                 'Интересненько.',
@@ -154,7 +154,7 @@ def try_peoplebook_management(ctx: Context, database: Database):
                 photo_url = extracted_url
             if photo_url:
                 database.mongo_peoplebook.update_one(
-                    {'username': ctx.user_object['username']}, {'$set': {'photo': photo_url}}
+                    {'username': ctx.user_object['username'], 'space': ctx.space}, {'$set': {'photo': photo_url}}
                 )
                 ctx.expected_intent = PB.PEOPLEBOOK_SET_CONTACTS if within else PB.PEOPLEBOOK_SHOW_PROFILE
             else:
@@ -166,7 +166,7 @@ def try_peoplebook_management(ctx: Context, database: Database):
     elif ctx.last_expected_intent == PB.PEOPLEBOOK_SET_CONTACTS:
         ctx.intent = PB.PEOPLEBOOK_SET_CONTACTS
         database.mongo_peoplebook.update_one(
-            {'username': ctx.user_object['username']}, {'$set': {'contacts': ctx.text}}
+            {'username': ctx.user_object['username'], 'space': ctx.space}, {'$set': {'contacts': ctx.text}}
         )
         if within:
             ctx.response = 'Отлично! Ваш профайл создан.'
@@ -181,7 +181,9 @@ def try_peoplebook_management(ctx: Context, database: Database):
         '/set_pb_contacts': PB.PEOPLEBOOK_SET_CONTACTS
     }.items():
         if ctx.text == k:
-            the_profile = database.mongo_peoplebook.find_one({'username': ctx.user_object['username']})
+            the_profile = database.mongo_peoplebook.find_one(
+                {'username': ctx.user_object['username'], 'space': ctx.space}
+            )
             if the_profile is None:
                 ctx.intent = PB.PEOPLEBOOK_GET_FAIL
                 ctx.response = 'У вас ещё нет профиля в пиплбуке. Завести?'
@@ -214,7 +216,7 @@ def try_peoplebook_management(ctx: Context, database: Database):
         ctx.response = ctx.response + '\nЕсли хотите, можете оставить контакты в соцсетях: ' \
                                       'телеграм, инстаграм, линкедин, фб, вк, почта.'
     elif ctx.expected_intent == PB.PEOPLEBOOK_SHOW_PROFILE:
-        the_profile = database.mongo_peoplebook.find_one({'username': ctx.user_object['username']})
+        the_profile = database.mongo_peoplebook.find_one({'username': ctx.user_object['username'], 'space': ctx.space})
         ctx.response = ctx.response + '\nТак выглядит ваш профиль:\n' + render_text_profile(
             the_profile, database, tg_id
         )

@@ -1,7 +1,7 @@
 import hashlib
 import os
 
-from peoplebot.config import PEOPLEBOOK_ROOT
+from config import PEOPLEBOOK_ROOT
 
 
 def make_pb_url(relative_path, user_tg_id):

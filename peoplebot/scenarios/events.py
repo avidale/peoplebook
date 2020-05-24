@@ -13,7 +13,7 @@ from utils.database import Database
 from utils.dialogue_management import Context
 from utils import matchers
 
-from peoplebot.config import BATCH_MESSAGE_TIMEOUT
+from config import BATCH_MESSAGE_TIMEOUT
 
 
 class InvitationStatuses:
@@ -136,7 +136,7 @@ def try_invitation(ctx: Context, database: Database):
             new_status = InvitationStatuses.ACCEPT
             ctx.intent = EventIntents.ACCEPT
             ctx.response = 'Ура! Я очень рад, что вы согласились прийти!'
-            the_peoplebook = database.mongo_peoplebook.find_one({'username': ctx.username})
+            the_peoplebook = database.mongo_peoplebook.find_one({'username': ctx.username, 'space': ctx.space})
             if the_peoplebook is None:
                 t = '\nЧтобы встреча прошла продуктивнее, пожалуйста, заполните свою страничку в ' \
                     + '<a href="{}">пиплбуке встречи</a>.'.format(make_pb_url('/event/' + event_code, user_tg_id)) \
