@@ -83,6 +83,7 @@ def preprocess_profiles(profiles):
 # используется для перезаписи объекта идентификатора пользователя сессии
 @login_manager.user_loader
 def load_user(userid):
+    # todo: make sure that profile details are preserved
     return User(userid)
 
 

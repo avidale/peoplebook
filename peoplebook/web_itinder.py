@@ -50,9 +50,9 @@ def text2vec(t):
     return v
 
 
-def get_pb_dict():
+def get_pb_dict(space=cfg.DEFAULT_SPACE):
     #  return {p['username']: p for p in get_profiles_for_event(CURRENT_EVENT) if p['username']}
-    return {p['username']: p for p in mongo_peoplebook.find({'space': cfg.DEFAULT_SPACE}) if p['username']}
+    return {p['username']: p for p in mongo_peoplebook.find({'space': space}) if p['username']}
 
 
 # searcher
