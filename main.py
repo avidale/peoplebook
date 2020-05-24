@@ -2,7 +2,7 @@ import argparse
 import os
 
 from peoplebot.main import bot_app, bot, web_hook
-from web import app
+from peoplebook.web import app
 
 
 def run_bot_and_book():

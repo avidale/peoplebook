@@ -8,17 +8,19 @@ import time
 from tqdm.auto import tqdm
 from collections import defaultdict
 
+import config as cfg
+
 from similarity import matchers, basic_nlu, similarity_tools
 from similarity.semantic_search import SemanticSearcher, get_searcher_data, extract_all_chunks
 
 from flask import render_template, request
 from flask_login import login_required
 
-from web_flask import app, get_profiles_for_event
-from web_flask import mongo_peoplebook, get_current_username
+from peoplebook.web_flask import app, get_profiles_for_event
+from peoplebook.web_flask import mongo_peoplebook, get_current_username
 
 CURRENT_EVENT = 'newyear2019'
-pb_list = list(mongo_peoplebook.find({}))  # get_profiles_for_event(CURRENT_EVENT)
+pb_list = list(mongo_peoplebook.find({'space': cfg.DEFAULT_SPACE}))  # get_profiles_for_event(CURRENT_EVENT)
 
 
 with open('similarity/fasttext_extract.pkl', 'rb') as f:
@@ -48,9 +50,9 @@ def text2vec(t):
     return v
 
 
-def get_pb_dict():
+def get_pb_dict(space=cfg.DEFAULT_SPACE):
     #  return {p['username']: p for p in get_profiles_for_event(CURRENT_EVENT) if p['username']}
-    return {p['username']: p for p in mongo_peoplebook.find({}) if p['username']}
+    return {p['username']: p for p in mongo_peoplebook.find({'space': space}) if p['username']}
 
 
 # searcher

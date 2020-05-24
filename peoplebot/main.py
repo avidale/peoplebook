@@ -9,7 +9,7 @@ import telebot
 
 from flask import Blueprint, Flask, request
 
-from peoplebot import config
+import config
 from peoplebot.response_logic import respond
 from peoplebot.scenarios.coffee import daily_random_coffee
 from peoplebot.scenarios.events import daily_event_management

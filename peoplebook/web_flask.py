@@ -1,9 +1,8 @@
-import json
 import os
 import pymongo
 import random
 from autolink import linkify
-from models import User
+from peoplebook.models import User
 import hashlib
 
 from flask import Flask
@@ -18,9 +17,18 @@ login_manager.init_app(app)
 login_manager.login_view = "login"
 login_manager.login_message = None
 
-with open('history_config.json', 'r', encoding='utf-8') as f:
-    # todo: remove it as deprecated
-    history_config = json.load(f)
+
+history_config = {
+  "current": "apr2019",
+  "current_text": "27 апреля 2019",
+  "history": {
+    "apr2019": "27 апреля 2019",
+    "april2019": "27 апреля 2019",
+    "march2019": "30 марта 2019",
+    "feb2019": "2 марта 2019"
+  }
+}
+
 
 MONGO_URL = os.environ.get('MONGODB_URI')
 mongo_client = pymongo.MongoClient(MONGO_URL)
@@ -75,6 +83,7 @@ def preprocess_profiles(profiles):
 # используется для перезаписи объекта идентификатора пользователя сессии
 @login_manager.user_loader
 def load_user(userid):
+    # todo: make sure that profile details are preserved
     return User(userid)
 
 

@@ -63,30 +63,38 @@
     </div>
 {% endmacro %}
 
-{% macro basic_nav() %}
+{% macro basic_nav(space_cfg, user=None) %}
     <nav class="bd-navbar navbar has-shadow" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
-            <a class="navbar-item" href="/members">
-              <p>Члены клуба</p>
-            </a>
-            <a class="navbar-item" href="/all">
-              <p>Сообщество Каппа Веди</p>
-            </a>
-            <a class="navbar-item" href="/">
-              <p>Пиплбук встречи</p>
-            </a>
-            <a class="navbar-item" href="/search">
-              <p>Поиск</p>
-            </a>
+            {% if space_cfg.key == 'kv' %}
+                <a class="navbar-item" href="/members">
+                  <p>Члены клуба</p>
+                </a>
+                <a class="navbar-item" href="/all">
+                  <p>Сообщество Каппа Веди</p>
+                </a>
+                <a class="navbar-item" href="/">
+                  <p>Пиплбук встречи</p>
+                </a>
+                <a class="navbar-item" href="/search">
+                  <p>Поиск</p>
+                </a>
+            {% else%}
+                <a class="navbar-item" href="/all">
+                  <p>Сообщество {{ space_cfg.title }}</p>
+                </a>
+            {% endif %}
        </div>
         <div class="navbar-menu">
             <div class="navbar-end">
-                <a class="navbar-item is-right" href="/me" >
-                  <p>Мой профиль</p>
-                </a>
-                <a class="navbar-item is-right" href="{{ url_for('logout') }}" >
-                  <p>Выйти</p>
-                </a>
+                {% if user and user.is_authenticated %}
+                    <a class="navbar-item is-right" href="/{{ space_cfg.key }}/me" >
+                      <p>Мой профиль</p>
+                    </a>
+                    <a class="navbar-item is-right" href="{{ url_for('logout') }}" >
+                      <p>Выйти</p>
+                    </a>
+                {% endif %}
             </div>
         </div>
     </nav>
