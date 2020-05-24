@@ -95,7 +95,6 @@ def peoplebook_for_all_members(space=cfg.DEFAULT_SPACE):
 @app.route('/members_and_guests')
 @app.route('/all')
 @app.route('/<space>/all')
-# @login_required # todo: enable this back after we implement bots for new spaces
 def peoplebook_for_all_members_and_guests(space=cfg.DEFAULT_SPACE):
     space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
     if not space_cfg:

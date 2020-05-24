@@ -67,20 +67,20 @@
     <nav class="bd-navbar navbar has-shadow" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
             {% if space_cfg.key == 'kv' %}
-                <a class="navbar-item" href="/{{ space_cfg.key }}/members">
+                <a class="navbar-item" href="/members">
                   <p>Члены клуба</p>
                 </a>
-                <a class="navbar-item" href="/{{ space_cfg.key }}/all">
+                <a class="navbar-item" href="/all">
                   <p>Сообщество Каппа Веди</p>
                 </a>
-                <a class="navbar-item" href="/{{ space_cfg.key }}/">
+                <a class="navbar-item" href="/">
                   <p>Пиплбук встречи</p>
                 </a>
-                <a class="navbar-item" href="/{{ space_cfg.key }}/search">
+                <a class="navbar-item" href="/search">
                   <p>Поиск</p>
                 </a>
             {% else%}
-                <a class="navbar-item" href="/{{ space_cfg.key }}/all">
+                <a class="navbar-item" href="/all">
                   <p>Сообщество {{ space_cfg.title }}</p>
                 </a>
             {% endif %}
