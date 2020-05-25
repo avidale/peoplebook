@@ -2,12 +2,16 @@ import pytest
 import peoplebot
 
 from utils.dialogue_management import Context
+from utils.spaces import SpaceConfig
 from peoplebot.scenarios.dog_mode import doggy_style
 from peoplebot.scenarios.coffee import TAKE_PART, NOT_TAKE_PART, INTENT_COFFEE_PUSH_REMIND
 from peoplebot.response_logic import respond
 
 
 from .conftest import make_mocked_message  # noqa
+
+
+TEST_SPACE = SpaceConfig(key='test', title='TestSpace')
 
 
 def test_everything_is_ok():
@@ -27,7 +31,7 @@ def test_everything_is_ok():
     ("ну ты пидор", "DOG"),
 ])
 def test_dog_mode_activation(mocked_member_uo, mocked_db, text, expected_intent):
-    ctx = Context(text=text, user_object=mocked_member_uo)
+    ctx = Context(text=text, user_object=mocked_member_uo, space=TEST_SPACE)
     new_ctx = doggy_style(ctx, database=mocked_db)
     assert new_ctx.intent == expected_intent
 

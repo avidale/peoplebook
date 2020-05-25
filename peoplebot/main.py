@@ -1,5 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
+# todo: remove this file, and use only new_main, with multibots.
+
 import argparse
 import logging
 import os
@@ -21,7 +24,6 @@ logging.basicConfig(level=logging.INFO)
 # The API will not allow more than ~30 messages to different users per second
 TIMEOUT_BETWEEN_MESSAGES = 0.2
 
-ON_HEROKU = os.environ.get('ON_HEROKU')
 TOKEN = os.environ['TOKEN']
 bot = telebot.TeleBot(TOKEN)
 

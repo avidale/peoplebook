@@ -16,6 +16,9 @@ class SpaceConfig:
         self.other_data = other_data
         self.peoplebook_is_public = peoplebook_is_public
 
+    def __str__(self):
+        return self.key
+
     @classmethod
     def from_record(cls, record):
         return cls(**record)

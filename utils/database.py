@@ -43,6 +43,7 @@ class Database:
         self.mongo_membership = self._mongo_db.get_collection('membership')
         self.message_queue = self._mongo_db.get_collection('message_queue')
         # (username: text, text: text, intent: text, fresh: bool)
+        self.mongo_spaces = self._mongo_db.get_collection('spaces')
 
     def _update_cache(self, force=False):
         if not force and (datetime.now() - self._cache_time).total_seconds() < self.cache_ttl_seconds:
@@ -79,12 +80,21 @@ class Database:
             return True
         return username in self._cached_mongo_participations
 
+    @property
+    def db(self):
+        return self._mongo_db
+
 
 class LoggedMessage:
-    def __init__(self, text, user_id, from_user, database: Database, username=None, intent=None, meta=None):
+    def __init__(
+            self,
+            text, user_id, from_user, database: Database,
+            space_name, username=None, intent=None, meta=None
+    ):
         self.text = text
         self.user_id = user_id
         self.from_user = from_user
+        self.space_name = space_name
         self.timestamp = str(datetime.utcnow())
         self.username = username
         self.intent = intent
@@ -100,7 +110,8 @@ class LoggedMessage:
             'text': self.text,
             'user_id': self.user_id,
             'from_user': self.from_user,
-            'timestamp': self.timestamp
+            'timestamp': self.timestamp,
+            'space': self.space_name,
         }
         if self.username is not None:
             result['username'] = matchers.normalize_username(self.username)

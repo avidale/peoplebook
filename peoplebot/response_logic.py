@@ -4,6 +4,7 @@ import logging
 from utils.database import Database, LoggedMessage, get_or_insert_user
 from utils.dialogue_management import Context
 from utils.messaging import BaseSender
+from utils.spaces import SpaceConfig, get_space_config
 
 from peoplebot.scenarios.events import try_invitation, try_event_usage, try_event_creation, try_event_edition
 from peoplebot.scenarios.peoplebook import try_peoplebook_management
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def respond(message, database: Database, sender: BaseSender, bot=None):
+def respond(message, database: Database, sender: BaseSender, bot=None, space_cfg=None):
     # todo: make it less dependent on telebot Message class structure
     logger.info('Got message {} with type {} and text {}'.format(
         message.message_id, message.content_type, message.text
@@ -50,9 +51,13 @@ def respond(message, database: Database, sender: BaseSender, bot=None):
     uo = get_or_insert_user(message.from_user, database=database)
     user_id = message.chat.id
     LoggedMessage(
-        text=message.text, user_id=user_id, from_user=True, database=database, username=uo.get('username')
+        text=message.text, user_id=user_id, from_user=True, database=database, username=uo.get('username'),
+        space_name=space_cfg.key,
     ).save()
-    ctx = Context(text=message.text, user_object=uo, sender=sender, message=message, bot=bot)
+    ctx = Context(
+        space=space_cfg,
+        text=message.text, user_object=uo, sender=sender, message=message, bot=bot,
+    )
 
     for handler in [
         try_queued_messages,
@@ -66,7 +71,7 @@ def respond(message, database: Database, sender: BaseSender, bot=None):
         try_conversation,
         try_coffee_feedback_collection,
         doggy_style,
-        fallback
+        fallback,
     ]:
         ctx = handler(ctx, database=database)
         if ctx.intent is not None:
@@ -74,6 +79,7 @@ def respond(message, database: Database, sender: BaseSender, bot=None):
 
     assert ctx.intent is not None
     assert ctx.response is not None
+    # todo: make the update space-dependent
     database.mongo_users.update_one({'tg_id': message.from_user.id}, ctx.make_update())
     user_object = get_or_insert_user(tg_uid=message.from_user.id, database=database)
 

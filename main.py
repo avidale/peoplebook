@@ -1,12 +1,17 @@
 import argparse
 import os
+import sentry_sdk
 
 from peoplebot.main import bot_app, bot, web_hook
 from peoplebook.web import app
 
 
+if os.environ.get('SENTRY_DSN'):
+    sentry_sdk.init(os.environ.get('SENTRY_DSN'))
+
+
 def run_bot_and_book():
-    parser = argparse.ArgumentParser(description='Run the bot')
+    parser = argparse.ArgumentParser(description='Run the bot and peoplebook')
     parser.add_argument('--poll', action='store_true')
     parser.add_argument('--nobot', action='store_true')
     args = parser.parse_args()
