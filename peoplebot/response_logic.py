@@ -89,7 +89,6 @@ def respond(message, database: Database, sender: BaseSender, space_cfg: SpaceCon
 
     assert ctx.intent is not None
     assert ctx.response is not None
-    # todo: make the update space-dependent
     database.update_user_object(
         username_or_id=message.from_user.id,
         space_name=space_cfg.key,

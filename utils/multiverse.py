@@ -18,8 +18,6 @@ ALL_CONTENT_TYPES = [
 
 class Multiverse:
     """ This class handles multiple spaces and multiple bot instances for them """
-    # todo: move some code from response_logic, main and messaging - to here.
-    # но вообще над реально подумать, как должна выглядеть самая простая архитектура тут.
 
     def __init__(self, db: Database, base_url, bot_url_prefix='telebot_webhook/'):
         self.db: Database = db
