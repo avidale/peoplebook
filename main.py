@@ -3,7 +3,7 @@ import logging
 import os
 import sentry_sdk
 
-from peoplebot.new_main import MULTIVERSE
+from peoplebot.new_main import MULTIVERSE, DATABASE
 from peoplebook.web import app
 
 
@@ -35,7 +35,9 @@ def run_bot_and_book():
     else:
         if not args.nobot:
             MULTIVERSE.set_web_hooks()
-        app.register_blueprint(MULTIVERSE.app)
+            # todo: deal with multiple endpoints
+            app.register_blueprint(MULTIVERSE.app)
+        app.database = DATABASE
         app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
 
 

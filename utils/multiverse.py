@@ -49,10 +49,12 @@ class Multiverse:
     def add_custom_handlers(self):
         pass
 
-    def make_updates_processor(self, bot):
+    def make_updates_processor(self, bot, function_suffix):
         def updates_processor():
             bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
             return "!", 200
+        # this hack is for Flask that uses __name__ as a lookup key
+        updates_processor.__name__ = updates_processor.__name__ + '__' + function_suffix
         return updates_processor
 
     def make_message_handler(self, space):
@@ -74,7 +76,7 @@ class Multiverse:
                 self.make_message_handler(space)
             )
             self.app.route(self.bot_url_suffix(space_name), methods=['POST'])(
-                self.make_updates_processor(bot)
+                self.make_updates_processor(bot, function_suffix=space_name)
             )
             # self.app.route("/" + self.restart_webhook_url)(self.telegram_web_hook)
         self.add_custom_handlers()

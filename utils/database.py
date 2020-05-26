@@ -22,10 +22,9 @@ def make_multidict(items, keys):
 
 
 class Database:
-    def __init__(self, mongo_url, admins=None, cache_ttl_seconds=10):
+    def __init__(self, mongo_url, cache_ttl_seconds=10):
         self._setup_client(mongo_url=mongo_url)
         self._setup_collections()
-        self._admins = set([] if admins is None else admins)
         self.cache_ttl_seconds = cache_ttl_seconds
         self._cache_time = datetime.now()
         self._update_cache(force=True)
