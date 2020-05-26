@@ -1,18 +1,27 @@
 from peoplebot.scenarios.coffee import TAKE_PART, NOT_TAKE_PART
 
+from utils.database import Database
+from utils.spaces import FEATURE_NAMES
 
-def make_standard_suggests(database, user_object):
-    # todo: make it space-dependent
+
+def make_standard_suggests(database: Database, user_object):
     suggests = []
+    space = database.get_space_for_user(user_object)
 
     if database.is_at_least_guest(user_object):
-        suggests.append('Покажи встречи')
-        suggests.append('Мой пиплбук')
-        suggests.append(TAKE_PART if not user_object.get('wants_next_coffee') else NOT_TAKE_PART)
+        if space.supports(FEATURE_NAMES.EVENTS):
+            suggests.append('Покажи встречи')
+        if space.supports(FEATURE_NAMES.PEOPLEBOOK):
+            suggests.append('Мой пиплбук')
+        if space.supports(FEATURE_NAMES.COFFEE):
+            suggests.append(TAKE_PART if not user_object.get('wants_next_coffee') else NOT_TAKE_PART)
 
     if database.is_admin(user_object):
-        suggests.append('Создать встречу')
+        if space.supports(FEATURE_NAMES.EVENTS):
+            suggests.append('Создать встречу')
         suggests.append('Добавить членов клуба')
-        suggests.append('Добавить членов сообщества')
+        if space.key == 'kv':
+            # todo: make it configurable
+            suggests.append('Добавить членов сообщества')
 
     return suggests

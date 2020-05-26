@@ -103,6 +103,11 @@ class Database:
             return True
         return False
 
+    def get_space_for_user(self, user_object) -> SpaceConfig:
+        space_name = user_object['space']
+        space = self._cached_spaces[space_name]
+        return space
+
     @property
     def db(self):
         return self._mongo_db

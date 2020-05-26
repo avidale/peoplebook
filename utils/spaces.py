@@ -1,6 +1,12 @@
 from typing import Optional
 
 
+class FEATURE_NAMES:
+    COFFEE = 'coffee'
+    EVENTS = 'events'
+    PEOPLEBOOK = 'peoplebook'
+
+
 class SpaceConfig:
     def __init__(
             self,
@@ -31,6 +37,17 @@ class SpaceConfig:
     @classmethod
     def from_record(cls, record):
         return cls(**record)
+
+    def supports(self, feature):
+        # todo: make it configurable
+        if feature == FEATURE_NAMES.COFFEE:
+            return True
+        elif feature == FEATURE_NAMES.EVENTS:
+            return self.key == 'kv'
+        elif feature == FEATURE_NAMES.PEOPLEBOOK:
+            return True
+        else:
+            return True
 
 
 def get_space_config(mongo_db, space_name) -> Optional[SpaceConfig]:
