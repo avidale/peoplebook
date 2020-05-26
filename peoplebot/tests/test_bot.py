@@ -80,8 +80,8 @@ def test_admin(mocked_sender, mocked_db, mocked_space, text, expected_intent):
 
 
 def test_roles(mocked_db, mocked_space):
-    assert mocked_db.is_at_least_guest({'username': 'a_guest'})
-    assert not mocked_db.is_at_least_member({'username': 'a_guest'})
+    assert mocked_db.is_at_least_guest({'username': 'a_guest', 'space': mocked_space.key})
+    assert not mocked_db.is_at_least_member({'username': 'a_guest', 'space': mocked_space.key})
 
 
 def test_guest_can_see_coffee(mocked_sender, mocked_db, mocked_space):
@@ -125,6 +125,6 @@ def test_coffee_feedback(mocked_sender, mocked_db, mocked_space):
         sender=mocked_sender,
         space_cfg=mocked_space,
     )
-    assert mocked_db.is_at_least_guest(user_object={'username': 'a_guest'})
+    assert mocked_db.is_at_least_guest(user_object={'username': 'a_guest', 'space': mocked_space.key})
     last_message = mocked_sender.sent_messages[-1]
     assert last_message.text.startswith('Ура')

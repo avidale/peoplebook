@@ -2,16 +2,19 @@ import logging
 
 from datetime import datetime
 from pymongo import MongoClient
-from utils import matchers
+from typing import Dict
 
+from utils import matchers
+from utils.matchers import normalize_username
+from utils.spaces import SpaceConfig
 
 logger = logging.getLogger(__name__)
 
 
-def make_multidict(items, keyname):
+def make_multidict(items, keys):
     result = {}
     for item in items:
-        key = item[keyname]
+        key = tuple(item[key_name] for key_name in keys)
         if key not in result:
             result[key] = []
         result[key].append(item)
@@ -50,9 +53,17 @@ class Database:
             return
         logger.info('updating database cache...')
         self._cache_time = datetime.now()
-        # todo: add spaces into the keys
-        self._cached_mongo_membership = {item['username']: item for item in self.mongo_membership.find({})}
-        self._cached_mongo_participations = make_multidict(self.mongo_participations.find({}), 'username')
+        self._cached_mongo_membership = {
+            (item['username'], item['space']): item
+            for item in self.mongo_membership.find({})
+        }
+        self._cached_mongo_participations = make_multidict(
+            self.mongo_participations.find({}), keys=['username', 'space']
+        )
+        self._cached_spaces: Dict[str, SpaceConfig] = {
+            record['key']: SpaceConfig.from_record(record)
+            for record in self.mongo_spaces.find({})
+        }
 
     def is_at_least_guest(self, user_object):
         return self.is_guest(user_object) or self.is_member(user_object) or self.is_admin(user_object)
@@ -61,25 +72,36 @@ class Database:
         return self.is_member(user_object) or self.is_admin(user_object)
 
     def is_admin(self, user_object):
-        if (user_object.get('username') or '').lower() in self._admins:
+        username = normalize_username(user_object.get('username') or 'anonymous')
+        space_name = user_object.get('space') or 'kv'
+        if space_name not in self._cached_spaces:
+            return False
+        space = self._cached_spaces[space_name]
+        if username in space.admins:
             return True
         return False
 
     def is_member(self, user_object):
-        username = user_object.get('username') or ''
-        username = username.lower()
+        username = normalize_username(user_object.get('username') or 'anonymous')
+        space = user_object.get('space') or 'kv'
+        key = (username, space)
         self._update_cache()
-        return self._cached_mongo_membership.get(username, {}).get('is_member')
+        return self._cached_mongo_membership.get(key, {}).get('is_member')
 
     def is_guest(self, user_object):
         # todo: check case of username here and everywhere
         self._update_cache()
-        username = user_object.get('username') or ''
-        if self._cached_mongo_membership.get(username, {}).get('is_guest'):
+        username = normalize_username(user_object.get('username') or 'anonymous')
+        space = user_object.get('space') or 'kv'
+        key = (username, space)
+        mem = self._cached_mongo_membership.get(key, {})
+        if mem.get('is_guest'):
             return True
-        if self._cached_mongo_membership.get(username, {}).get('is_member'):
+        if mem.get('is_member'):
             return True
-        return username in self._cached_mongo_participations
+        if key in self._cached_mongo_participations:
+            return True
+        return False
 
     @property
     def db(self):

@@ -56,23 +56,30 @@ def mocked_member_uo():
 
 
 @pytest.fixture()
-def mocked_db():
-    db = MockedDatabase(mongo_url="no url", admins=['an_admin'])
+def mocked_space_dict():
+    return dict(
+        key=test_space_id,
+        title='Space for autotests',
+        bot_token='lol:kek',
+        admins=['an_admin'],
+    )
+
+
+@pytest.fixture()
+def mocked_db(mocked_space_dict):
+    db = MockedDatabase(mongo_url="no url")
     db.mongo_membership.insert_one({'username': 'a_member', 'is_member': True, 'space': test_space_id})
     db.mongo_events.insert_one({'code': 'an_event', 'title': 'An Event', 'date': '2030.12.30', 'space': test_space_id})
     db.mongo_participations.insert_one({'event_code': 'an_event', 'username': 'a_guest', 'space': test_space_id})
     db.mongo_users.insert_one({'tg_id': 123, 'space': test_space_id})
+    db.mongo_spaces.insert_one(mocked_space_dict)
     db._update_cache(force=True)
     return db
 
 
 @pytest.fixture()
-def mocked_space():
-    return SpaceConfig(
-        key=test_space_id,
-        title='Space for autotests',
-        bot_token='lol:kek',
-    )
+def mocked_space(mocked_space_dict):
+    return SpaceConfig.from_record(mocked_space_dict)
 
 
 @pytest.fixture()

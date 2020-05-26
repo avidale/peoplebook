@@ -2,6 +2,7 @@ from peoplebot.scenarios.coffee import TAKE_PART, NOT_TAKE_PART
 
 
 def make_standard_suggests(database, user_object):
+    # todo: make it space-dependent
     suggests = []
 
     if database.is_at_least_guest(user_object):
