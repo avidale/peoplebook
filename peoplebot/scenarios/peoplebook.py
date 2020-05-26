@@ -56,7 +56,7 @@ def try_peoplebook_management(ctx: Context, database: Database):
                            '\nЕсли вы есть, будьте первыми!'
             return ctx
         the_profile = database.mongo_peoplebook.find_one(
-            {'username': ctx.user_object['username'], 'space': ctx.space}
+            {'username': ctx.user_object['username'], 'space': ctx.space.key}
         )
         if the_profile is None:
             ctx.intent = PB.PEOPLEBOOK_GET_FAIL
@@ -65,7 +65,9 @@ def try_peoplebook_management(ctx: Context, database: Database):
             ctx.suggests.append('Нет')
         else:
             ctx.intent = PB.PEOPLEBOOK_GET_SUCCESS
-            ctx.response = 'Ваш профиль:\n' + render_text_profile(the_profile, database, tg_id)
+            ctx.response = 'Ваш профиль:\n' + render_text_profile(
+                the_profile, database, tg_id, space_name=ctx.space.key
+            )
             if re.match(RE_AUTH_INTENT, ctx.text_normalized):
                 ctx.response = '<b>Чтобы авторизоваться на сайте пиплбука, перейдите по ссылке ' \
                                '"Авторизоваться и посмотреть профиль" из этого сообщения. ' \
@@ -75,7 +77,7 @@ def try_peoplebook_management(ctx: Context, database: Database):
         if matchers.is_like_yes(ctx.text_normalized):
             ctx.intent = PB.PEOPLEBOOK_CREATE_PROFILE
             ctx.expected_intent = PB.PEOPLEBOOK_SET_FIRST_NAME
-            database.mongo_peoplebook.insert_one({'username': ctx.user_object['username'], 'space': ctx.space})
+            database.mongo_peoplebook.insert_one({'username': ctx.user_object['username'], 'space': ctx.space.key})
             ctx.the_update = {'$set': {PB.CREATING_PB_PROFILE: True}}
             ctx.response = 'Отлично! Создаём профиль в пиплбуке.'
         elif matchers.is_like_no(ctx.text_normalized):
@@ -228,14 +230,14 @@ def try_peoplebook_management(ctx: Context, database: Database):
             {'username': ctx.user_object['username'], 'space': ctx.space.key}
         )
         ctx.response = ctx.response + '\nТак выглядит ваш профиль:\n' + render_text_profile(
-            the_profile, database, tg_id
+            the_profile, database, tg_id, space_name=ctx.space.key,
         )
     if ctx.response is not None:
         ctx.response = ctx.response.strip()
     return ctx
 
 
-def render_text_profile(profile, database: Database, user_tg_id, editable=True):
+def render_text_profile(profile, database: Database, user_tg_id, space_name, editable=True):
     username = profile.get('username', 'does_not_exist')
     rows = [
         '<b>{} {}</b>'.format(profile.get('first_name', ''), profile.get('last_name', '')),
@@ -246,7 +248,7 @@ def render_text_profile(profile, database: Database, user_tg_id, editable=True):
         '<b>Контакты</b>',
         profile.get('contacts', 't.me/{}'.format(profile.get('username', ''))),
         '\n<a href="{}">Авторизоваться и посмотреть свой профиль</a>'.format(
-            make_pb_url('/person/' + username, user_tg_id)
+            make_pb_url('/{}/person/{}'.format(space_name, username), user_tg_id)
         )
     ]
     if editable:

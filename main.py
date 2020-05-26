@@ -26,6 +26,7 @@ def run_bot_and_book():
         else:
             bot = MULTIVERSE.bots_dict[args.space]
         bot.remove_webhook()
+        print('running a bot in the polling mode')
         bot.polling()
     else:
         if not args.nobot:

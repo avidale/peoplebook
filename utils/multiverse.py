@@ -38,6 +38,17 @@ class Multiverse:
         # respond(message=msg, database=self.db, sender=SENDER, bot=bot, space_cfg=space)
         raise NotImplementedError()
 
+    def make_updates_processor(self, bot):
+        def updates_processor():
+            bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
+            return "!", 200
+        return updates_processor
+
+    def make_message_handler(self, space):
+        def process_message(msg):
+            self.respond(message=msg, space=space)
+        return process_message
+
     def create_bots(self, timeout_between_messages=0.3):
         """ Setup a telegram bot for each space """
         for space_name, space in self.spaces_dict.items():
@@ -48,16 +59,12 @@ class Multiverse:
             sender = TelegramSender(space=space, bot=bot, timeout=timeout_between_messages)
             self.senders_dict[space_name] = sender
 
-            def process_message(msg):
-                self.respond(message=msg, space=space)
-
-            bot.message_handler(func=lambda message: True)(process_message)
-
-            def get_message():
-                bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
-                return "!", 200
-
-            self.app.route(self.bot_url_suffix(space_name), methods=['POST'])(get_message)
+            bot.message_handler(func=lambda message: True)(  # todo: add content types
+                self.make_message_handler(space)
+            )
+            self.app.route(self.bot_url_suffix(space_name), methods=['POST'])(
+                self.make_updates_processor(bot)
+            )
             # self.app.route("/" + self.restart_webhook_url)(self.telegram_web_hook)
 
     def set_web_hooks(self):

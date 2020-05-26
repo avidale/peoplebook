@@ -144,15 +144,16 @@ def try_invitation(ctx: Context, database: Database):
             ctx.intent = EventIntents.ACCEPT
             ctx.response = 'Ура! Я очень рад, что вы согласились прийти!'
             the_peoplebook = database.mongo_peoplebook.find_one({'username': ctx.username, 'space': ctx.space.key})
+            event_url = make_pb_url('/{}/event/{}'.format(ctx.space.key, event_code), user_tg_id)
             if the_peoplebook is None:
                 t = '\nЧтобы встреча прошла продуктивнее, пожалуйста, заполните свою страничку в ' \
-                    + '<a href="{}">пиплбуке встречи</a>.'.format(make_pb_url('/event/' + event_code, user_tg_id)) \
+                    + '<a href="{}">пиплбуке встречи</a>.'.format(event_url) \
                     + '\nДля этого, когда будете готовы, напишите мне "мой пиплбук"' \
                     + ' и ответьте на пару вопросов о себе.'\
                     + '\nЕсли вы есть, будьте первыми!'
             else:
                 t = '\nВозможно, вы хотите обновить свою страничку в ' \
-                    + '<a href="{}">пиплбуке встречи</a>.'.format(make_pb_url('/event/' + event_code, user_tg_id)) \
+                    + '<a href="{}">пиплбуке встречи</a>.'.format(event_url) \
                     + '\nДля этого, когда будете готовы, напишите мне "мой пиплбук"' \
                     + ' и ответьте на пару вопросов о себе.' \
                     + '\nЕсли вы есть, будьте первыми!'
@@ -590,13 +591,13 @@ EVENT_EDITION_COMMANDS = '\n'.join(
 )
 
 
-def format_event_description(event_dict, user_tg_id):
+def format_event_description(event_dict, user_tg_id, space_name):
     result = 'Мероприятие:'
     for field in EVENT_FIELDS:
         if event_dict.get(field.code, '') != '':
             result = result + '\n\t<b>{}</b>: \t{}'.format(field.name, event_dict.get(field.code))
     result = result + '\n\t<b>пиплбук встречи</b>: <a href="{}">ссылка</a>\n'.format(
-        make_pb_url('/event/' + event_dict.get('code'), user_tg_id)
+        make_pb_url('/{}/event/{}'.format(space_name, event_dict.get('code')), user_tg_id)
     )
     return result
 
@@ -743,8 +744,11 @@ def try_event_edition(ctx: Context, database: Database):
                    'P.S. Если вам пришло два сообщения про пары сразу - вы словили редкую удачу, ' \
                    'и вам предстоит собраться сразу в тройку (:'.format(
                     another['username'],
-                    make_pb_url('/person/'+another['username'], user_tg_id=usr['tg_id']),
-                    make_pb_url('/similarity/' + one['username'] + '/' + another['username'], user_tg_id=usr['tg_id']),
+                    make_pb_url('/{}/person/{}'.format(ctx.space.key, another['username']), user_tg_id=usr['tg_id']),
+                    make_pb_url(
+                        '/{}/similarity/{}/{}'.format(ctx.space.key, one['username'], another['username']),
+                        user_tg_id=usr['tg_id']
+                    ),
                     )
             intent = 'GET_RANDOMWINE_MESSAGE'
             suggests = ['Ясно', 'Спасибо']
