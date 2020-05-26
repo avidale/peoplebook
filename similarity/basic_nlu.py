@@ -33,7 +33,7 @@ def fast_normalize(text, lemmatize=False, filter_pos=False):
     text = re.sub('\\s+', ' ', text).strip()
     if lemmatize:
         lemmas = [word2lemma(w, filter_pos=filter_pos) for w in text.split()]
-        text = ' '.join([l for l in lemmas if l])
+        text = ' '.join([lemma for lemma in lemmas if l])
     text = re.sub('ё', 'е', text)
     return text
 
