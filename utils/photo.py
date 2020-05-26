@@ -74,7 +74,7 @@ def is_url_image(image_url):
 
 
 def extract_photo_url_from_text(text):
-    urls = re.findall('(?:http[s]?://|src="//)(?:[a-zA-Z]|[0-9]|[$_@&+.\-~/]|[!*\(\),]|(?:%[0-9a-fA-F]'
+    urls = re.findall('(?:http[s]?://|src="//)(?:[a-zA-Z]|[0-9]|[$_@&+.\\-~/]|[!*\\(\\),]|(?:%[0-9a-fA-F]'
                       '[0-9a-fA-F]))+', text)
     for url in urls:
         img_url = url.replace('src="//', 'http://')

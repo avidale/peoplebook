@@ -22,7 +22,7 @@ def inflect_first_word(text, case):
 
 def fast_normalize(text):
     text = re.sub('[^a-zа-яё0-9]+', ' ', text.lower())
-    text = re.sub('\s+', ' ', text).strip()
+    text = re.sub('\\s+', ' ', text).strip()
     text = re.sub('ё', 'е', text)
     return text
 

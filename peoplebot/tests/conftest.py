@@ -12,6 +12,7 @@ from peoplebot.response_logic import PROCESSED_MESSAGES
 
 test_space_id = 'autotest'
 
+
 class MockedDatabase(Database):
     def _setup_client(self, mongo_url):
         self._mongo_client = mongomock.MongoClient()

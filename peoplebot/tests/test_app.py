@@ -10,5 +10,4 @@ def test_import():
             obj._mongo_db = mongomock.MongoClient().db
 
         with patch.object(Database, '_setup_client', new=new_setup_client):
-            pass
-        from peoplebot import new_main  # noqa
+            from peoplebot import new_main  # noqa

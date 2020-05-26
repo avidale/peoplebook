@@ -133,7 +133,7 @@ class LoggedMessage:
         return result
 
 
-def get_or_insert_user(space_name, tg_user=None, tg_uid=None, database: Database=None):
+def get_or_insert_user(space_name, tg_user=None, tg_uid=None, database: Database = None):
     if tg_user is not None:
         uid = tg_user.id
     elif tg_uid is not None:
