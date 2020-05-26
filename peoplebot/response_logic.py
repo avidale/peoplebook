@@ -140,6 +140,7 @@ class NewMultiverse(Multiverse):
         return "Кофе перезапущен!", 200
 
     def all_random_coffee(self, force_restart=False):
+        self.init_spaces()
         for space_name, space in self.spaces_dict.items():
             daily_random_coffee(
                 database=self.db,
@@ -149,6 +150,7 @@ class NewMultiverse(Multiverse):
             )
 
     def all_event_management(self):
+        self.init_spaces()
         for space_name, space in self.spaces_dict.items():
             daily_event_management(
                 database=self.db,

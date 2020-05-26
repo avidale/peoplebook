@@ -104,8 +104,11 @@ class Database:
 
     def get_space_for_user(self, user_object) -> SpaceConfig:
         space_name = user_object['space']
-        space = self._cached_spaces[space_name]
-        return space
+        return self.get_space(space_name=space_name)
+
+    def get_space(self, space_name) -> SpaceConfig:
+        self._update_cache()
+        return self._cached_spaces[space_name]
 
     @property
     def db(self):

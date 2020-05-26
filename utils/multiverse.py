@@ -57,8 +57,9 @@ class Multiverse:
         updates_processor.__name__ = updates_processor.__name__ + '__' + function_suffix
         return updates_processor
 
-    def make_message_handler(self, space):
+    def make_message_handler(self, space_name):
         def process_message(msg):
+            space = self.db.get_space(space_name)
             self.respond(message=msg, space=space)
         return process_message
 
@@ -73,7 +74,7 @@ class Multiverse:
             self.senders_dict[space_name] = sender
 
             bot.message_handler(func=lambda message: True, content_types=ALL_CONTENT_TYPES)(
-                self.make_message_handler(space)
+                self.make_message_handler(space_name=space_name)
             )
             self.app.route(self.bot_url_suffix(space_name), methods=['POST'])(
                 self.make_updates_processor(bot, function_suffix=space_name)
