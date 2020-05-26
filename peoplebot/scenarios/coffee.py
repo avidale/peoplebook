@@ -5,12 +5,13 @@ from typing import Callable
 
 from utils.database import Database
 from utils.dialogue_management import Context
+from utils.spaces import SpaceConfig
 from utils import matchers
 
 from peoplebot.scenarios.coffee_match_maker import generate_good_pairs
 from peoplebot.scenarios.peoplebook_auth import make_pb_url
 
-from config import ADMIN_UID, BATCH_MESSAGE_TIMEOUT, DEFAULT_SPACE
+from config import ADMIN_UID, BATCH_MESSAGE_TIMEOUT
 
 import random
 import time
@@ -33,12 +34,14 @@ def get_coffee_score(text):
     return 0
 
 
-def daily_random_coffee(database: Database, sender: Callable, force_restart=False):
+def daily_random_coffee(database: Database, sender: Callable, space: SpaceConfig, force_restart=False):
     if force_restart or datetime.today().weekday() == 5:  # on saturday, we recalculate the matches
-        user_to_matches = generate_good_pairs(database)
-        database.mongo_coffee_pairs.insert_one({'date': str(datetime.utcnow()), 'matches': user_to_matches})
-
-    last_matches = database.mongo_coffee_pairs.find_one({}, sort=[('_id', pymongo.DESCENDING)])
+        now = datetime.utcnow()
+        user_to_matches = generate_good_pairs(database, space=space, now=now)
+        database.mongo_coffee_pairs.insert_one(
+            {'date': str(now), 'matches': user_to_matches, 'space': space.key}
+        )
+    last_matches = database.mongo_coffee_pairs.find_one({'space': space.key}, sort=[('_id', pymongo.DESCENDING)])
 
     if last_matches is None:
         sender(
@@ -56,24 +59,30 @@ def daily_random_coffee(database: Database, sender: Callable, force_restart=Fals
             user_id=ADMIN_UID, database=database, notify_on_error=False
         )
         for username, matches in converted_matches.items():
-            user_obj = database.mongo_users.find_one({'username': username})
+            user_obj = database.mongo_users.find_one({'username': username, 'space': space.key})
             if user_obj is None:
                 sender(
                     text='юзер {} не был найден!'.format(username),
                     user_id=ADMIN_UID, database=database, notify_on_error=False
                 )
             else:
-                remind_about_coffee(user_obj, matches, database=database, sender=sender, force_restart=force_restart)
+                remind_about_coffee(
+                    user_obj, matches, database=database, sender=sender, force_restart=force_restart, space=space
+                )
                 time.sleep(BATCH_MESSAGE_TIMEOUT)
 
 
-def remind_about_coffee(user_obj, matches, database: Database, sender: Callable, force_restart=False):
+def remind_about_coffee(
+        user_obj, matches, database: Database, sender: Callable, space: SpaceConfig, force_restart=False
+):
     user_id = user_obj['tg_id']
     match_texts = []
     for m in matches:
-        in_pb = database.mongo_peoplebook.find_one({'username': m, 'space': DEFAULT_SPACE})
+        in_pb = database.mongo_peoplebook.find_one({'username': m, 'space': space.key})
         if in_pb:
-            match_texts.append('@{} (<a href="{}">пиплбук</a>)'.format(m, make_pb_url('/person/' + m, user_id)))
+            match_texts.append('@{} (<a href="{}">пиплбук</a>)'.format(
+                m, make_pb_url('/{}/person/{}'.format(space.key, m), user_id)
+            ))
         else:
             match_texts.append('@{}'.format(m))
 
@@ -82,6 +91,7 @@ def remind_about_coffee(user_obj, matches, database: Database, sender: Callable,
         with_whom = with_whom + ' и c {}'.format(next_match)
 
     response = None
+    intent = None
     if force_restart or datetime.today().weekday() == 5:  # saturday
         response = 'На этой неделе вы пьёте кофе {}.\nЕсли вы есть, будьте первыми!'.format(with_whom)
         intent = INTENT_COFFEE_PUSH_FIRST
@@ -94,7 +104,9 @@ def remind_about_coffee(user_obj, matches, database: Database, sender: Callable,
             '\nНадеюсь, вы уже договорились о встрече?	\U0001f609'
         intent = INTENT_COFFEE_PUSH_REMIND
     if response is not None:
-        user_in_pb = database.mongo_peoplebook.find_one({'username': user_obj.get('username'), 'space': DEFAULT_SPACE})
+        user_in_pb = database.mongo_peoplebook.find_one(
+            {'username': user_obj.get('username'), 'space': space.key}
+        )
         if not user_in_pb:
             response = response + '\n\nКстати, кажется, вас нет в пиплбуке, а жаль: ' \
                                   'с пиплбуком даже незнакомому собеседнику проще будет начать с вами общение.' \
@@ -104,7 +116,7 @@ def remind_about_coffee(user_obj, matches, database: Database, sender: Callable,
         from peoplebot.scenarios.suggests import make_standard_suggests
         suggests = make_standard_suggests(database=database, user_object=user_obj)
         sender(user_id=user_id, text=response, database=database, suggests=suggests,
-               reset_intent=True, intent=intent)
+               reset_intent=True, intent=intent, space=space)
 
 
 def try_coffee_management(ctx: Context, database: Database):

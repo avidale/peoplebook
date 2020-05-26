@@ -16,11 +16,13 @@ from utils.spaces import get_space_config
 
 
 @app.route('/')
+@app.route('/<space>')
+@app.route('/<space>/')
 @login_required
 def home(space=cfg.DEFAULT_SPACE):
-    all_events = mongo_events.find().sort('date', pymongo.DESCENDING)
+    all_events = mongo_events.find({'space': space}).sort('date', pymongo.DESCENDING)
     for event in all_events:
-        who_comes = list(mongo_participations.find({'code': event['code'], 'status': 'ACCEPT'}))
+        who_comes = list(mongo_participations.find({'code': event['code'], 'status': 'ACCEPT', 'space': space}))
         if len(who_comes) >= 1:  # one participant is enough to show the event - but this may be revised
             return peoplebook_for_event(event['code'])
     space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
@@ -34,6 +36,7 @@ def home(space=cfg.DEFAULT_SPACE):
 
 
 @app.route('/history/<period>')
+@app.route('/<space>/history/<period>')
 @login_required
 def history(period, space=cfg.DEFAULT_SPACE):
     space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
@@ -49,14 +52,15 @@ def history(period, space=cfg.DEFAULT_SPACE):
 
 
 @app.route('/event/<event_code>')
+@app.route('/<space>/event/<event_code>')
 @login_required
 def peoplebook_for_event(event_code, space=cfg.DEFAULT_SPACE):
-    the_event = mongo_events.find_one({'code': event_code})
+    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+    the_event = mongo_events.find_one({'code': event_code, 'space': space_cfg.key})
     if the_event is None:
         return 'Такого события не найдено!'
     profiles = get_profiles_for_event(event_code)
     # profiles = [p for rp in raw_profiles for p in rp.get('profiles', [])]
-    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
     return render_template(
         'backend_peoplebook.html',
         title=the_event.get('title', 'Пиплбук встречи'),
@@ -67,6 +71,7 @@ def peoplebook_for_event(event_code, space=cfg.DEFAULT_SPACE):
 
 
 @app.route('/members')
+@app.route('/<space>/members')
 @login_required
 def peoplebook_for_all_members(space=cfg.DEFAULT_SPACE):
     raw_profiles = list(mongo_membership.aggregate([
@@ -93,6 +98,7 @@ def peoplebook_for_all_members(space=cfg.DEFAULT_SPACE):
 
 
 @app.route('/members_and_guests')
+@app.route('/<space>/members_and_guests')
 @app.route('/all')
 @app.route('/<space>/all')
 def peoplebook_for_all_members_and_guests(space=cfg.DEFAULT_SPACE):
@@ -129,10 +135,10 @@ def peoplebook_for_all_members_and_guests(space=cfg.DEFAULT_SPACE):
 @app.route('/<space>/person/<username>')
 @login_required
 def peoplebook_for_person(username, space=cfg.DEFAULT_SPACE):
-    the_profile = mongo_peoplebook.find_one({'username': username, 'space': space})
+    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+    the_profile = mongo_peoplebook.find_one({'username': username, 'space': space_cfg.key})
     if the_profile is None:
         return 'Такого профиля не найдено!'
-    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
     return render_template(
         'single_person.html',
         profile=the_profile,
@@ -153,6 +159,7 @@ def my_profile(space=cfg.DEFAULT_SPACE):
 
 
 @app.route('/search', methods=['POST', 'GET'])
+@app.route('/<space>/search', methods=['POST', 'GET'])
 @login_required
 def search(space=cfg.DEFAULT_SPACE):
     if request.form and request.form.get('req_text'):

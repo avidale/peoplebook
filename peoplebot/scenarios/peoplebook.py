@@ -55,7 +55,9 @@ def try_peoplebook_management(ctx: Context, database: Database):
                            'имя пользователя) и попробуйте снова.\nВ случае ошибки напишите @cointegrated.' \
                            '\nЕсли вы есть, будьте первыми!'
             return ctx
-        the_profile = database.mongo_peoplebook.find_one({'username': ctx.user_object['username'], 'space': ctx.space})
+        the_profile = database.mongo_peoplebook.find_one(
+            {'username': ctx.user_object['username'], 'space': ctx.space}
+        )
         if the_profile is None:
             ctx.intent = PB.PEOPLEBOOK_GET_FAIL
             ctx.response = 'У вас ещё нет профиля в пиплбуке. Завести?'
@@ -188,7 +190,7 @@ def try_peoplebook_management(ctx: Context, database: Database):
     }.items():
         if ctx.text == k:
             the_profile = database.mongo_peoplebook.find_one(
-                {'username': ctx.user_object['username'], 'space': ctx.space}
+                {'username': ctx.user_object['username'], 'space': ctx.space.key}
             )
             if the_profile is None:
                 ctx.intent = PB.PEOPLEBOOK_GET_FAIL
@@ -222,7 +224,9 @@ def try_peoplebook_management(ctx: Context, database: Database):
         ctx.response = ctx.response + '\nЕсли хотите, можете оставить контакты в соцсетях: ' \
                                       'телеграм, инстаграм, линкедин, фб, вк, почта.'
     elif ctx.expected_intent == PB.PEOPLEBOOK_SHOW_PROFILE:
-        the_profile = database.mongo_peoplebook.find_one({'username': ctx.user_object['username'], 'space': ctx.space})
+        the_profile = database.mongo_peoplebook.find_one(
+            {'username': ctx.user_object['username'], 'space': ctx.space.key}
+        )
         ctx.response = ctx.response + '\nТак выглядит ваш профиль:\n' + render_text_profile(
             the_profile, database, tg_id
         )

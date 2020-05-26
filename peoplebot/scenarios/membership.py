@@ -25,7 +25,9 @@ def try_membership_management(ctx: Context, database: Database):
             if not matchers.is_like_telegram_login(login):
                 resp = resp + '\nСлово "{}" не очень похоже на логин, пропускаю.'.format(login)
                 continue
-            existing = database.mongo_membership.find_one({'username': login, 'is_member': True})
+            existing = database.mongo_membership.find_one(
+                {'username': login, 'is_member': True, 'space': ctx.space.key}
+            )
             if existing is None:
                 database.mongo_membership.update_one(
                     {'username': login, 'space': ctx.space.key},
@@ -47,7 +49,7 @@ def try_membership_management(ctx: Context, database: Database):
             if not matchers.is_like_telegram_login(login):
                 resp = resp + '\nСлово "{}" не очень похоже на логин, пропускаю.'.format(login)
                 continue
-            existing = database.mongo_membership.find_one({'username': login, 'space': ctx.space})
+            existing = database.mongo_membership.find_one({'username': login, 'space': ctx.space.key})
             if existing is not None and existing.get('is_member'):
                 resp = resp + '\n@{} уже является членом СООБЩЕСТВА и даже КЛУБА.'.format(login)
             elif existing is not None and existing.get('is_guest'):
