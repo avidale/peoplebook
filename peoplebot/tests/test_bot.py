@@ -49,11 +49,12 @@ def test_dog_mode_activation(mocked_member_uo, mocked_db, text, expected_intent)
     ("чё выёбываешься", "DOG"),
     ("ну ты пидор", "DOG"),
 ])
-def test_basic_responses(mocked_sender, mocked_db, text, expected_intent):
+def test_basic_responses(mocked_sender, mocked_db, mocked_space, text, expected_intent):
     respond(
         message=make_mocked_message(text),
         database=mocked_db,
-        sender=mocked_sender
+        sender=mocked_sender,
+        space_cfg=mocked_space,
     )
     assert len(mocked_sender.sent_messages) == 1
     last_message = mocked_sender.sent_messages[-1]
@@ -66,27 +67,29 @@ def test_basic_responses(mocked_sender, mocked_db, text, expected_intent):
     ("добавить членов", "FRIEND_OR_MEMBER_ADD_TRY"),
     ("создать встречу", "EVENT_CREATE_INIT"),
 ])
-def test_admin(mocked_sender, mocked_db, text, expected_intent):
+def test_admin(mocked_sender, mocked_db, mocked_space, text, expected_intent):
     respond(
         message=make_mocked_message(text, username='an_admin'),
         database=mocked_db,
-        sender=mocked_sender
+        sender=mocked_sender,
+        space_cfg=mocked_space,
     )
     assert len(mocked_sender.sent_messages) == 1
     last_message = mocked_sender.sent_messages[-1]
     assert last_message.intent == expected_intent
 
 
-def test_roles(mocked_db):
+def test_roles(mocked_db, mocked_space):
     assert mocked_db.is_at_least_guest({'username': 'a_guest'})
     assert not mocked_db.is_at_least_member({'username': 'a_guest'})
 
 
-def test_guest_can_see_coffee(mocked_sender, mocked_db):
+def test_guest_can_see_coffee(mocked_sender, mocked_db, mocked_space):
     respond(
         message=make_mocked_message('привет', username='a_guest'),
         database=mocked_db,
-        sender=mocked_sender
+        sender=mocked_sender,
+        space_cfg=mocked_space,
     )
     assert len(mocked_sender.sent_messages) == 1
     last_message = mocked_sender.sent_messages[-1]
@@ -97,7 +100,8 @@ def test_guest_can_see_coffee(mocked_sender, mocked_db):
     respond(
         message=make_mocked_message(TAKE_PART, username='a_guest'),
         database=mocked_db,
-        sender=mocked_sender
+        sender=mocked_sender,
+        space_cfg=mocked_space,
     )
     assert len(mocked_sender.sent_messages) == 2
     last_message = mocked_sender.sent_messages[-1]
@@ -106,7 +110,7 @@ def test_guest_can_see_coffee(mocked_sender, mocked_db):
     assert NOT_TAKE_PART in last_message.suggests
 
 
-def test_coffee_feedback(mocked_sender, mocked_db):
+def test_coffee_feedback(mocked_sender, mocked_db, mocked_space):
     mocked_sender(
         text='Вы уже договорились?',
         database=mocked_db,
@@ -118,7 +122,8 @@ def test_coffee_feedback(mocked_sender, mocked_db):
     respond(
         message=make_mocked_message('да', username='a_guest', user_id=123),  # user id is required to track context
         database=mocked_db,
-        sender=mocked_sender
+        sender=mocked_sender,
+        space_cfg=mocked_space,
     )
     assert mocked_db.is_at_least_guest(user_object={'username': 'a_guest'})
     last_message = mocked_sender.sent_messages[-1]

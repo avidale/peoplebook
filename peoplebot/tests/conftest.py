@@ -6,8 +6,11 @@ from telebot.types import Message, User, Chat
 
 from utils.database import Database
 from utils.messaging import TelegramSender
+from utils.spaces import SpaceConfig
 from peoplebot.response_logic import PROCESSED_MESSAGES
 
+
+test_space_id = 'autotest'
 
 class MockedDatabase(Database):
     def _setup_client(self, mongo_url):
@@ -54,24 +57,31 @@ def mocked_member_uo():
 @pytest.fixture()
 def mocked_db():
     db = MockedDatabase(mongo_url="no url", admins=['an_admin'])
-    db.mongo_membership.insert_one({'username': 'a_member', 'is_member': True})
-    db.mongo_events.insert_one({'code': 'an_event', 'title': 'An Event', 'date': '2030.12.30'})
-    db.mongo_participations.insert_one({'event_code': 'an_event', 'username': 'a_guest'})
-    db.mongo_users.insert_one({'tg_id': 123})
+    db.mongo_membership.insert_one({'username': 'a_member', 'is_member': True, 'space': test_space_id})
+    db.mongo_events.insert_one({'code': 'an_event', 'title': 'An Event', 'date': '2030.12.30', 'space': test_space_id})
+    db.mongo_participations.insert_one({'event_code': 'an_event', 'username': 'a_guest', 'space': test_space_id})
+    db.mongo_users.insert_one({'tg_id': 123, 'space': test_space_id})
     db._update_cache(force=True)
     return db
 
 
 @pytest.fixture()
-def mocked_sender():
-    config = unittest.mock.Mock()
-    config.ADMIN_UID = 12345
-    return MockedSender(bot=MockedBot(), config=config)
+def mocked_space():
+    return SpaceConfig(
+        key=test_space_id,
+        title='Space for autotests',
+        bot_token='lol:kek',
+    )
+
+
+@pytest.fixture()
+def mocked_sender(mocked_space):
+    return MockedSender(bot=MockedBot(), space=mocked_space)
 
 
 def make_mocked_message(text, user_id=123, first_name='Юзер', username='a_member', message_id=None):
     if message_id is None:
-        message_id = len(PROCESSED_MESSAGES)
+        message_id = sum(len(subspace) for subspace in PROCESSED_MESSAGES.values())
     message = Message(
         message_id=message_id,
         from_user=User(id=user_id, is_bot=False, first_name=first_name, username=username),
