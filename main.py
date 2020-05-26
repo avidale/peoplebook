@@ -1,9 +1,13 @@
 import argparse
+import logging
 import os
 import sentry_sdk
 
 from peoplebot.new_main import MULTIVERSE
 from peoplebook.web import app
+
+
+logging.basicConfig(level=logging.INFO)
 
 
 if os.environ.get('SENTRY_DSN'):

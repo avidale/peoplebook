@@ -8,6 +8,14 @@ from utils.messaging import BaseSender, TelegramSender
 from utils.spaces import SpaceConfig
 
 
+ALL_CONTENT_TYPES = [
+    'audio', 'channel_chat_created', 'contact', 'delete_chat_photo', 'document', 'group_chat_created',
+    'left_chat_member',
+    'location', 'migrate_from_chat_id', 'migrate_to_chat_id', 'new_chat_members', 'new_chat_photo', 'new_chat_title',
+    'photo', 'pinned_message', 'sticker', 'supergroup_chat_created', 'text', 'video', 'video_note', 'voice'
+]
+
+
 class Multiverse:
     """ This class handles multiple spaces and multiple bot instances for them """
     # todo: move some code from response_logic, main and messaging - to here.
@@ -38,6 +46,9 @@ class Multiverse:
         # respond(message=msg, database=self.db, sender=SENDER, bot=bot, space_cfg=space)
         raise NotImplementedError()
 
+    def add_custom_handlers(self):
+        pass
+
     def make_updates_processor(self, bot):
         def updates_processor():
             bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
@@ -59,13 +70,14 @@ class Multiverse:
             sender = TelegramSender(space=space, bot=bot, timeout=timeout_between_messages)
             self.senders_dict[space_name] = sender
 
-            bot.message_handler(func=lambda message: True)(  # todo: add content types
+            bot.message_handler(func=lambda message: True, content_types=ALL_CONTENT_TYPES)(
                 self.make_message_handler(space)
             )
             self.app.route(self.bot_url_suffix(space_name), methods=['POST'])(
                 self.make_updates_processor(bot)
             )
             # self.app.route("/" + self.restart_webhook_url)(self.telegram_web_hook)
+        self.add_custom_handlers()
 
     def set_web_hooks(self):
         for space_name, bot in self.bots_dict.items():

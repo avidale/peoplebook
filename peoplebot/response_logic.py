@@ -1,4 +1,6 @@
 import logging
+import os
+import random
 
 from collections import defaultdict
 
@@ -18,6 +20,10 @@ from peoplebot.scenarios.membership import try_membership_management
 from peoplebot.scenarios.coffee import try_coffee_management, try_coffee_feedback_collection
 from peoplebot.scenarios.suggests import make_standard_suggests
 
+from peoplebot.scenarios.coffee import daily_random_coffee
+from peoplebot.scenarios.events import daily_event_management
+
+ADMIN_URL_PREFIX = os.environ.get('ADMIN_URL_PREFIX') or str(random.random())
 PROCESSED_MESSAGES = defaultdict(set)
 
 logger = logging.getLogger(__name__)
@@ -114,3 +120,38 @@ class NewMultiverse(Multiverse):
             sender=sender,
             database=self.db,
         )
+
+    def add_custom_handlers(self):
+        self.app.route("/{}/restart-coffee/".format(ADMIN_URL_PREFIX))(self.force_restart_coffee)
+        self.app.route("/{}/send-events/".format(ADMIN_URL_PREFIX))(self.do_event_management)
+        self.app.route("/{}/wakeup/".format(ADMIN_URL_PREFIX))(self.wake_up)
+
+    def wake_up(self):
+        self.all_random_coffee()
+        self.all_event_management()
+        return "Ежедневная встряска произошла!", 200
+
+    def do_event_management(self):
+        self.all_event_management()
+        return "Сделал со встречами всё, что хотел!", 200
+
+    def force_restart_coffee(self):
+        self.all_random_coffee(force_restart=True)
+        return "Кофе перезапущен!", 200
+
+    def all_random_coffee(self, force_restart=False):
+        for space_name, space in self.spaces_dict.items():
+            daily_random_coffee(
+                database=self.db,
+                sender=self.senders_dict[space_name],
+                space=space,
+                force_restart=force_restart,
+            )
+
+    def all_event_management(self):
+        for space_name, space in self.spaces_dict.items():
+            daily_event_management(
+                database=self.db,
+                sender=self.senders_dict[space_name],
+                space=space,
+            )
