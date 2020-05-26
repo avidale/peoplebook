@@ -45,6 +45,8 @@ MEANINGFUL_FIELDS = {'first_name', 'last_name', 'photo', 'activity', 'topics', '
 
 
 def get_current_username():
+    if not hasattr(current_user, 'id'):
+        return None
     for u in users:
         if str(u.id) == str(current_user.id):
             return u.username

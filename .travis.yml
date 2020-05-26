@@ -3,7 +3,7 @@ python:
     - "3.6"
 install: 
   - pip install -r requirements.txt
-  - pip install pep8 pytest-cov
+  - pip install pycodestyle pytest-cov
 script:
   - pytest --cov=peoplebot --cov=utils --cov-fail-under=39
-  - pep8 . --max-line-length 120
+  - pycodestyle . --max-line-length 120

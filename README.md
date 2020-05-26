@@ -5,7 +5,7 @@ A telegram bot and web app for Kappa Vedi community
 1. Клонируйте себе этот репозиторий
 1. Убедитесь, что у вас стоит python 3.6 или старше
 1. Установите зависимости: `pip install -r requirements.txt`
-1. Выставите переменные окружения `TOKEN`, `MONGODB_URI`, `login_salt` и `APP_KEY`. 
+1. Выставите переменные окружения `MONGODB_URI`, `login_salt` и `APP_KEY`. 
 Они все секретные, значения надо спрашивать у Давида.
 1. Для локального запуска пиплбука используйте `python main.py --nobot`
 1. Для локального запуска ботика используйте `python main.py --poll` 

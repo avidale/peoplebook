@@ -1,6 +1,10 @@
 import random
 
 from collections import defaultdict, Counter
+from datetime import datetime
+
+from utils.database import Database
+from utils.spaces import SpaceConfig
 
 
 def generate_pairs(users):
@@ -24,14 +28,24 @@ def evaluate_pairs(matching, repeatedness):
     return loss
 
 
-def generate_good_pairs(database, decay=0.5):
-    free_users = [str(user['tg_id']) for user in database.mongo_users.find({'wants_next_coffee': True})]
-    prev_coffee_pairs = [c['matches'] for c in database.mongo_coffee_pairs.find({})]
+def generate_good_pairs(database: Database, space: SpaceConfig, now, decay=0.5):
+    free_users = [
+        str(user['tg_id'])
+        for user in database.mongo_users.find({'wants_next_coffee': True, 'space': space.key})
+    ]
+    # we deliberately use all the spaces here to avoid same pairs across different spaces
+    prev_coffee_pairs = list(database.mongo_coffee_pairs.find({}))
     repeatedness = Counter()
-    for t, matching in enumerate(prev_coffee_pairs[::-1]):
-        for u1, peers in matching.items():
+    for matching in prev_coffee_pairs[::-1]:
+        if 'date' in matching:
+            lag = 30
+        else:
+            prev_date = datetime.strptime(matching['date'], "%Y-%m-%d %H:%M:%S.%f")
+            diff = now - prev_date
+            lag = diff.total_seconds / (60*60*24*7)
+        for u1, peers in matching['matches'].items():
             for u2 in peers:
-                repeatedness[(u1, u2)] += decay ** t
+                repeatedness[(u1, u2)] += decay ** lag
     best_score = 100500
     best_pair = None
     for i in range(100):

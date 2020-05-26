@@ -2,12 +2,14 @@ import re
 import config as cfg
 
 from utils.matchers import fast_normalize
+from utils.spaces import SpaceConfig
 
 
 class Context:
     def __init__(
-            self, user_object=None, text=None, sender=None, message=None, bot=None,
-            space=cfg.DEFAULT_SPACE,
+            self,
+            space: SpaceConfig,
+            user_object=None, text=None, sender=None, message=None, bot=None,
     ):
         self.user_object = user_object
         self.username = user_object.get('username', '')
@@ -19,7 +21,7 @@ class Context:
 
         self.message = message
         self.bot = bot
-        self.space = space
+        self.space: SpaceConfig = space
 
         self.intent = None
         self.response = None

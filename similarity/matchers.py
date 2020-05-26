@@ -64,13 +64,13 @@ class WeightedAverageMatcher(BaseMatcher):
         label2matchers2scores = defaultdict(lambda: defaultdict(lambda: 0))
         for i, m in enumerate(self.matchers):
             scores, labels = m.get_scores(text)
-            for l, s in zip(labels, scores):
-                if s > label2matchers2scores[l][i]:
-                    label2matchers2scores[l][i] = s
+            for lbl, s in zip(labels, scores):
+                if s > label2matchers2scores[lbl][i]:
+                    label2matchers2scores[lbl][i] = s
         labels = []
         scores = []
-        for l, ldict in label2matchers2scores.items():
-            labels.append(l)
+        for lbl, ldict in label2matchers2scores.items():
+            labels.append(lbl)
             scores.append(sum(w * ldict[i] for i, w in enumerate(self.weights)))
         return scores, labels
 

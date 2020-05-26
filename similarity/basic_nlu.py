@@ -30,10 +30,10 @@ def word2lemma(word, filter_pos=False):
 def fast_normalize(text, lemmatize=False, filter_pos=False):
     text = re.sub('[^a-zа-яё0-9]+', ' ', text.lower())
     # we consider '-' as a delimiter, because it is often missing in results of ASR
-    text = re.sub('\s+', ' ', text).strip()
+    text = re.sub('\\s+', ' ', text).strip()
     if lemmatize:
         lemmas = [word2lemma(w, filter_pos=filter_pos) for w in text.split()]
-        text = ' '.join([l for l in lemmas if l])
+        text = ' '.join([lemma for lemma in lemmas if lemma])
     text = re.sub('ё', 'е', text)
     return text
 
@@ -42,7 +42,7 @@ def split(text, need_alhpa=True, min_len=2):
     sentences = [s.text for s in razdel.sentenize(text)]
     result = []
     for s in sentences:
-        result.extend(re.split('[,:\n\(\);]', s))
+        result.extend(re.split('[,:\n\\(\\);]', s))
     result = [r.strip() for r in result]
     result = [r for r in result if r and len(r) >= min_len]
     if need_alhpa:

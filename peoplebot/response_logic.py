@@ -1,9 +1,15 @@
 import logging
+import os
+import random
 
+from collections import defaultdict
 
 from utils.database import Database, LoggedMessage, get_or_insert_user
 from utils.dialogue_management import Context
 from utils.messaging import BaseSender
+from utils.multiverse import Multiverse
+from utils.spaces import SpaceConfig
+
 
 from peoplebot.scenarios.events import try_invitation, try_event_usage, try_event_creation, try_event_edition
 from peoplebot.scenarios.peoplebook import try_peoplebook_management
@@ -14,45 +20,54 @@ from peoplebot.scenarios.membership import try_membership_management
 from peoplebot.scenarios.coffee import try_coffee_management, try_coffee_feedback_collection
 from peoplebot.scenarios.suggests import make_standard_suggests
 
-PROCESSED_MESSAGES = set()
+from peoplebot.scenarios.coffee import daily_random_coffee
+from peoplebot.scenarios.events import daily_event_management
+
+ADMIN_URL_PREFIX = os.environ.get('ADMIN_URL_PREFIX') or str(random.random())
+PROCESSED_MESSAGES = defaultdict(set)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def respond(message, database: Database, sender: BaseSender, bot=None):
+def respond(message, database: Database, sender: BaseSender, space_cfg: SpaceConfig, bot=None):
     # todo: make it less dependent on telebot Message class structure
-    logger.info('Got message {} with type {} and text {}'.format(
-        message.message_id, message.content_type, message.text
+    logger.info('Got message {} in space {} with type {} and text {}'.format(
+        message.message_id, space_cfg.key, message.content_type, message.text
     ))
-    if message.message_id in PROCESSED_MESSAGES:
+    # avoid duplicate response to some Telegram messages
+    if message.message_id in PROCESSED_MESSAGES[space_cfg.key]:
         return
-    PROCESSED_MESSAGES.add(message.message_id)
+    PROCESSED_MESSAGES[space_cfg.key].add(message.message_id)
 
     if message.chat.type != 'private':
-        print(message.chat)
+        print('got a message from public chat', message.chat)
         if not message.from_user or not message.chat.id:
             return
-        uo = get_or_insert_user(message.from_user, database=database)
+        uo = get_or_insert_user(tg_user=message.from_user, space_name=space_cfg.key, database=database)
         if not uo.get('username'):
             return
-        user_filter = {'username': uo['username']}
-        if message.chat.id == sender.config.MAIN_CHAT_ID:
+        user_filter = {'username': uo['username'], 'space': space_cfg.key}
+        if space_cfg.member_chat_id and message.chat.id == space_cfg.member_chat_id:
             print('adding user {} to the community members'.format(user_filter))
-            database.mongo_membership.update_one(user_filter, {'$set': {'is_guest': True}}, upsert=True)
-        elif message.chat.id == sender.config.FIRST_CHAT_ID:
             database.mongo_membership.update_one(user_filter, {'$set': {'is_member': True}}, upsert=True)
-            print('adding user {} to the club members'.format(user_filter))
+        elif space_cfg.guest_chat_id and message.chat.id == space_cfg.guest_chat_id:
+            database.mongo_membership.update_one(user_filter, {'$set': {'is_guest': True}}, upsert=True)
+            print('adding user {} to the community guests'.format(user_filter))
         return
 
     if bot is not None:
         bot.send_chat_action(message.chat.id, 'typing')
-    uo = get_or_insert_user(message.from_user, database=database)
+    uo = get_or_insert_user(tg_user=message.from_user, space_name=space_cfg.key, database=database)
     user_id = message.chat.id
     LoggedMessage(
-        text=message.text, user_id=user_id, from_user=True, database=database, username=uo.get('username')
+        text=message.text, user_id=user_id, from_user=True, database=database, username=uo.get('username'),
+        space_name=space_cfg.key,
     ).save()
-    ctx = Context(text=message.text, user_object=uo, sender=sender, message=message, bot=bot)
+    ctx = Context(
+        space=space_cfg,
+        text=message.text, user_object=uo, sender=sender, message=message, bot=bot,
+    )
 
     for handler in [
         try_queued_messages,
@@ -66,7 +81,7 @@ def respond(message, database: Database, sender: BaseSender, bot=None):
         try_conversation,
         try_coffee_feedback_collection,
         doggy_style,
-        fallback
+        fallback,
     ]:
         ctx = handler(ctx, database=database)
         if ctx.intent is not None:
@@ -74,8 +89,13 @@ def respond(message, database: Database, sender: BaseSender, bot=None):
 
     assert ctx.intent is not None
     assert ctx.response is not None
-    database.mongo_users.update_one({'tg_id': message.from_user.id}, ctx.make_update())
-    user_object = get_or_insert_user(tg_uid=message.from_user.id, database=database)
+    database.update_user_object(
+        username_or_id=message.from_user.id,
+        space_name=space_cfg.key,
+        use_id=True,
+        change=ctx.make_update(),
+    )
+    user_object = get_or_insert_user(tg_uid=message.from_user.id, space_name=space_cfg.key, database=database)
 
     # context-independent suggests (they are always below the dependent ones)
     ctx.suggests.extend(make_standard_suggests(database=database, user_object=user_object))
@@ -83,6 +103,56 @@ def respond(message, database: Database, sender: BaseSender, bot=None):
     logger.info('Start sending an already prepared reply to {}'.format(message.message_id))
     sender(
         text=ctx.response, reply_to=message, suggests=ctx.suggests, database=database, intent=ctx.intent,
-        file_to_send=ctx.file_to_send
+        file_to_send=ctx.file_to_send,
     )
     logger.info('Sent message with text {} as reply to {}'.format(ctx.response, message.message_id))
+
+
+class NewMultiverse(Multiverse):
+    def respond(self, message, space: SpaceConfig):
+        bot = self.bots_dict[space.key]
+        sender = self.senders_dict[space.key]
+        return respond(
+            message=message,
+            space_cfg=space,
+            bot=bot,
+            sender=sender,
+            database=self.db,
+        )
+
+    def add_custom_handlers(self):
+        self.app.route("/{}/restart-coffee/".format(ADMIN_URL_PREFIX))(self.force_restart_coffee)
+        self.app.route("/{}/send-events/".format(ADMIN_URL_PREFIX))(self.do_event_management)
+        self.app.route("/{}/wakeup/".format(ADMIN_URL_PREFIX))(self.wake_up)
+
+    def wake_up(self):
+        self.all_random_coffee()
+        self.all_event_management()
+        return "Ежедневная встряска произошла!", 200
+
+    def do_event_management(self):
+        self.all_event_management()
+        return "Сделал со встречами всё, что хотел!", 200
+
+    def force_restart_coffee(self):
+        self.all_random_coffee(force_restart=True)
+        return "Кофе перезапущен!", 200
+
+    def all_random_coffee(self, force_restart=False):
+        self.init_spaces()
+        for space_name, space in self.spaces_dict.items():
+            daily_random_coffee(
+                database=self.db,
+                sender=self.senders_dict[space_name],
+                space=space,
+                force_restart=force_restart,
+            )
+
+    def all_event_management(self):
+        self.init_spaces()
+        for space_name, space in self.spaces_dict.items():
+            daily_event_management(
+                database=self.db,
+                sender=self.senders_dict[space_name],
+                space=space,
+            )

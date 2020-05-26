@@ -5,7 +5,11 @@ from utils.dialogue_management import Context
 
 
 def try_queued_messages(ctx: Context, database: Database):
-    queue = list(database.message_queue.find({'username': ctx.user_object['username'], 'fresh': True}))
+    queue = list(database.message_queue.find({
+        'username': ctx.user_object['username'],
+        'fresh': True,
+        'space': ctx.space.key,
+    }))
     if len(queue) == 0:
         return ctx
     first_message = queue[0]
