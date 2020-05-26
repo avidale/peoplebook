@@ -11,9 +11,12 @@ from peoplebot.scenarios.suggests import make_standard_suggests
 from peoplebot.scenarios.peoplebook_auth import make_pb_url
 from utils.database import Database
 from utils.dialogue_management import Context
+from utils.spaces import SpaceConfig
 from utils import matchers
 
 from config import BATCH_MESSAGE_TIMEOUT
+
+DETAILED_HEAD_SIZE = 3
 
 
 class InvitationStatuses:
@@ -108,7 +111,7 @@ def render_full_event(ctx: Context, database: Database, the_event):
     return response
 
 
-def make_invitation(invitation, database: Database, user_tg_id):
+def make_invitation(invitation, database: Database, user_tg_id, space: SpaceConfig):
     r = 'Здравствуйте! Вы были приглашены пользователем @{} на встречу Каппа Веди.\n'.format(invitation['invitor'])
     event_code = invitation.get('code', '')
     the_event = database.mongo_events.find_one({'code': event_code})
@@ -118,7 +121,11 @@ def make_invitation(invitation, database: Database, user_tg_id):
     r = r + '\nВы сможете участвовать в этой встрече?'
     suggests = ['Да', 'Нет', 'Пока не знаю']
     intent = EventIntents.INVITE
-    database.mongo_users.update_one({'username': invitation['username']}, {'$set': {'event_code': event_code}})
+    database.update_user_object(
+        username_or_id=invitation['username'],
+        space_name=space.key,
+        change={'$set': {'event_code': event_code}},
+    )
     return r, intent, suggests
 
 
@@ -167,11 +174,13 @@ def try_invitation(ctx: Context, database: Database):
             ctx.suggests.extend(['Да', 'Нет', 'Пока не знаю'])
         if new_status is not None:
             database.mongo_participations.update_one(
-                {'username': ctx.username, 'code': event_code},
+                {'username': ctx.username, 'code': event_code, 'space': ctx.space.key},
                 {'$set': {'status': new_status}}
             )
     elif deferred_invitation is not None:
-        resp, intent, suggests = make_invitation(deferred_invitation, database=database, user_tg_id=user_tg_id)
+        resp, intent, suggests = make_invitation(
+            deferred_invitation, database=database, user_tg_id=user_tg_id, space=ctx.space,
+        )
         ctx.response = resp
         ctx.intent = intent
         ctx.suggests.extend(suggests)
@@ -183,7 +192,7 @@ def try_event_usage(ctx: Context, database: Database):
     if not database.is_at_least_guest(ctx.user_object):
         return ctx
     event_code = ctx.user_object.get('event_code')
-    event_user_filter = {'username': ctx.user_object.get('username'), 'code': event_code}
+    event_user_filter = {'username': ctx.user_object.get('username'), 'code': event_code, 'space': ctx.space.key}
     if re.match('(най[тд]и|пока(жи|зать))( мои| все)? (встреч[уи]|событи[ея]|мероприяти[ея])', ctx.text_normalized):
         ctx.intent = 'EVENT_GET_LIST'
         all_events = list(database.mongo_events.find({}))
@@ -208,8 +217,7 @@ def try_event_usage(ctx: Context, database: Database):
                     }
                 ])
             ]
-        available_events.sort(key=lambda e: e['date'], reverse=True)
-        DETAILED_HEAD_SIZE = 3
+        available_events.sort(key=lambda evt: evt['date'], reverse=True)
         first_events = available_events[:DETAILED_HEAD_SIZE]
         last_events = available_events[DETAILED_HEAD_SIZE:]
         if len(available_events) > 0:
@@ -277,13 +285,17 @@ def try_event_usage(ctx: Context, database: Database):
                            '\nПожалуйста, кратко опишите в следующем сообщении свой способ оплаты ' \
                            '(на какую карту; сколько; кто оплатил, если не вы):'
             database.mongo_participations.update_one(
-                event_user_filter, {'$set': {'payment_status': InvitationStatuses.PAYMENT_PAID}}, upsert=True
+                event_user_filter,
+                {'$set': {'payment_status': InvitationStatuses.PAYMENT_PAID}},
+                upsert=True
             )
     elif ctx.last_expected_intent == 'EVENT_REPORT_PAYMENT_DETAILS':
         ctx.response = 'Спасибо за предоставленную информацию. \nЕсли вы есть, будьте первыми!'
         ctx.intent = 'EVENT_REPORT_PAYMENT_DETAILS'
         database.mongo_participations.update_one(
-            event_user_filter, {'$set': {'payment_details': ctx.text}}, upsert=True
+            event_user_filter,
+            {'$set': {'payment_details': ctx.text}},
+            upsert=True
         )
         # todo: add a button "return to the event"
     elif ctx.text == '/invite':
@@ -321,14 +333,16 @@ def try_event_usage(ctx: Context, database: Database):
             if existing_invitation is not None:
                 ctx.response = 'Пользователь @{} уже получал приглашение на эту встречу!'.format(the_login)
             else:
-                user_account = database.mongo_users.find_one({'username': the_login})
+                user_account = database.mongo_users.find_one({'username': the_login, 'space': ctx.space.key})
                 never_used_this_bot = user_account is None
                 if existing_membership is None:
                     database.mongo_membership.update_one(
-                        {'username': the_login}, {'$set': {'is_guest': True}}, upsert=True
+                        {'username': the_login, 'space': ctx.space.key},
+                        {'$set': {'is_guest': True}},
+                        upsert=True
                     )
                 database.mongo_participations.update_one(
-                    {'username': the_login, 'code': event_code},
+                    {'username': the_login, 'code': event_code, 'space': ctx.space.key},
                     {'$set': {'status': InvitationStatuses.NOT_SENT, 'invitor': ctx.user_object['username']}},
                     upsert=True
                 )
@@ -337,23 +351,26 @@ def try_event_usage(ctx: Context, database: Database):
                     r = r + '\nПередайте ему/ей ссылку на меня (@kappa_vedi_bot), ' \
                             'чтобы подтвердить участие и заполнить пиплбук (увы, бот не может писать первым).'
                 else:
-                    sent_invitation_to_user(the_login, event_code, database, ctx.sender)
+                    sent_invitation_to_user(the_login, event_code, database, ctx.sender, space=ctx.space)
                 ctx.response = r
     return ctx
 
 
-def sent_invitation_to_user(username, event_code, database: Database, sender: Callable):
+def sent_invitation_to_user(username, event_code, database: Database, sender: Callable, space: SpaceConfig):
     invitation = database.mongo_participations.find_one({'username': username, 'code': event_code})
     if invitation is None:
         return False
     user_account = database.mongo_users.find_one({'username': username})
     if user_account is None:
         return False
-    text, intent, suggests = make_invitation(invitation=invitation, database=database, user_tg_id=user_account['tg_id'])
+    text, intent, suggests = make_invitation(
+        invitation=invitation, database=database, user_tg_id=user_account['tg_id'], space=space
+    )
     if sender(text=text, database=database, suggests=suggests, user_id=user_account['tg_id']):
-        database.mongo_users.update_one(
-            {'username': username},
-            {'$set': {'last_intent': intent, 'event_code': event_code, 'last_expected_intent': None}}
+        database.update_user_object(
+            username_or_id=username,
+            space_name=space.key,
+            change={'$set': {'last_intent': intent, 'event_code': event_code, 'last_expected_intent': None}},
         )
         if invitation.get('status') == InvitationStatuses.NOT_SENT:
             database.mongo_participations.update_one(
@@ -500,11 +517,12 @@ def try_event_creation(ctx: Context, database: Database):
                     status = 'приглашение уже было сделано'
                 else:
                     database.mongo_participations.update_one(
-                        {'username': the_login, 'code': event_code},
+                        {'username': the_login, 'code': event_code, 'space': ctx.space.key},
                         {'$set': {'status': InvitationStatuses.NOT_SENT, 'invitor': ctx.username}}, upsert=True
                     )
                     success = sent_invitation_to_user(
-                        username=the_login, event_code=event_code, database=database, sender=ctx.sender
+                        username=the_login, event_code=event_code, database=database, sender=ctx.sender,
+                        space=ctx.space,
                     )
                     status = 'успех' if success else 'не получилось'
                 r = r + '\n  @{}: {}'.format(member['username'], status)
@@ -593,7 +611,10 @@ def try_event_edition(ctx: Context, database: Database):
         field = EVENT_FIELD_BY_INTENT[ctx.last_expected_intent]
         ctx.intent = ctx.last_expected_intent
         if field.validate(ctx.text):
-            database.mongo_events.update_one({'code': event_code}, {'$set': {field.code: ctx.text}})
+            database.mongo_events.update_one(
+                {'code': event_code, 'space': ctx.space.key},
+                {'$set': {field.code: ctx.text}}
+            )
             the_event = database.mongo_events.find_one({'code': event_code})
             ctx.response = 'Вы успешно изменили {}!\n\n'.format(field.name_accs)
             ctx.response = ctx.response + render_full_event(ctx, database, the_event)
@@ -644,9 +665,10 @@ def try_event_edition(ctx: Context, database: Database):
         broadcast_warning = 'Окей, я начинаю рассылку вашего текста. Это может занять пару минут, придётся подождать.' \
                             '\nПрошу вас, не трогайте ничего и молчите, пока я не закончу.' \
                             '\nКогда я завершу рассылку, я отпишусь.'
-        database.mongo_users.update_one(
-            {'username': ctx.user_object.get('username')},
-            {'$set': {'last_expected_intent': None}}
+        database.update_user_object(
+            username_or_id=ctx.user_object.get('username'),
+            space_name=ctx.space.key,
+            change={'$set': {'last_expected_intent': None}},
         )  # without this update, the next message from this user may get broadcasted as well
         ctx.sender(text=broadcast_warning, database=database, suggests=[], user_id=ctx.user_object['tg_id'])
         participants = list(database.mongo_participations.find(
@@ -791,7 +813,7 @@ def try_event_edition(ctx: Context, database: Database):
                            'сумма, карта, и т.п.'.format(target_username)
             ctx.expected_intent = 'EVENT_OTHER_PAYMENT_STATUS_SET_INFO'
             database.mongo_participations.update_one(
-                {'username': target_username, 'code': event_code},
+                {'username': target_username, 'code': event_code, 'space': ctx.space.key},
                 {'$set': {'payment_status': InvitationStatuses.PAYMENT_PAID}}, upsert=True
             )
         elif ctx.text_normalized == 'нет':
@@ -799,7 +821,7 @@ def try_event_edition(ctx: Context, database: Database):
             ctx.response = 'Отлично, записали, что @{} не оплатил(а) встречу.\n'.format(target_username) \
                            + render_full_event(ctx, database, the_event)
             database.mongo_participations.update_one(
-                {'username': target_username, 'code': event_code},
+                {'username': target_username, 'code': event_code, 'space': ctx.space.key},
                 {'$set': {'payment_status': InvitationStatuses.PAYMENT_NOT_PAID}}, upsert=True
             )
         elif ctx.text_normalized == 'отмена':
@@ -818,14 +840,18 @@ def try_event_edition(ctx: Context, database: Database):
             ctx.intent = 'EVENT_OTHER_PAYMENT_STATUS_SET_INFO'
             ctx.response = 'Хорошо, запомню эту информацию. Спасибо!'
             database.mongo_participations.update_one(
-                {'username': target_username, 'code': event_code},
+                {'username': target_username, 'code': event_code, 'space': ctx.space.key},
                 {'$set': {'payment_details': ctx.text}}, upsert=True
             )
     return ctx
 
 
-def daily_event_management(database: Database, sender: Callable):
-    all_users = {u['username']: u for u in database.mongo_users.find() if u['username'] is not None}
+def daily_event_management(database: Database, sender: Callable, space: SpaceConfig):
+    all_users = {
+        u['username']: u
+        for u in database.mongo_users.find({'space': space.key})
+        if u.get('username') is not None
+    }
     # find all the future events
     future_events = []
     today_events = []
@@ -873,7 +899,8 @@ def daily_event_management(database: Database, sender: Callable):
             if random.random() <= remind_probability:
                 # todo: make a custom header (with days to event)
                 sent_invitation_to_user(
-                    username=inv['username'], event_code=event['code'], database=database, sender=sender
+                    username=inv['username'], event_code=event['code'], database=database, sender=sender,
+                    space=space,
                 )
                 time.sleep(BATCH_MESSAGE_TIMEOUT)
         for invitation in sure_invitations:
@@ -895,10 +922,15 @@ def daily_event_management(database: Database, sender: Callable):
                 intent = EventIntents.PAYMENT_REMINDER
                 suggests = ['Сообщить об оплате'] + make_standard_suggests(database=database, user_object=user_account)
                 if sender(text=text, database=database, suggests=suggests, user_id=user_account['tg_id']):
-                    database.mongo_users.update_one(
-                        {'username': invitation['username']},
-                        {'$set': {'last_intent': intent, 'event_code': invitation['code'],
-                                  'last_expected_intent': None}}
+                    database.update_user_object(
+                        username_or_id=invitation['username'],
+                        space_name=space.key,
+                        change={
+                            '$set': {
+                                'last_intent': intent, 'event_code': invitation['code'],
+                                'last_expected_intent': None,
+                            }
+                        },
                     )
                 time.sleep(BATCH_MESSAGE_TIMEOUT)
             elif event['days_to'] in {0, 5}:
@@ -912,10 +944,15 @@ def daily_event_management(database: Database, sender: Callable):
                 intent = EventIntents.NORMAL_REMINDER
                 suggests = make_standard_suggests(database=database, user_object=user_account)
                 if sender(text=text, database=database, suggests=suggests, user_id=user_account['tg_id']):
-                    database.mongo_users.update_one(
-                        {'username': invitation['username']},
-                        {'$set': {'last_intent': intent, 'event_code': invitation['code'],
-                                  'last_expected_intent': None}}
+                    database.update_user_object(
+                        username_or_id=invitation['username'],
+                        space_name=space.key,
+                        change={
+                            '$set': {
+                                'last_intent': intent, 'event_code': invitation['code'],
+                                'last_expected_intent': None,
+                            }
+                        },
                     )
                 time.sleep(BATCH_MESSAGE_TIMEOUT)
     for event in yesterday_events:

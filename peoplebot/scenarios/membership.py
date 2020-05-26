@@ -27,7 +27,11 @@ def try_membership_management(ctx: Context, database: Database):
                 continue
             existing = database.mongo_membership.find_one({'username': login, 'is_member': True})
             if existing is None:
-                database.mongo_membership.update_one({'username': login}, {'$set': {'is_member': True}}, upsert=True)
+                database.mongo_membership.update_one(
+                    {'username': login, 'space': ctx.space.key},
+                    {'$set': {'is_member': True}},
+                    upsert=True
+                )
                 resp = resp + '\n@{} успешно добавлен(а) в список членов КЛУБА.'.format(login)
             else:
                 resp = resp + '\n@{} уже является членом КЛУБА.'.format(login)
@@ -43,13 +47,17 @@ def try_membership_management(ctx: Context, database: Database):
             if not matchers.is_like_telegram_login(login):
                 resp = resp + '\nСлово "{}" не очень похоже на логин, пропускаю.'.format(login)
                 continue
-            existing = database.mongo_membership.find_one({'username': login})
+            existing = database.mongo_membership.find_one({'username': login, 'space': ctx.space})
             if existing is not None and existing.get('is_member'):
                 resp = resp + '\n@{} уже является членом СООБЩЕСТВА и даже КЛУБА.'.format(login)
             elif existing is not None and existing.get('is_guest'):
                 resp = resp + '\n@{} уже является членом СООБЩЕСТВА (но не КЛУБА).'.format(login)
             else:
-                database.mongo_membership.update_one({'username': login}, {'$set': {'is_guest': True}}, upsert=True)
+                database.mongo_membership.update_one(
+                    {'username': login, 'space': ctx.space.key},
+                    {'$set': {'is_guest': True}},
+                    upsert=True
+                )
                 resp = resp + '\n@{} успешно добавлен(а) в список членов СООБЩЕСТВА (но не КЛУБА).'.format(login)
         ctx.response = resp
     elif re.match('(добавь|добавить)( нов(ых|ого))? (члена|членов)', ctx.text_normalized):

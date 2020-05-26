@@ -1,5 +1,6 @@
 import time
 
+from utils.spaces import SpaceConfig
 from utils.telegram import render_markup
 from utils.database import LoggedMessage
 
@@ -53,10 +54,10 @@ class BaseSender:
 
 
 class TelegramSender(BaseSender):
-    def __init__(self, bot, config=None, timeout=0):
+    def __init__(self, bot, space: SpaceConfig, timeout=0):
         self.bot = bot
-        self.config = config
-        self.admin_uid = config.ADMIN_UID
+        self.space = space
+        self.admin_uid = space.owner_uid
         self.timeout = timeout
 
     def __call__(
@@ -89,11 +90,11 @@ class TelegramSender(BaseSender):
 
             LoggedMessage(
                 text=text, user_id=user_id, from_user=False, database=database,
-                intent=intent, meta=meta, username=username
+                intent=intent, meta=meta, username=username, space_name=self.space.key,
             ).save()
             if reset_intent:
                 database.mongo_users.update_one(
-                    {'tg_id': user_id},
+                    {'tg_id': user_id, 'space': self.space.key},
                     {'$set': {'last_expected_intent': None, 'last_intent': intent or 'probably_some_push'}}
                 )
             if self.timeout:
@@ -105,7 +106,8 @@ class TelegramSender(BaseSender):
                 'Текст: {}'.format(text[:1000]),
                 'user_id: {}'.format(user_id),
                 'chat_id: {}'.format(reply_to.chat.username if reply_to is not None else None),
-                'error: {}'.format(e)
+                'space: {}'.format(self.space.key),
+                'error: {}'.format(e),
             ])
             if notify_on_error and self.admin_uid is not None:
                 self.bot.send_message(self.admin_uid, error)

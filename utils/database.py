@@ -50,6 +50,7 @@ class Database:
             return
         logger.info('updating database cache...')
         self._cache_time = datetime.now()
+        # todo: add spaces into the keys
         self._cached_mongo_membership = {item['username']: item for item in self.mongo_membership.find({})}
         self._cached_mongo_participations = make_multidict(self.mongo_participations.find({}), 'username')
 
@@ -83,6 +84,16 @@ class Database:
     @property
     def db(self):
         return self._mongo_db
+
+    def update_user_object(self, username_or_id, space_name, change, use_id=False):
+        filters = {
+            'space': space_name,
+        }
+        if use_id:
+            filters['tg_id'] = username_or_id
+        else:
+            filters['username'] = username_or_id
+        self.mongo_users.update_one(filters, change or {})
 
 
 class LoggedMessage:
@@ -122,7 +133,7 @@ class LoggedMessage:
         return result
 
 
-def get_or_insert_user(tg_user=None, tg_uid=None, database: Database=None):
+def get_or_insert_user(space_name, tg_user=None, tg_uid=None, database: Database=None):
     if tg_user is not None:
         uid = tg_user.id
     elif tg_uid is not None:
@@ -130,14 +141,18 @@ def get_or_insert_user(tg_user=None, tg_uid=None, database: Database=None):
     else:
         return None
     assert database is not None
-    found = database.mongo_users.find_one({'tg_id': uid})
+    found = database.mongo_users.find_one({'tg_id': uid, 'space': space_name})
     if found is not None:
         if tg_user is not None and found.get('username') != matchers.normalize_username(tg_user.username):
+            # todo: when updating username, keep track of old usernames and/or rewrite
+            #  - peoplebook
+            #  - membership
+            # todo: update usernames in multiple spaces
             database.mongo_users.update_one(
-                {'tg_id': uid},
+                {'tg_id': uid, 'space': space_name},
                 {'$set': {'username': matchers.normalize_username(tg_user.username)}}
             )
-            found = database.mongo_users.find_one({'tg_id': uid})
+            found = database.mongo_users.find_one({'tg_id': uid, 'space': space_name})
         return found
     if tg_user is None:
         return ValueError('User should be created, but telegram user object was not provided.')
@@ -146,7 +161,8 @@ def get_or_insert_user(tg_user=None, tg_uid=None, database: Database=None):
         first_name=tg_user.first_name,
         last_name=tg_user.last_name,
         username=matchers.normalize_username(tg_user.username),
-        wants_next_coffee=False
+        wants_next_coffee=False,
+        space=space_name,
     )
     database.mongo_users.insert_one(new_user)
     return new_user

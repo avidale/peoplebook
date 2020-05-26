@@ -3,8 +3,9 @@ import telebot
 from flask import Blueprint, request
 from typing import Dict
 
-from utils.spaces import SpaceConfig
 from utils.database import Database
+from utils.messaging import BaseSender, TelegramSender
+from utils.spaces import SpaceConfig
 
 
 class Multiverse:
@@ -17,6 +18,7 @@ class Multiverse:
         self.base_url = base_url
         self.spaces_dict: Dict[str, SpaceConfig] = {}
         self.bots_dict: Dict[str, telebot.TeleBot] = {}
+        self.senders_dict: Dict[str, BaseSender] = {}
 
         self.app = Blueprint('bot_app', __name__)
         self.bot_url_prefix = bot_url_prefix  # todo: move it into the blueprint
@@ -36,13 +38,15 @@ class Multiverse:
         # respond(message=msg, database=self.db, sender=SENDER, bot=bot, space_cfg=space)
         raise NotImplementedError()
 
-    def create_bots(self):
+    def create_bots(self, timeout_between_messages=0.3):
         """ Setup a telegram bot for each space """
         for space_name, space in self.spaces_dict.items():
             if not space.bot_token:
                 continue
             bot = telebot.TeleBot(token=space.bot_token)
             self.bots_dict[space_name] = bot
+            sender = TelegramSender(space=space, bot=bot, timeout=timeout_between_messages)
+            self.senders_dict[space_name] = sender
 
             def process_message(msg):
                 self.respond(message=msg, space=space)
