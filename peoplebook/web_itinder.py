@@ -13,11 +13,17 @@ import config as cfg
 from similarity import matchers, basic_nlu, similarity_tools
 from similarity.semantic_search import SemanticSearcher, get_searcher_data, extract_all_chunks
 
-from flask import render_template, request
-from flask_login import login_required
+from flask import render_template, request, Blueprint
+from flask_login import login_required, current_user
 
-from peoplebook.web_flask import app, get_profiles_for_event
+from peoplebook.web_flask import get_profiles_for_event
 from peoplebook.web_flask import mongo_peoplebook, get_current_username
+
+from peoplebook.web import SPACE_NOT_FOUND, get_space_config, mongo_db, check_space
+
+
+itinder_bp = Blueprint('itinder', __name__)
+
 
 CURRENT_EVENT = 'newyear2019'
 pb_list = list(mongo_peoplebook.find({'space': cfg.DEFAULT_SPACE}))  # get_profiles_for_event(CURRENT_EVENT)
@@ -87,7 +93,7 @@ sims = np.dot(user_vecs, user_vecs.T)
 dissimilar_pairs = similarity_tools.assign_pairs(sims, n_pairs=20)
 
 
-@app.route('/similarity', methods=['POST', 'GET'])
+@itinder_bp.route('/similarity', methods=['POST', 'GET'])
 @login_required
 def similarity_page(one=None, another=None):
     pb_list = sorted(
@@ -138,13 +144,13 @@ def similarity_page(one=None, another=None):
     )
 
 
-@app.route('/similarity/<one>/<another>', methods=['POST', 'GET'])
+@itinder_bp.route('/similarity/<one>/<another>', methods=['POST', 'GET'])
 @login_required
 def similarity_page_parametrized(one, another):
     return similarity_page(one=one, another=another)
 
 
-@app.route('/itinder_search', methods=['POST', 'GET'])
+@itinder_bp.route('/itinder_search', methods=['POST', 'GET'])
 @login_required
 def search_page(text=None):
     if request.form and request.form.get('req_text'):
@@ -163,13 +169,13 @@ def search_page(text=None):
     )
 
 
-@app.route('/itinder')
+@itinder_bp.route('/itinder')
 @login_required
 def itinder():
     return render_template('itinder.html')
 
 
-@app.route('/most_similar', methods=['POST', 'GET'])
+@itinder_bp.route('/most_similar', methods=['POST', 'GET'])
 @login_required
 def most_similar_page(username=None):
     if username is None:
@@ -183,12 +189,12 @@ def most_similar_page(username=None):
     return render_template('most_similar.html', results=top, profile=profile)
 
 
-@app.route('/most_similar/<username>', methods=['POST', 'GET'])
+@itinder_bp.route('/most_similar/<username>', methods=['POST', 'GET'])
 def most_similar_page_parametrized(username):
     return most_similar_page(username=username)
 
 
-@app.route('/least_similar', methods=['POST', 'GET'])
+@itinder_bp.route('/least_similar', methods=['POST', 'GET'])
 @login_required
 def least_similar_page(username=None):
     if username is None:
@@ -212,6 +218,32 @@ def least_similar_page(username=None):
     return render_template('least_similar.html', results=top, profile=profile)
 
 
-@app.route('/least_similar/<username>', methods=['POST', 'GET'])
+@itinder_bp.route('/least_similar/<username>', methods=['POST', 'GET'])
 def least_similar_page_parametrized(username):
     return least_similar_page(username=username)
+
+
+@itinder_bp.route('/search', methods=['POST', 'GET'])
+@itinder_bp.route('/<space>/search', methods=['POST', 'GET'])
+@login_required
+def search(space=cfg.DEFAULT_SPACE):
+    if not check_space(space):
+        return SPACE_NOT_FOUND
+    if request.form and request.form.get('req_text'):
+        req_text = request.form['req_text']
+        results = searcher.lookup(req_text)
+        pb_dict = get_pb_dict()
+        for r in results:
+            r['profile'] = pb_dict.get(r['username'], {})
+    else:
+        req_text = None
+        results = None
+    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+    return render_template(
+        'search.html',
+        req_text=req_text,
+        results=results,
+        title='',
+        space_cfg=space_cfg,
+        user=current_user,
+    )

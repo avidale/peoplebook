@@ -1,8 +1,10 @@
 pytelegrambotapi
 pytest
 flask
+flask-wtf
 pymongo
 pymorphy2
+pymorphy2-dicts
 sentry-sdk
 pyyaml
 mongomock
@@ -16,8 +18,6 @@ gunicorn
 autolink
 flask-login
 textdistance
-pymorphy2
-pymorphy2-dicts
 numpy
 pyemd
 scikit-learn

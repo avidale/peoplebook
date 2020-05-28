@@ -8,8 +8,15 @@ import hashlib
 from flask import Flask
 from flask_login import LoginManager, current_user
 
+from flask_wtf import CSRFProtect
+
+
 app = Flask(__name__)
 app.secret_key = os.environ.get('APP_KEY')
+
+# csrf for forms
+csrfp = CSRFProtect()
+csrfp.init_app(app)
 
 # flask-login
 login_manager = LoginManager()
