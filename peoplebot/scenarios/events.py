@@ -89,7 +89,7 @@ def is_future_event(event, may_be_today=True):
 
 
 def render_full_event(ctx: Context, database: Database, the_event):
-    response = format_event_description(the_event, user_tg_id=ctx.user_object['tg_id'])
+    response = format_event_description(the_event, user_tg_id=ctx.user_object['tg_id'], space_name=ctx.space.key)
     the_participation = database.mongo_participations.find_one(
         {'username': ctx.user_object['username'], 'code': the_event['code'], 'space': ctx.space.key}
     )
@@ -112,12 +112,12 @@ def render_full_event(ctx: Context, database: Database, the_event):
 
 
 def make_invitation(invitation, database: Database, user_tg_id, space: SpaceConfig):
-    r = 'Здравствуйте! Вы были приглашены пользователем @{} на встречу Каппа Веди.\n'.format(invitation['invitor'])
+    r = 'Здравствуйте! Вы были приглашены пользователем @{} на встречу {}.\n'.format(invitation['invitor'], space.title)
     event_code = invitation.get('code', '')
     the_event = database.mongo_events.find_one({'code': event_code, 'space': space.key})
     if event_code == '' or the_event is None:
-        return 'Я не смог найти встречу, напишите @cointegrated пожалуйста.', 'ERROR', []
-    r = r + format_event_description(the_event, user_tg_id=user_tg_id)
+        return 'Я не смог найти встречу, напишите @{} пожалуйста.'.format(space.owner_username), 'ERROR', []
+    r = r + format_event_description(the_event, user_tg_id=user_tg_id, space_name=space.key)
     r = r + '\nВы сможете участвовать в этой встрече?'
     suggests = ['Да', 'Нет', 'Пока не знаю']
     intent = EventIntents.INVITE
@@ -138,7 +138,7 @@ def try_invitation(ctx: Context, database: Database):
         new_status = None
         event_code = ctx.user_object.get('event_code')
         if event_code is None:
-            ctx.response = 'Почему-то не удалось получить код встречи, сообщите @cointegrated'
+            ctx.response = 'Почему-то не удалось получить код встречи, сообщите @{}'.format(ctx.space.owner_username)
         elif matchers.is_like_yes(ctx.text_normalized):
             new_status = InvitationStatuses.ACCEPT
             ctx.intent = EventIntents.ACCEPT
@@ -150,20 +150,20 @@ def try_invitation(ctx: Context, database: Database):
                     + '<a href="{}">пиплбуке встречи</a>.'.format(event_url) \
                     + '\nДля этого, когда будете готовы, напишите мне "мой пиплбук"' \
                     + ' и ответьте на пару вопросов о себе.'\
-                    + '\nЕсли вы есть, будьте первыми!'
+                    + ctx.space.text_after_messages
             else:
                 t = '\nВозможно, вы хотите обновить свою страничку в ' \
                     + '<a href="{}">пиплбуке встречи</a>.'.format(event_url) \
                     + '\nДля этого, когда будете готовы, напишите мне "мой пиплбук"' \
                     + ' и ответьте на пару вопросов о себе.' \
-                    + '\nЕсли вы есть, будьте первыми!'
+                    + ctx.space.text_after_messages
             ctx.response = ctx.response + t
             # todo: tell the details and remind about money
         elif matchers.is_like_no(ctx.text_normalized):
             new_status = InvitationStatuses.REJECT
             ctx.intent = EventIntents.REJECT
             ctx.response = 'Мне очень жаль, что у вас не получается. ' \
-                           'Но, видимо, такова жизнь. Если вы есть, будьте первыми!'
+                           'Но, видимо, такова жизнь.' + ctx.space.text_after_messages
             # todo: ask why the user rejects it
         elif re.match('пока не знаю', ctx.text_normalized):
             new_status = InvitationStatuses.ON_HOLD
@@ -293,7 +293,7 @@ def try_event_usage(ctx: Context, database: Database):
                 upsert=True
             )
     elif ctx.last_expected_intent == 'EVENT_REPORT_PAYMENT_DETAILS':
-        ctx.response = 'Спасибо за предоставленную информацию. \nЕсли вы есть, будьте первыми!'
+        ctx.response = 'Спасибо за предоставленную информацию.' + ctx.space.text_after_messages
         ctx.intent = 'EVENT_REPORT_PAYMENT_DETAILS'
         database.mongo_participations.update_one(
             event_user_filter,
@@ -326,7 +326,7 @@ def try_event_usage(ctx: Context, database: Database):
         the_login = ctx.text.strip().strip('@').lower()
         event_code = ctx.user_object.get('event_code')
         if event_code is None:
-            ctx.response = 'Почему-то не удалось получить код события, сообщите @cointegrated'
+            ctx.response = 'Почему-то не удалось получить код события, сообщите @{}'.format(ctx.space.owner_username)
         elif not matchers.is_like_telegram_login(the_login):
             f = 'Текст "{}" не похож на логин в телеграме. Если хотите попробовать снова, нажмите /invite опять.'
             ctx.response = f.format(the_login)
@@ -355,8 +355,9 @@ def try_event_usage(ctx: Context, database: Database):
                 )
                 r = 'Юзер @{} был добавлен в список участников встречи!'.format(the_login)
                 if never_used_this_bot:
-                    r = r + '\nПередайте ему/ей ссылку на меня (@kappa_vedi_bot), ' \
-                            'чтобы подтвердить участие и заполнить пиплбук (увы, бот не может писать первым).'
+                    r = r + '\nПередайте ему/ей ссылку на меня (@{}), '.format(ctx.space.bot_username) + \
+                        'чтобы подтвердить участие и заполнить пиплб' \
+                        'ук (увы, бот не может писать первым).'
                 else:
                     sent_invitation_to_user(the_login, event_code, database, ctx.sender, space=ctx.space)
                 ctx.response = r
@@ -415,7 +416,7 @@ def try_event_creation(ctx: Context, database: Database):
     if re.match('созда(ть|й) встречу', ctx.text_normalized):
         ctx.intent = EventCreationIntents.INIT
         ctx.expected_intent = EventCreationIntents.SET_TITLE
-        ctx.response = 'Придумайте название встречи (например, Встреча Каппа Веди 27 апреля):'
+        ctx.response = 'Придумайте название встречи (например, Встреча {} 27 апреля):'.format(ctx.space.title)
         ctx.the_update = {'$set': {'event_to_create': {'space': ctx.space.key}}}
         ctx.suggests.append('Отменить создание встречи')
     elif re.match('отменить создание встречи', ctx.text_normalized):
@@ -637,7 +638,9 @@ def try_event_edition(ctx: Context, database: Database):
         ctx.intent = 'EVENT_GET_INVITATION_STATUSES'
         event_members = list(database.mongo_participations.find({'code': event_code, 'space': ctx.space.key}))
         if len(event_members) == 0:
-            ctx.response = 'Пока в этой встрече совсем нет участников. Если вы есть, будьте первыми!!!'
+            ctx.response = 'Пока в этой встрече совсем нет участников.'
+            if ctx.space.key == 'kv':
+                ctx.response = ctx.response + '\nЕсли вы есть, будьте первыми!!!'
         else:
             statuses = [InvitationStatuses.translate(em['status'], em.get('payment_status')) for em in event_members]
             descriptions = '\n'.join([
@@ -740,7 +743,7 @@ def try_event_edition(ctx: Context, database: Database):
                    'Пиплбук: <a href="{}">смотреть</a>\n' \
                    'У вас есть 5 минут на разговор :)\n' \
                    'Приятного общения!\n' \
-                   'Если вы есть, будьте первыми!\n\n' \
+                   '\n' \
                    'P.S. Если вам пришло два сообщения про пары сразу - вы словили редкую удачу, ' \
                    'и вам предстоит собраться сразу в тройку (:'.format(
                     another['username'],
@@ -927,15 +930,17 @@ def daily_event_management(database: Database, sender: Callable, space: SpaceCon
                 continue
             if invitation.get('payment_status') != InvitationStatuses.PAYMENT_PAID and \
                     event['days_to'] in {0, 1, 3, 5, 7, 14, 21}:
-                text = 'Здравствуйте, {}! Осталось всего {} дней до очередной встречи Каппа Веди - /{}.' \
+                text = 'Здравствуйте, {}! Осталось всего {} дней до очередной встречи {} - /{}.' \
                        '\nКажется, вы всё ещё не оплатили своё участие во встрече. ' \
                        'Пожалуйста, сделайте это заранее!' \
                        '\n Если вы уже оплатили, пожалуйста, сообщите об этом, ' \
                        'нажав кнопку "Сообщить об оплате".' \
-                       '\nЕсли вы есть, будьте первыми!'.format(
+                       '{}'.format(
+                            space.title,
                             user_account.get('first_name', 'товарищ ' + user_account.get('username', 'Анонимус')),
                             event['days_to'] + 1,
-                            invitation['code']
+                            invitation['code'],
+                            space.text_after_messages
                         )
                 intent = EventIntents.PAYMENT_REMINDER
                 suggests = ['Сообщить об оплате'] + make_standard_suggests(database=database, user_object=user_account)
@@ -952,13 +957,14 @@ def daily_event_management(database: Database, sender: Callable, space: SpaceCon
                     )
                 time.sleep(BATCH_MESSAGE_TIMEOUT)
             elif event['days_to'] in {0, 5}:
-                text = 'Здравствуйте, {}! Осталось всего {} дней до очередной встречи Каппа Веди\n'.format(
+                text = 'Здравствуйте, {}! Осталось всего {} дней до очередной встречи {}\n'.format(
+                    space.title,
                     user_account.get('first_name', 'товарищ ' + user_account.get('username', 'Анонимус')),
                     event['days_to'] + 1
                 )
-                text = text + format_event_description(event, user_tg_id=user_account['tg_id'])
+                text = text + format_event_description(event, user_tg_id=user_account['tg_id'], space_name=space.key)
                 text = text + '\nСоветую вам полистать пиплбук встречи заранее, чтобы нетворкаться на ней эффективнее.'
-                text = text + '\nЕсли вы есть, будьте первыми! \U0001f60e'
+                text = text + '\n' + space.text_after_messages + '\U0001f60e'
                 intent = EventIntents.NORMAL_REMINDER
                 suggests = make_standard_suggests(database=database, user_object=user_account)
                 if sender(text=text, database=database, suggests=suggests, user_id=user_account['tg_id']):

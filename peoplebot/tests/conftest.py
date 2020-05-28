@@ -62,6 +62,8 @@ def mocked_space_dict():
         title='Space for autotests',
         bot_token='lol:kek',
         admins=['an_admin'],
+        text_help_authorized='help for internals',
+        text_help_unauthorized='help for externals',
     )
 
 
