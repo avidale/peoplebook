@@ -108,7 +108,7 @@ class Database:
 
     def get_space(self, space_name) -> SpaceConfig:
         self._update_cache()
-        return self._cached_spaces[space_name]
+        return self._cached_spaces.get(space_name)
 
     @property
     def db(self):

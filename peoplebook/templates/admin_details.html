@@ -1,0 +1,34 @@
+{% extends 'basic_template.html' %}
+
+{% block content %}
+
+
+<section>
+    <div class="container">
+        <h1>Опасная зона! Настройка параметров сообщества {{ space.title }} </h1>
+        <br>
+        {% if update_status %}
+        <div>
+            <b>{{ update_status }}</b>
+        </div>
+        {% endif %}
+        <form action="" method="post" novalidate>
+            {{ form.hidden_tag() }}
+            {% for field in form %}
+                {% if field.type != "CSRFTokenField" and field.type != "SubmitField" %}
+                    <div>
+                        {{ field.label }}<br>
+                        {% if field.description %}
+                            <small>{{ field.description }}<br></small>
+                        {% endif %}
+                        {{ field }}
+                    </div>
+                {% endif %}
+            {% endfor %}
+            <p>{{ form.submit() }}</p>
+        </form>
+    </div>
+</section>
+
+
+{% endblock %}

@@ -10,7 +10,6 @@ from peoplebook.web_flask import app, get_users, get_profiles_for_event, get_cur
 from peoplebook.web_flask import mongo_events, mongo_participations, mongo_membership, mongo_peoplebook, mongo_db
 from peoplebook.web_flask import history_config
 
-from peoplebook.web_itinder import get_pb_dict, searcher
 
 from utils.database import Database
 from utils.spaces import get_space_config
@@ -182,32 +181,6 @@ def my_profile(space=cfg.DEFAULT_SPACE):
     return peoplebook_for_person(
         username=get_current_username(),
         space=space,
-    )
-
-
-@app.route('/search', methods=['POST', 'GET'])
-@app.route('/<space>/search', methods=['POST', 'GET'])
-@login_required
-def search(space=cfg.DEFAULT_SPACE):
-    if not check_space(space):
-        return SPACE_NOT_FOUND
-    if request.form and request.form.get('req_text'):
-        req_text = request.form['req_text']
-        results = searcher.lookup(req_text)
-        pb_dict = get_pb_dict()
-        for r in results:
-            r['profile'] = pb_dict.get(r['username'], {})
-    else:
-        req_text = None
-        results = None
-    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
-    return render_template(
-        'search.html',
-        req_text=req_text,
-        results=results,
-        title='',
-        space_cfg=space_cfg,
-        user=current_user,
     )
 
 

@@ -6,6 +6,8 @@ import sentry_sdk
 from peoplebot.new_main import MULTIVERSE, DATABASE
 from peoplebook.web import app
 
+from peoplebook.web_itinder import itinder_bp
+from peoplebook.admins import admin_bp
 
 logging.basicConfig(level=logging.INFO)
 
@@ -37,6 +39,8 @@ def run_bot_and_book():
             MULTIVERSE.set_web_hooks()
             app.register_blueprint(MULTIVERSE.app)
         app.database = DATABASE
+        app.register_blueprint(itinder_bp)
+        app.register_blueprint(admin_bp)
         app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
 
 
