@@ -112,7 +112,7 @@ def peoplebook_for_all_members(space=cfg.DEFAULT_SPACE):
     space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
     return render_template(
         'backend_peoplebook.html',
-        title='Члены клуба Каппа Веди',
+        title='Члены клуба {}'.format(space_cfg.title),
         profiles=profiles,
         space_cfg=space_cfg,
         user=current_user,

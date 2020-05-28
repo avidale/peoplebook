@@ -13,21 +13,33 @@ class SpaceConfig:
             key,
             title,
             bot_token=None,
+            bot_username=None,
             peoplebook_is_public=False,
             member_chat_id=None,
             guest_chat_id=None,
             owner_uid=None,
+            owner_username='cointegrated',
             admins=None,
+            text_help_authorized=None,  # todo: default one
+            text_help_unauthorized=None,  # todo: default one
+            text_after_messages='',
             **other_data
     ):
         self.key = key
         self.title = title
         self.bot_token = bot_token
+        self.bot_username = bot_username
         self.peoplebook_is_public = peoplebook_is_public
         self.member_chat_id = member_chat_id
         self.guest_chat_id = guest_chat_id
         self.owner_uid = owner_uid  # the one who runs the space and will receive bug reports
+        self.owner_username = owner_username
         self.admins = admins or []  # list of usernames of space admins (who can create events etc.)
+        self.text_help_authorized = text_help_authorized
+        self.text_help_unauthorized = text_help_unauthorized
+        if text_after_messages.strip() and not text_after_messages.startswith('\n'):
+            text_after_messages = '\n' + text_after_messages
+        self.text_after_messages = text_after_messages
 
         self.other_data = other_data
 

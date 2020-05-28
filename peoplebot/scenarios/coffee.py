@@ -93,7 +93,7 @@ def remind_about_coffee(
     response = None
     intent = None
     if force_restart or datetime.today().weekday() == 5:  # saturday
-        response = 'На этой неделе вы пьёте кофе {}.\nЕсли вы есть, будьте первыми!'.format(with_whom)
+        response = 'На этой неделе вы пьёте кофе {}. {}'.format(with_whom, space.text_after_messages)
         intent = INTENT_COFFEE_PUSH_FIRST
     elif datetime.today().weekday() == 4:  # friday
         response = 'На этой неделе вы, наверное, пили кофе {}.\nКак оно прошло?'.format(with_whom)
@@ -111,7 +111,7 @@ def remind_about_coffee(
             response = response + '\n\nКстати, кажется, вас нет в пиплбуке, а жаль: ' \
                                   'с пиплбуком даже незнакомому собеседнику проще будет начать с вами общение.' \
                                   '\nПожалуйста, когда будет время, напишите мне "мой пиплбук" ' \
-                                  'и заполните свою страничку.\nЕсли вы есть, будьте первыми!'
+                                  'и заполните свою страничку.{}'.format(space.text_after_messages)
         # avoiding circular imports
         from peoplebot.scenarios.suggests import make_standard_suggests
         suggests = make_standard_suggests(database=database, user_object=user_obj)
@@ -128,8 +128,8 @@ def try_coffee_management(ctx: Context, database: Database):
             ctx.intent = 'COFFEE_NO_USERNAME'
             ctx.response = 'Чтобы участвовать в random coffee, нужно иметь имя пользователя в Телеграме.' \
                            '\nПожалуйста, создайте себе юзернейм (ТГ > настройки > изменить профиль > ' \
-                           'имя пользователя) и попробуйте снова.\nВ случае ошибки напишите @cointegrated.' \
-                           '\nЕсли вы есть, будьте первыми!'
+                           'имя пользователя) и попробуйте снова.\nВ случае ошибки напишите @{}.' \
+                           '\n{}!'.format(ctx.space.owner_username, ctx.space.text_after_messages)
             return ctx
         ctx.the_update = {"$set": {'wants_next_coffee': True}}
         ctx.response = 'Окей, на следующей неделе вы будете участвовать в random coffee!'
@@ -174,6 +174,6 @@ def try_coffee_feedback_collection(ctx: Context, database: Database):
             ctx.response = random.choice([
                 'Благодарю за обратную связь! \U00002615',
                 'Спасибо за фибдек! Я рад, что вы пользуетесь Random Coffee \U0001F642',
-                'Спасибо, что делитесь своими впечатлениями. Если вы есть, будьте первыми!'
+                'Спасибо, что делитесь своими впечатлениями. {}'.format(ctx.space.text_after_messages)
             ])
     return ctx
