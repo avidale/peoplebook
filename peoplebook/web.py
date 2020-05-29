@@ -29,7 +29,12 @@ def check_space(space_name):
     return True
 
 
-@app.route('/')
+@app.route('/about')
+def about_peoplebook():
+    return render_template('about.html')
+
+
+@app.route('/')  # todo: stop serving the links without space
 @app.route('/<space>')
 @login_required
 def home(space=cfg.DEFAULT_SPACE):

@@ -54,7 +54,7 @@ class BaseSender:
 
 
 class TelegramSender(BaseSender):
-    def __init__(self, bot, space: SpaceConfig, timeout=0):
+    def __init__(self, bot, space: SpaceConfig, timeout=0.0):
         self.bot = bot
         self.space = space
         self.admin_uid = space.owner_uid
