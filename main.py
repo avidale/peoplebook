@@ -3,6 +3,7 @@ import logging
 import os
 import sentry_sdk
 
+from fatherbot.main import father_bot, father_bot_bp
 from peoplebot.new_main import MULTIVERSE, DATABASE
 from peoplebook.web import app
 
@@ -29,6 +30,8 @@ def run_bot_and_book():
                 return
             else:
                 bot = list(MULTIVERSE.bots_dict.values())[0]
+        elif args.space == 'main':
+            bot = father_bot_bp
         else:
             bot = MULTIVERSE.bots_dict[args.space]
         bot.remove_webhook()
@@ -41,6 +44,7 @@ def run_bot_and_book():
         app.database = DATABASE
         app.register_blueprint(itinder_bp)
         app.register_blueprint(admin_bp)
+        app.register_blueprint(father_bot_bp)
         app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
 
 

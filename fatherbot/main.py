@@ -10,20 +10,7 @@ from utils.spaces import SpaceConfig
 
 from peoplebot.new_main import DATABASE
 
-FORBIDDEN_SPACE_NAMES = {
-    'about',
-    'admin',
-    'bot',
-    'contacts',
-    'details',
-    'faq',
-    'father_bot',
-    'features',
-    'help',
-    'main',
-    'meta',
-    'prices',
-}
+from fatherbot.space_creation import CREATE_A_SPACE, space_creation
 
 
 FATHER_BOT_USERNAME = 'the_peoplebot'
@@ -31,8 +18,8 @@ FATHER_BOT_TOKEN = os.getenv('FATHER_BOT_TOKEN', '')
 
 
 space = SpaceConfig(key='main', title='The meta space')
-bot = telebot.TeleBot(FATHER_BOT_TOKEN)
-sender = TelegramSender(bot=bot, space=space, timeout=0.3)
+father_bot = telebot.TeleBot(FATHER_BOT_TOKEN)
+sender = TelegramSender(bot=father_bot, space=space, timeout=0.3)
 
 father_bot_bp = Blueprint('father_bot', __name__)
 
@@ -51,6 +38,21 @@ MAIN_HELP = """Привет, человек!
 
 Чтобы зарегистрировать новое сообщество или управлять имеющимися, воспользуйтесь кнопками.
 """
+
+
+def first_respond(ctx: Context, database: Database):
+    if ctx.text in {'/help', '/start'} or not ctx.text:
+        ctx.intent = 'intro'
+        ctx.response = MAIN_HELP
+        ctx.suggests = [CREATE_A_SPACE]
+    return ctx
+
+
+def fallback_respond(ctx: Context, database: Database):
+    ctx.intent = 'fallback'
+    ctx.response = MAIN_HELP
+    ctx.suggests = [CREATE_A_SPACE]
+    return ctx
 
 
 def respond(message, database: Database, sender: BaseSender, space_cfg: SpaceConfig, bot=None):
@@ -72,13 +74,13 @@ def respond(message, database: Database, sender: BaseSender, space_cfg: SpaceCon
     )
 
     for handler in [
+        first_respond,
+        space_creation,
+        fallback_respond,
     ]:
         ctx = handler(ctx, database=database)
         if ctx.intent is not None:
             break
-    if ctx.intent is None or ctx.response is None:
-        ctx.intent = 'fallback'
-        ctx.response = MAIN_HELP
 
     database.update_user_object(
         username_or_id=message.from_user.id,
@@ -92,14 +94,14 @@ def respond(message, database: Database, sender: BaseSender, space_cfg: SpaceCon
     )
 
 
-@bot.message_handler(func=lambda message: True)
+@father_bot.message_handler(func=lambda message: True)
 def process_message(message: telebot.types.Message):
-    respond(message=message, database=DATABASE, bot=bot, sender=sender, space_cfg=space)
+    respond(message=message, database=DATABASE, bot=father_bot, sender=sender, space_cfg=space)
 
 
 @father_bot_bp.route('/telebot_webhook/' + FATHER_BOT_TOKEN, methods=['POST'])
 def get_message():
-    bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
+    father_bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
     return "!", 200
 
 
@@ -107,5 +109,5 @@ if __name__ == '__main__':
     app = Flask(__name__)
     app.register_blueprint(father_bot_bp)
     print('running the bot in the polling mode')
-    bot.polling()
+    father_bot.polling()
 
