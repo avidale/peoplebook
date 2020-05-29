@@ -16,7 +16,7 @@ app.secret_key = os.environ.get('APP_KEY')
 
 # csrf for forms
 csrfp = CSRFProtect()
-csrfp.init_app(app)
+# csrfp.init_app(app)  # we turn it off because it interferes with Telegram API
 
 # flask-login
 login_manager = LoginManager()
