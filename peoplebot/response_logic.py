@@ -141,6 +141,8 @@ class NewMultiverse(Multiverse):
     def all_random_coffee(self, force_restart=False):
         self.init_spaces()
         for space_name, space in self.spaces_dict.items():
+            if space_name not in self.senders_dict:
+                continue
             daily_random_coffee(
                 database=self.db,
                 sender=self.senders_dict[space_name],
@@ -151,6 +153,8 @@ class NewMultiverse(Multiverse):
     def all_event_management(self):
         self.init_spaces()
         for space_name, space in self.spaces_dict.items():
+            if space_name not in self.senders_dict:
+                continue
             daily_event_management(
                 database=self.db,
                 sender=self.senders_dict[space_name],
