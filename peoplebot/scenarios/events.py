@@ -5,12 +5,12 @@ import time
 
 from collections import Counter
 from datetime import datetime, timedelta
-from typing import Callable
 
 from peoplebot.scenarios.suggests import make_standard_suggests
 from peoplebot.scenarios.peoplebook_auth import make_pb_url
 from utils.database import Database
 from utils.dialogue_management import Context
+from utils.messaging import BaseSender
 from utils.spaces import SpaceConfig
 from utils import matchers
 
@@ -364,7 +364,7 @@ def try_event_usage(ctx: Context, database: Database):
     return ctx
 
 
-def sent_invitation_to_user(username, event_code, database: Database, sender: Callable, space: SpaceConfig):
+def sent_invitation_to_user(username, event_code, database: Database, sender: BaseSender, space: SpaceConfig):
     invitation = database.mongo_participations.find_one(
         {'username': username, 'code': event_code, 'space': space.key}
     )
@@ -865,7 +865,7 @@ def try_event_edition(ctx: Context, database: Database):
     return ctx
 
 
-def daily_event_management(database: Database, sender: Callable, space: SpaceConfig):
+def daily_event_management(database: Database, sender: BaseSender, space: SpaceConfig):
     all_users = {
         u['username']: u
         for u in database.mongo_users.find({'space': space.key})

@@ -1,7 +1,5 @@
-import re
-import config as cfg
-
 from utils.matchers import fast_normalize
+from utils.messaging import BaseSender
 from utils.spaces import SpaceConfig
 
 
@@ -17,7 +15,7 @@ class Context:
         self.last_expected_intent = user_object.get('last_expected_intent', '')
         self.text = text or ''
         self.text_normalized = fast_normalize(self.text)
-        self.sender = sender
+        self.sender: BaseSender = sender
 
         self.message = message
         self.bot = bot

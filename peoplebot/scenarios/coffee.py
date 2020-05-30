@@ -1,10 +1,10 @@
 import pymongo
 
 from datetime import datetime
-from typing import Callable
 
 from utils.database import Database
 from utils.dialogue_management import Context
+from utils.messaging import BaseSender
 from utils.spaces import SpaceConfig
 from utils import matchers
 
@@ -34,7 +34,7 @@ def get_coffee_score(text):
     return 0
 
 
-def daily_random_coffee(database: Database, sender: Callable, space: SpaceConfig, force_restart=False):
+def daily_random_coffee(database: Database, sender: BaseSender, space: SpaceConfig, force_restart=False):
     if force_restart or datetime.today().weekday() == 5:  # on saturday, we recalculate the matches
         now = datetime.utcnow()
         user_to_matches = generate_good_pairs(database, space=space, now=now)
@@ -73,7 +73,7 @@ def daily_random_coffee(database: Database, sender: Callable, space: SpaceConfig
 
 
 def remind_about_coffee(
-        user_obj, matches, database: Database, sender: Callable, space: SpaceConfig, force_restart=False
+        user_obj, matches, database: Database, sender: BaseSender, space: SpaceConfig, force_restart=False
 ):
     user_id = user_obj['tg_id']
     match_texts = []
@@ -116,7 +116,7 @@ def remind_about_coffee(
         from peoplebot.scenarios.suggests import make_standard_suggests
         suggests = make_standard_suggests(database=database, user_object=user_obj)
         sender(user_id=user_id, text=response, database=database, suggests=suggests,
-               reset_intent=True, intent=intent, space=space)
+               reset_intent=True, intent=intent)
 
 
 def try_coffee_management(ctx: Context, database: Database):
