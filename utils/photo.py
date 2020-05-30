@@ -19,23 +19,41 @@ def photo_url_from_message(bot, message):
 
 
 def load_photo_from_message(bot, message, directory='offline'):
-    file_info = None
     file_name = None
+    file_id = None
     if message.photo is not None:
         for p in message.photo:
-            file_info = bot.get_file(p.file_id)
-            file_name = file_info.file_path.replace('/', '__')
+            file_id = p.file_id
     elif message.document is not None:
-        file_info = bot.get_file(message.document.file_id)
+        file_id = message.document.file_id
         file_name = message.document.file_name
-    if file_info is None:
+    if file_id is None:
         return None
+    return load_photo_from_file(file_id=file_id, bot=bot, directory=directory, file_name=file_name)
 
+
+def load_user_profile_photo(user_id, bot):
+    """ Get the local filename of the largest version of the first (leftmost) user profile photo, or None """
+    photos_obj = bot.get_user_profile_photos(user_id=user_id)
+    for row in photos_obj.photos:
+        current_size = 0
+        current_file_id = None
+        for photo_obj in row:
+            if photo_obj.width >= current_size:
+                current_size = photo_obj.width
+                current_file_id = photo_obj.file_id
+        if current_size > 0:
+            return load_photo_from_file(bot, current_file_id)
+
+
+def load_photo_from_file(bot, file_id, directory='offline', file_name=None):
+    file_info = bot.get_file(file_id)
+    if file_name is None:
+        file_name = file_info.file_path.replace('/', '__')
     downloaded_file = bot.download_file(file_info.file_path)
     full_file_name = os.path.join(directory, file_name)
     with open(full_file_name, 'wb') as f:
         f.write(downloaded_file)
-
     return full_file_name
 
 
