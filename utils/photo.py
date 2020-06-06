@@ -18,6 +18,15 @@ def photo_url_from_message(bot, message):
     return url
 
 
+def profile_photo_url_from_message(bot, message):
+    url = None
+    with tempfile.TemporaryDirectory() as temp_dir:
+        filename = load_user_profile_photo(bot=bot, user_id=message.from_user.id, directory=temp_dir)
+        if filename is not None:
+            url = upload_photo_to_cloudinary(filename)
+    return url
+
+
 def load_photo_from_message(bot, message, directory='offline'):
     file_name = None
     file_id = None
@@ -32,7 +41,7 @@ def load_photo_from_message(bot, message, directory='offline'):
     return load_photo_from_file(file_id=file_id, bot=bot, directory=directory, file_name=file_name)
 
 
-def load_user_profile_photo(user_id, bot):
+def load_user_profile_photo(user_id, bot, directory='offline'):
     """ Get the local filename of the largest version of the first (leftmost) user profile photo, or None """
     photos_obj = bot.get_user_profile_photos(user_id=user_id)
     for row in photos_obj.photos:
@@ -43,7 +52,7 @@ def load_user_profile_photo(user_id, bot):
                 current_size = photo_obj.width
                 current_file_id = photo_obj.file_id
         if current_size > 0:
-            return load_photo_from_file(bot, current_file_id)
+            return load_photo_from_file(bot, current_file_id, directory=directory)
 
 
 def load_photo_from_file(bot, file_id, directory='offline', file_name=None):

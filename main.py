@@ -24,6 +24,7 @@ def run_bot_and_book():
     parser.add_argument('--nobot', action='store_true', help='Do not run the bots (peoplebook only)')
     args = parser.parse_args()
     if args.poll:
+        # todo: don't run the searcher here because it is slow
         if not args.space:
             if len(MULTIVERSE.bots_dict) > 1:
                 print('There are multiple bots. To run one, provide the --space argument.')
@@ -33,6 +34,7 @@ def run_bot_and_book():
         elif args.space == 'main':
             bot = father_bot_bp
         else:
+            print('I will start the bot for space {}'.format(args.space))
             bot = MULTIVERSE.bots_dict[args.space]
         bot.remove_webhook()
         print('running a bot in the polling mode')

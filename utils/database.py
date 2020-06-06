@@ -46,6 +46,8 @@ class Database:
         self.message_queue = self._mongo_db.get_collection('message_queue')
         # (username: text, text: text, intent: text, fresh: bool)
         self.mongo_spaces = self._mongo_db.get_collection('spaces')
+        self.mongo_chat_waiting_list = self._mongo_db.get_collection('chat_waiting_list')
+        self.mongo_whois = self._mongo_db.get_collection('whois')
 
     def _update_cache(self, force=False):
         if not force and (datetime.now() - self._cache_time).total_seconds() < self.cache_ttl_seconds:
@@ -124,6 +126,20 @@ class Database:
             filters['username'] = username_or_id
         self.mongo_users.update_one(filters, change or {})
 
+    def add_member(self, username, space_name):
+        self.mongo_membership.update_one(
+            {'username': username, 'space': space_name},
+            {'$set': {'is_member': True}},
+            upsert=True
+        )
+
+    def add_guest(self, username, space_name):
+        self.mongo_membership.update_one(
+            {'username': username, 'space': space_name},
+            {'$set': {'is_guest': True}},
+            upsert=True
+        )
+
 
 class LoggedMessage:
     def __init__(
@@ -163,6 +179,7 @@ class LoggedMessage:
 
 
 def get_or_insert_user(space_name, tg_user=None, tg_uid=None, database: Database = None):
+    # todo: make user object a class
     if tg_user is not None:
         uid = tg_user.id
     elif tg_uid is not None:

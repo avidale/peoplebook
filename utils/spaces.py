@@ -1,10 +1,18 @@
 from typing import Optional
 
 
-class FEATURE_NAMES:
+class FeatureName:
     COFFEE = 'coffee'
     EVENTS = 'events'
     PEOPLEBOOK = 'peoplebook'
+
+
+class MembershipStatus:
+    NONE = 'none'
+    GUEST = 'guest'
+    MEMBER = 'member'
+    ADMIN = 'admin'
+    OWNER = 'owner'
 
 
 class SpaceConfig:
@@ -23,6 +31,10 @@ class SpaceConfig:
             text_help_authorized=None,  # todo: default one
             text_help_unauthorized=None,  # todo: default one
             text_after_messages='',
+            add_chat_members_to_community=MembershipStatus.NONE,
+            require_whois=False,
+            public_chat_intro_text=None,
+            public_chat_greeting_text=None,
             **other_data
     ):
         self.key = key
@@ -40,6 +52,7 @@ class SpaceConfig:
         if text_after_messages.strip() and not text_after_messages.startswith('\n'):
             text_after_messages = '\n' + text_after_messages
         self.text_after_messages = text_after_messages
+        self.add_chat_members_to_community = add_chat_members_to_community
 
         self.other_data = other_data
 
@@ -52,11 +65,11 @@ class SpaceConfig:
 
     def supports(self, feature):
         # todo: make it configurable
-        if feature == FEATURE_NAMES.COFFEE:
+        if feature == FeatureName.COFFEE:
             return True
-        elif feature == FEATURE_NAMES.EVENTS:
+        elif feature == FeatureName.EVENTS:
             return self.key == 'kv'
-        elif feature == FEATURE_NAMES.PEOPLEBOOK:
+        elif feature == FeatureName.PEOPLEBOOK:
             return True
         else:
             return True
