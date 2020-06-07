@@ -12,7 +12,7 @@ ALL_CONTENT_TYPES = [
     'audio', 'channel_chat_created', 'contact', 'delete_chat_photo', 'document', 'group_chat_created',
     'left_chat_member',
     'location', 'migrate_from_chat_id', 'migrate_to_chat_id', 'new_chat_members', 'new_chat_photo', 'new_chat_title',
-    'photo', 'pinned_message', 'sticker', 'supergroup_chat_created', 'text', 'video', 'video_note', 'voice'
+    'photo', 'pinned_message', 'sticker', 'supergroup_chat_created', 'text', 'video', 'video_note', 'voice',
 ]
 
 
@@ -40,7 +40,7 @@ class Multiverse:
         space = self.spaces_dict[space_name]
         return '/' + self.bot_url_prefix + space.bot_token
 
-    def respond(self, message, space: SpaceConfig):
+    def respond(self, message, space: SpaceConfig, edited: bool = False):
         # respond(message=msg, database=self.db, sender=SENDER, bot=bot, space_cfg=space)
         raise NotImplementedError()
 
@@ -55,10 +55,10 @@ class Multiverse:
         updates_processor.__name__ = updates_processor.__name__ + '__' + function_suffix
         return updates_processor
 
-    def make_message_handler(self, space_name):
+    def make_message_handler(self, space_name, edited=False):
         def process_message(msg):
             space = self.db.get_space(space_name)
-            self.respond(message=msg, space=space)
+            self.respond(message=msg, space=space, edited=edited)
         return process_message
 
     def create_bots(self, timeout_between_messages=0.3):
@@ -72,7 +72,10 @@ class Multiverse:
             self.senders_dict[space_name] = sender
 
             bot.message_handler(func=lambda message: True, content_types=ALL_CONTENT_TYPES)(
-                self.make_message_handler(space_name=space_name)
+                self.make_message_handler(space_name=space_name, edited=False)
+            )
+            bot.edited_message_handler(func=lambda message: True, content_types=ALL_CONTENT_TYPES)(
+                self.make_message_handler(space_name=space_name, edited=True)
             )
             self.app.route(self.bot_url_suffix(space_name), methods=['POST'])(
                 self.make_updates_processor(bot, function_suffix=space_name)

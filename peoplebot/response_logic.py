@@ -3,16 +3,18 @@ import os
 import random
 
 from collections import defaultdict
+from telebot.types import Message
 
 from utils.database import Database, LoggedMessage, get_or_insert_user
 from utils.dialogue_management import Context
 from utils.messaging import BaseSender
 from utils.multiverse import Multiverse
-from utils.spaces import SpaceConfig
+from utils.spaces import SpaceConfig, MembershipStatus
 
 
 from peoplebot.scenarios.events import try_invitation, try_event_usage, try_event_creation, try_event_edition
 from peoplebot.scenarios.peoplebook import try_peoplebook_management
+from peoplebot.scenarios.wachter import do_wachter_check
 from peoplebot.scenarios.conversation import try_conversation, fallback
 from peoplebot.scenarios.dog_mode import doggy_style
 from peoplebot.scenarios.push import try_queued_messages
@@ -30,14 +32,17 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def respond(message, database: Database, sender: BaseSender, space_cfg: SpaceConfig, bot=None):
+def respond(message: Message, database: Database, sender: BaseSender, space_cfg: SpaceConfig, bot=None, edited=False):
     # todo: make it less dependent on telebot Message class structure
     logger.info('Got message {} in space {} with type {} and text {}'.format(
         message.message_id, space_cfg.key, message.content_type, message.text
     ))
     # avoid duplicate response to some Telegram messages
-    if message.message_id in PROCESSED_MESSAGES[space_cfg.key]:
+    if message.message_id in PROCESSED_MESSAGES[space_cfg.key] and not edited:
+        print('ignoring a repeated message')
         return
+    elif edited:
+        print('processing an edited message')
     PROCESSED_MESSAGES[space_cfg.key].add(message.message_id)
 
     if message.chat.type != 'private':
@@ -46,6 +51,7 @@ def respond(message, database: Database, sender: BaseSender, space_cfg: SpaceCon
             return
         uo = get_or_insert_user(tg_user=message.from_user, space_name=space_cfg.key, database=database)
         if not uo.get('username'):
+            # todo: ask new users to provide usernames
             return
         user_filter = {'username': uo['username'], 'space': space_cfg.key}
         if space_cfg.member_chat_id and message.chat.id == space_cfg.member_chat_id:
@@ -54,6 +60,15 @@ def respond(message, database: Database, sender: BaseSender, space_cfg: SpaceCon
         elif space_cfg.guest_chat_id and message.chat.id == space_cfg.guest_chat_id:
             database.mongo_membership.update_one(user_filter, {'$set': {'is_guest': True}}, upsert=True)
             print('adding user {} to the community guests'.format(user_filter))
+        elif space_cfg.add_chat_members_to_community != MembershipStatus.NONE or space_cfg.require_whois:
+            do_wachter_check(
+                user_object=uo,
+                database=database,
+                space_cfg=space_cfg,
+                message=message,
+                bot=bot,
+                sender=sender,
+            )
         return
 
     if bot is not None:
@@ -109,7 +124,7 @@ def respond(message, database: Database, sender: BaseSender, space_cfg: SpaceCon
 
 
 class NewMultiverse(Multiverse):
-    def respond(self, message, space: SpaceConfig):
+    def respond(self, message, space: SpaceConfig, edited: bool = False):
         bot = self.bots_dict[space.key]
         sender = self.senders_dict[space.key]
         return respond(
@@ -118,6 +133,7 @@ class NewMultiverse(Multiverse):
             bot=bot,
             sender=sender,
             database=self.db,
+            edited=edited,
         )
 
     def add_custom_handlers(self):

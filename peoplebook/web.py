@@ -168,7 +168,8 @@ def peoplebook_for_person(username, space=cfg.DEFAULT_SPACE):
     space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
     the_profile = mongo_peoplebook.find_one({'username': username, 'space': space_cfg.key})
     if the_profile is None:
-        return 'Такого профиля не найдено!'
+        return 'Такого профиля в пиплбуке не найдено!\n' \
+               'Можно написать https://t.me/{} и предложить заполнить его!'.format(username)
     return render_template(
         'single_person.html',
         profile=the_profile,
