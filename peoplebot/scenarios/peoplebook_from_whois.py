@@ -47,3 +47,7 @@ def parse_whois_text(text):
         'topics': '',
         'contacts': '',
     }
+
+
+def validate_whois_text(text):
+    return len(text) >= 20 and len(set(text)) >= 10

@@ -41,8 +41,8 @@ def try_conversation(ctx: Context, database: Database):
 def fallback(ctx: Context, database: Database):
     if not database.is_at_least_guest(ctx.user_object):
         ctx.intent = Intents.UNAUTHORIZED
-        ctx.response = ctx.space.text_help_unauthorized
+        ctx.response = ctx.space.get_text_help_unauthorized()
     else:
         ctx.intent = Intents.OTHER
-        ctx.response = ctx.space.text_help_authorized
+        ctx.response = ctx.space.get_text_help_authorized()
     return ctx

@@ -3,7 +3,6 @@ import os
 import random
 
 from collections import defaultdict
-from datetime import datetime
 
 from utils.database import Database, LoggedMessage, get_or_insert_user
 from utils.dialogue_management import Context
@@ -14,7 +13,7 @@ from utils.spaces import SpaceConfig, MembershipStatus
 
 from peoplebot.scenarios.events import try_invitation, try_event_usage, try_event_creation, try_event_edition
 from peoplebot.scenarios.peoplebook import try_peoplebook_management
-from peoplebot.scenarios.peoplebook_from_whois import add_peoplebook_from_whois
+from peoplebot.scenarios.wachter import do_wachter_check
 from peoplebot.scenarios.conversation import try_conversation, fallback
 from peoplebot.scenarios.dog_mode import doggy_style
 from peoplebot.scenarios.push import try_queued_messages
@@ -57,72 +56,15 @@ def respond(message, database: Database, sender: BaseSender, space_cfg: SpaceCon
         elif space_cfg.guest_chat_id and message.chat.id == space_cfg.guest_chat_id:
             database.mongo_membership.update_one(user_filter, {'$set': {'is_guest': True}}, upsert=True)
             print('adding user {} to the community guests'.format(user_filter))
-        elif space_cfg.add_chat_members_to_community != MembershipStatus.NONE:
-            if not database.is_at_least_guest(user_object=uo):  # todo: check status properly
-                # todo: do the right thing if the bot itself was added to the chat (new_chat_members)
-                if not message.text or '#whois' not in message.text:
-                    waiting_filter = {
-                        'tg_id': message.from_user.id,
-                        'space': space_cfg.key,
-                        'chat_id': message.chat.id,
-                        'active': True,
-                    }
-                    waiting = database.mongo_chat_waiting_list.find_one(waiting_filter)
-                    if waiting is None:
-                        print('asking user for whois')
-                        sender(
-                            # todo: edit the text
-                            text='Приветствую вас! Представьтесь с тегом `#whois`, иначе я вас кикну.',
-                            reply_to=message,
-                            database=database,
-                            intent='ask_whois',
-                        )
-                        database.mongo_chat_waiting_list.insert_one(waiting_filter)
-                    else:
-                        print('not asking user for whois because alredy asked')
-                        # the bot has already greeted this user
-                        pass
-                else:
-                    # todo: validate the whois message
-                    print('processing the whois')
-                    database.mongo_whois.insert_one({
-                        'text': message.text,
-                        'tg_id': message.from_user.id,
-                        'username': message.from_user.username,
-                        'timestamp': str(datetime.utcnow()),
-                        'chat_id': message.chat.id,
-                        'space': space_cfg.key,
-                    })
-                    database.mongo_chat_waiting_list.update_many(
-                        {
-                            'tg_id': message.from_user.id,
-                            'space': space_cfg.key,
-                        },
-                        {
-                            '$set': {'active': False},
-                        }
-                    )
-                    add_peoplebook_from_whois(
-                        message=message,
-                        database=database,
-                        space_cfg=space_cfg,
-                        bot=bot,
-                    )
-                    if space_cfg.add_chat_members_to_community == MembershipStatus.GUEST:
-                        database.add_guest(username=message.from_user.username, space_name=space_cfg.key)
-                    else:
-                        # member or admin or owner => just member
-                        database.add_member(username=message.from_user.username, space_name=space_cfg.key)
-                    sender(
-                        # todo: edit the reply text
-                        text='Ура! Ваш хуиз прочитан!',
-                        reply_to=message,
-                        database=database,
-                        intent='reply_whois'
-                    )
-            else:
-                # todo: dont' print it
-                print('user {} is already a member of community {}'.format(uo.get('username'), space_cfg.key))
+        elif space_cfg.add_chat_members_to_community != MembershipStatus.NONE or space_cfg.require_whois:
+            do_wachter_check(
+                user_object=uo,
+                database=database,
+                space_cfg=space_cfg,
+                message=message,
+                bot=bot,
+                sender=sender,
+            )
         return
 
     if bot is not None:

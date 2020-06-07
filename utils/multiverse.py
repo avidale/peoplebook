@@ -12,7 +12,7 @@ ALL_CONTENT_TYPES = [
     'audio', 'channel_chat_created', 'contact', 'delete_chat_photo', 'document', 'group_chat_created',
     'left_chat_member',
     'location', 'migrate_from_chat_id', 'migrate_to_chat_id', 'new_chat_members', 'new_chat_photo', 'new_chat_title',
-    'photo', 'pinned_message', 'sticker', 'supergroup_chat_created', 'text', 'video', 'video_note', 'voice'
+    'photo', 'pinned_message', 'sticker', 'supergroup_chat_created', 'text', 'video', 'video_note', 'voice',
 ]
 
 
@@ -72,6 +72,9 @@ class Multiverse:
             self.senders_dict[space_name] = sender
 
             bot.message_handler(func=lambda message: True, content_types=ALL_CONTENT_TYPES)(
+                self.make_message_handler(space_name=space_name)
+            )
+            bot.edited_message_handler(func=lambda message: True, content_types=ALL_CONTENT_TYPES)(
                 self.make_message_handler(space_name=space_name)
             )
             self.app.route(self.bot_url_suffix(space_name), methods=['POST'])(
