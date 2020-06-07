@@ -117,7 +117,9 @@ class SpaceConfig:
         return 'Ура! Ваше приветствие распознано и появится в пиплбуке сообщества.'
 
     def get_public_chat_failed_greeting_text(self):
-        return ''
+        return 'Спасибо, что вы представились! ' \
+               'Мне нравится ваше представление, но хотелось бы узнать о вас побольше. ' \
+               'Пожалуйста, отредактируйте ваше сообщение, добавив больше деталей.'
 
 
 def get_space_config(mongo_db, space_name) -> Optional[SpaceConfig]:
