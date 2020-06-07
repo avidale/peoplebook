@@ -3,6 +3,7 @@ import os
 import random
 
 from collections import defaultdict
+from telebot.types import Message
 
 from utils.database import Database, LoggedMessage, get_or_insert_user
 from utils.dialogue_management import Context
@@ -31,14 +32,17 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def respond(message, database: Database, sender: BaseSender, space_cfg: SpaceConfig, bot=None):
+def respond(message: Message, database: Database, sender: BaseSender, space_cfg: SpaceConfig, bot=None, edited=False):
     # todo: make it less dependent on telebot Message class structure
     logger.info('Got message {} in space {} with type {} and text {}'.format(
         message.message_id, space_cfg.key, message.content_type, message.text
     ))
     # avoid duplicate response to some Telegram messages
-    if message.message_id in PROCESSED_MESSAGES[space_cfg.key]:
+    if message.message_id in PROCESSED_MESSAGES[space_cfg.key] and not edited:
+        print('ignoring a repeated message')
         return
+    elif edited:
+        print('processing an edited message')
     PROCESSED_MESSAGES[space_cfg.key].add(message.message_id)
 
     if message.chat.type != 'private':
@@ -120,7 +124,7 @@ def respond(message, database: Database, sender: BaseSender, space_cfg: SpaceCon
 
 
 class NewMultiverse(Multiverse):
-    def respond(self, message, space: SpaceConfig):
+    def respond(self, message, space: SpaceConfig, edited: bool = False):
         bot = self.bots_dict[space.key]
         sender = self.senders_dict[space.key]
         return respond(
@@ -129,6 +133,7 @@ class NewMultiverse(Multiverse):
             bot=bot,
             sender=sender,
             database=self.db,
+            edited=edited,
         )
 
     def add_custom_handlers(self):
