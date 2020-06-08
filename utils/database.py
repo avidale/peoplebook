@@ -146,10 +146,12 @@ class LoggedMessage:
     def __init__(
             self,
             text, user_id, from_user, database: Database,
-            space_name, username=None, intent=None, meta=None
+            space_name, username=None, intent=None, meta=None,
+            chat_id=None,
     ):
         self.text = text
         self.user_id = user_id
+        self.chat_id = chat_id
         self.from_user = from_user
         self.space_name = space_name
         self.timestamp = str(datetime.utcnow())
@@ -166,6 +168,7 @@ class LoggedMessage:
         result = {
             'text': self.text,
             'user_id': self.user_id,
+            'chat_id': self.chat_id,
             'from_user': self.from_user,
             'timestamp': self.timestamp,
             'space': self.space_name,
