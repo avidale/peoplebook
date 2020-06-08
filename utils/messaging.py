@@ -62,7 +62,11 @@ class TelegramSender(BaseSender):
 
     def __call__(
             self,
-            text, database, reply_to=None, user_id=None, suggests=None,
+            text,
+            database,
+            reply_to=None,
+            user_id=None,
+            suggests=None,
             notify_on_error=True,
             intent=None,
             meta=None,

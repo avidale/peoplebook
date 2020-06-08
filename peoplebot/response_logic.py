@@ -12,6 +12,7 @@ from utils.multiverse import Multiverse
 from utils.spaces import SpaceConfig, MembershipStatus
 
 
+from peoplebot.scenarios.chat_stats import update_chat_stats, tag_everyone
 from peoplebot.scenarios.events import try_invitation, try_event_usage, try_event_creation, try_event_edition
 from peoplebot.scenarios.peoplebook import try_peoplebook_management
 from peoplebot.scenarios.wachter import do_wachter_check
@@ -50,9 +51,24 @@ def respond(message: Message, database: Database, sender: BaseSender, space_cfg:
         if not message.from_user or not message.chat.id:
             return
         uo = get_or_insert_user(tg_user=message.from_user, space_name=space_cfg.key, database=database)
+        update_chat_stats(user_object=uo, db=database, chat_id=message.chat.id)
+
+        # tage everyone in the chat
+        if message.text and (
+                message.text.startswith('/all@{}'.format(space_cfg.bot_username))
+                or message.text == '/all'
+        ):
+            sender(
+                text=tag_everyone(db=database, chat_id=message.chat.id),
+                reply_to=message,
+                database=database,
+                intent='tag_all',
+            )
+
         if not uo.get('username'):
             # todo: ask new users to provide usernames
             return
+
         user_filter = {'username': uo['username'], 'space': space_cfg.key}
         if space_cfg.member_chat_id and message.chat.id == space_cfg.member_chat_id:
             print('adding user {} to the community members'.format(user_filter))
