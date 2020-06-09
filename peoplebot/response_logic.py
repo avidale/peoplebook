@@ -53,11 +53,16 @@ def respond(message: Message, database: Database, sender: BaseSender, space_cfg:
         uo = get_or_insert_user(tg_user=message.from_user, space_name=space_cfg.key, database=database)
         update_chat_stats(user_object=uo, db=database, chat_id=message.chat.id)
 
-        # tage everyone in the chat
-        if message.text and (
-                message.text.startswith('/all@{}'.format(space_cfg.bot_username))
-                or message.text == '/all'
-        ):
+        # tag everyone in the chat
+        words = set(message.text.split()) if message.text else set()
+        if words.intersection({
+            '/all', '@all',
+            '/channel', '@channel',
+            '/everyone', '@everyone',
+            '/all@{}'.format(space_cfg.bot_username),
+            '/channel@{}'.format(space_cfg.bot_username),
+            '/everyone@{}'.format(space_cfg.bot_username),
+        }):
             sender(
                 text=tag_everyone(db=database, chat_id=message.chat.id),
                 reply_to=message,
