@@ -1,22 +1,13 @@
-import gensim
-import numpy as np
-import pandas as pd
-import pickle
 import random
-import time
-
-from tqdm.auto import tqdm
-from collections import defaultdict
 
 import config as cfg
 
-from similarity import matchers, basic_nlu, similarity_tools
-from similarity.semantic_search import SemanticSearcher, get_searcher_data, extract_all_chunks
+from peoplebook.profile_searcher import ProfileSearcher
+from similarity import basic_nlu, similarity_tools
 
-from flask import render_template, request, Blueprint
+from flask import render_template, request, Blueprint, current_app
 from flask_login import login_required, current_user
 
-from peoplebook.web_flask import get_profiles_for_event
 from peoplebook.web_flask import mongo_peoplebook, get_current_username
 
 from peoplebook.web import SPACE_NOT_FOUND, get_space_config, mongo_db, check_space
@@ -25,79 +16,25 @@ from peoplebook.web import SPACE_NOT_FOUND, get_space_config, mongo_db, check_sp
 itinder_bp = Blueprint('itinder', __name__)
 
 
-CURRENT_EVENT = 'newyear2019'
-pb_list = list(mongo_peoplebook.find({'space': cfg.DEFAULT_SPACE}))  # get_profiles_for_event(CURRENT_EVENT)
-
-
-with open('similarity/fasttext_extract.pkl', 'rb') as f:
-    main_w2v = pickle.load(f)
-
-ft_small = gensim.models.fasttext.FastTextKeyedVectors.load(
-    'similarity/araneum_new_compressed.model'
-)
-
-w2v = similarity_tools.FallbackW2V(main_w2v, ft_small)
-
-
-weighter = basic_nlu.Weighter(custom_weights=basic_nlu.NOISE_WORDS)
-matcher = matchers.WMDMatcher(text_normalization='fast_lemmatize_filter_pos', w2v=w2v, weighter=weighter)
-texts = [p.get('activity', '') + '\n' + p.get('topics', '') for p in pb_list]
-texts = [t for text in texts for t in basic_nlu.split(text)]
-matcher.fit(texts, ['' for _ in texts])
-
-
-w2vmatcher = matchers.W2VMatcher(w2v=w2v, weighter=weighter, text_normalization='fast_lemmatize_filter_pos')
-
-
-def text2vec(t):
-    v = w2vmatcher.preprocess(t)
-    if v is None:
-        return np.zeros(300)
-    return v
-
-
 def get_pb_dict(space=cfg.DEFAULT_SPACE):
-    #  return {p['username']: p for p in get_profiles_for_event(CURRENT_EVENT) if p['username']}
     return {p['username']: p for p in mongo_peoplebook.find({'space': space}) if p['username']}
 
 
-# searcher
-t = time.time()
-print('start getting searcher data')
-df = pd.DataFrame(list(get_pb_dict().values()))
-df.topics.fillna('', inplace=True)
-df.activity.fillna('', inplace=True)
-parts, owners, normals = extract_all_chunks(df)
-searcher_data = get_searcher_data(parts, owners, vectorizer=text2vec)
-print('got searcher data, spent {}'.format(time.time() - t))
-
-searcher = SemanticSearcher()
-searcher.setup(**searcher_data, vectorizer=text2vec)
-
-# most similar people
-# todo: make it updateable
-preprocessed = [matcher.preprocess(p) for p in tqdm(searcher_data['texts'])]
-owner2texts = defaultdict(list)
-for prep, owner, text in zip(preprocessed, searcher_data['owners'], searcher_data['texts']):
-    owner2texts[owner].append((text, prep))
-
-
-# least similar people
-df['fulltext'] = ' '
-for i, row in df.iterrows():
-    df.loc[i, 'fulltext'] = '{} {}\n{}\n{}'.format(row.first_name, row.last_name, row.activity, row.topics)
-new_matcher = matchers.W2VMatcher(w2v=w2v, weighter=weighter)
-new_matcher.fit(df.fulltext.tolist(), df.username.tolist())
-user_vecs = np.stack(new_matcher._texts)
-sims = np.dot(user_vecs, user_vecs.T)
-dissimilar_pairs = similarity_tools.assign_pairs(sims, n_pairs=20)
-
-
 @itinder_bp.route('/similarity', methods=['POST', 'GET'])
+@itinder_bp.route('/<space>/similarity', methods=['POST', 'GET'])
 @login_required
-def similarity_page(one=None, another=None):
+def similarity_page(one=None, another=None, space=cfg.DEFAULT_SPACE):
+    if not check_space(space):
+        return SPACE_NOT_FOUND
+    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+
+    if not hasattr(current_app, 'profile_searcher'):
+        return 'Feature not supported', 400
+    ps: ProfileSearcher = current_app.profile_searcher.get(space)
+    if not ps:
+        return 'Feature not supported', 400
     pb_list = sorted(
-        get_profiles_for_event(CURRENT_EVENT),
+        list(get_pb_dict(space=space).values()),
         key=lambda x: '{}_{}'.format(x.get('first_name'), x.get('last_name'))
     )
     pb_set = {p['username'] for p in pb_list if p['username']}
@@ -124,7 +61,7 @@ def similarity_page(one=None, another=None):
         results = []
         for i, c1 in enumerate(text1):
             for j, c2 in enumerate(text2):
-                score = matcher.compare_two(c1, c2)
+                score = ps.matcher.compare_two(c1, c2)
                 results.append({'score': round(score, 2), 'first': text1[i], 'second': text2[j]})
         results = similarity_tools.deduplicate(results, threshold=0.3)  # 0.05 for tfidf
     else:
@@ -141,22 +78,36 @@ def similarity_page(one=None, another=None):
         second_default=u2,
         first_person=p1,
         second_person=p2,
+        space=space,
+        space_cfg=space_cfg,
     )
 
 
 @itinder_bp.route('/similarity/<one>/<another>', methods=['POST', 'GET'])
+@itinder_bp.route('/<space>/similarity/<one>/<another>', methods=['POST', 'GET'])
 @login_required
-def similarity_page_parametrized(one, another):
-    return similarity_page(one=one, another=another)
+def similarity_page_parametrized(one, another, space=cfg.DEFAULT_SPACE):
+    return similarity_page(one=one, another=another, space=space)
 
 
 @itinder_bp.route('/itinder_search', methods=['POST', 'GET'])
+@itinder_bp.route('/<space>/itinder_search', methods=['POST', 'GET'])
 @login_required
-def search_page(text=None):
+def search_page(text=None, space=cfg.DEFAULT_SPACE):
+    if not check_space(space):
+        return SPACE_NOT_FOUND
+    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+
+    if not hasattr(current_app, 'profile_searcher'):
+        return 'Feature not supported', 400
+    ps: ProfileSearcher = current_app.profile_searcher.get(space)
+    if not ps:
+        return 'Feature not supported', 400
+
     if request.form and request.form.get('req_text'):
         req_text = request.form['req_text']
-        results = searcher.lookup(req_text)
-        pb_dict = get_pb_dict()
+        results = ps.searcher.lookup(req_text)
+        pb_dict = get_pb_dict(space=space)
         for r in results:
             r['profile'] = pb_dict.get(r['username'], {})
     else:
@@ -166,61 +117,102 @@ def search_page(text=None):
         'itinder_search.html',
         req_text=req_text,
         results=results,
+        space=space,
+        space_cfg=space_cfg,
     )
 
 
 @itinder_bp.route('/itinder')
+@itinder_bp.route('/<space>/itinder')
 @login_required
-def itinder():
-    return render_template('itinder.html')
+def itinder(space=cfg.DEFAULT_SPACE):
+    if not check_space(space):
+        return SPACE_NOT_FOUND
+    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+
+    return render_template(
+        'itinder.html',
+        space=space,
+        space_cfg=space_cfg,
+    )
 
 
 @itinder_bp.route('/most_similar', methods=['POST', 'GET'])
+@itinder_bp.route('/<space>/most_similar', methods=['POST', 'GET'])
 @login_required
-def most_similar_page(username=None):
+def most_similar_page(username=None, space=cfg.DEFAULT_SPACE):
+    if not check_space(space):
+        return SPACE_NOT_FOUND
+    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+
+    if not hasattr(current_app, 'profile_searcher'):
+        return 'Feature not supported', 400
+    ps: ProfileSearcher = current_app.profile_searcher.get(space)
+    if not ps:
+        return 'Feature not supported', 400
+
     if username is None:
         username = get_current_username()
-    rating = similarity_tools.rank_similarities(one=username, owner2texts=owner2texts, matcher=matcher)
+    if username not in ps.owner2texts:
+        return 'Your peoplebook profile was not found', 404
+    rating = similarity_tools.rank_similarities(one=username, owner2texts=ps.owner2texts, matcher=ps.matcher)
     top = rating.head(10).to_dict('records')
-    pb_dict = get_pb_dict()
+    pb_dict = get_pb_dict(space=space)
     for result in top:
         result['other_profile'] = pb_dict.get(result['who'])
     profile = pb_dict.get(username)
-    return render_template('most_similar.html', results=top, profile=profile)
+    return render_template(
+        'most_similar.html',
+        results=top,
+        profile=profile,
+        space=space,
+        space_cfg=space_cfg,
+    )
 
 
 @itinder_bp.route('/most_similar/<username>', methods=['POST', 'GET'])
-def most_similar_page_parametrized(username):
-    return most_similar_page(username=username)
+@itinder_bp.route('/<space>/most_similar/<username>', methods=['POST', 'GET'])
+def most_similar_page_parametrized(username, space=cfg.DEFAULT_SPACE):
+    return most_similar_page(username=username, space=space)
 
 
 @itinder_bp.route('/least_similar', methods=['POST', 'GET'])
+@itinder_bp.route('/<space>/least_similar', methods=['POST', 'GET'])
+@itinder_bp.route('/<space>/least_similar/<username>', methods=['POST', 'GET'])
 @login_required
-def least_similar_page(username=None):
+def least_similar_page(username=None, space=cfg.DEFAULT_SPACE):
+    if not check_space(space):
+        return SPACE_NOT_FOUND
+    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+
+    if not hasattr(current_app, 'profile_searcher'):
+        return 'Feature not supported', 400
+    ps: ProfileSearcher = current_app.profile_searcher.get(space)
+    if not ps:
+        return 'Feature not supported', 400
+
     if username is None:
         username = get_current_username()
 
-    for user_idx, un in enumerate(df.username):
-        if un == username:
-            break
-    who = dissimilar_pairs[user_idx]
-    how = sims[user_idx, who]
-    top = [{
-        'username': username,
-        'score': score,
-        'who': df.username.iloc[other_id],
-    } for score, other_id in zip(how, who)]
+    top = ps.get_top_dissimilar(username=username)
 
-    pb_dict = get_pb_dict()
+    pb_dict = get_pb_dict(space=space)
     for result in top:
         result['other_profile'] = pb_dict.get(result['who'])
     profile = pb_dict.get(username)
-    return render_template('least_similar.html', results=top, profile=profile)
+    return render_template(
+        'least_similar.html',
+        results=top,
+        profile=profile,
+        space=space,
+        space_cfg=space_cfg,
+    )
 
 
 @itinder_bp.route('/least_similar/<username>', methods=['POST', 'GET'])
-def least_similar_page_parametrized(username):
-    return least_similar_page(username=username)
+@itinder_bp.route('/<space>/least_similar/<username>', methods=['POST', 'GET'])
+def least_similar_page_parametrized(username, space=cfg.DEFAULT_SPACE):
+    return least_similar_page(username=username, space=space)
 
 
 @itinder_bp.route('/search', methods=['POST', 'GET'])
@@ -229,16 +221,26 @@ def least_similar_page_parametrized(username):
 def search(space=cfg.DEFAULT_SPACE):
     if not check_space(space):
         return SPACE_NOT_FOUND
+    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+
+    if not hasattr(current_app, 'profile_searcher'):
+        return 'Feature not supported', 400
+    ps: ProfileSearcher = current_app.profile_searcher.get(space)
+    if not ps:
+        return 'Feature not supported', 400
+
+    if not check_space(space):
+        return SPACE_NOT_FOUND
     if request.form and request.form.get('req_text'):
         req_text = request.form['req_text']
-        results = searcher.lookup(req_text)
-        pb_dict = get_pb_dict()
+        results = ps.searcher.lookup(req_text)
+        pb_dict = get_pb_dict(space=space)
         for r in results:
             r['profile'] = pb_dict.get(r['username'], {})
     else:
         req_text = None
         results = None
-    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+
     return render_template(
         'search.html',
         req_text=req_text,
@@ -246,4 +248,5 @@ def search(space=cfg.DEFAULT_SPACE):
         title='',
         space_cfg=space_cfg,
         user=current_user,
+        space=space,
     )

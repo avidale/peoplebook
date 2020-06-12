@@ -7,8 +7,10 @@ from fatherbot.main import father_bot, father_bot_bp
 from peoplebot.new_main import MULTIVERSE, DATABASE
 from peoplebook.web import app
 
-from peoplebook.web_itinder import itinder_bp
+from peoplebook.web_itinder import itinder_bp, get_pb_dict
 from peoplebook.admins import admin_bp
+
+from peoplebook.profile_searcher import ProfileSearcher, load_ft
 
 logging.basicConfig(level=logging.INFO)
 
@@ -22,6 +24,7 @@ def run_bot_and_book():
     parser.add_argument('--poll', action='store_true', help='Run one bot in local mode')
     parser.add_argument('--space', type=str, help='The space for which to run the polling bot')
     parser.add_argument('--nobot', action='store_true', help='Do not run the bots (peoplebook only)')
+    parser.add_argument('--nosearch', action='store_true', help='Do not run the semantic search engine')
     args = parser.parse_args()
     if args.poll:
         # todo: don't run the searcher here because it is slow
@@ -43,6 +46,13 @@ def run_bot_and_book():
         if not args.nobot:
             MULTIVERSE.set_web_hooks()
             app.register_blueprint(MULTIVERSE.app)
+        if not args.nosearch:
+            ft = load_ft()
+            searchers = {
+                space: ProfileSearcher(w2v=ft, records=list(get_pb_dict(space=space).values()))
+                for space in MULTIVERSE.spaces_dict
+            }
+            app.profile_searcher = searchers
         app.database = DATABASE
         app.register_blueprint(itinder_bp)
         app.register_blueprint(admin_bp)

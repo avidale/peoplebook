@@ -9,7 +9,7 @@
 
 
 {% block navbar %}
-  {{ itinder_nav() }}
+  {{ itinder_nav(space=space) }}
 {% endblock %}
 
 
@@ -22,7 +22,7 @@
 <div class="similarity-root">
 
 <p>Вот на кого вы больше всего похожи,
-    <a class="subtitle has-text-link" href="/person/{{profile.username}}">@{{profile.username}}</a>:
+    <a class="subtitle has-text-link" href="/{{space}}/person/{{profile.username}}">@{{profile.username}}</a>:
 </p>
 
 {% for result in results %}
@@ -31,7 +31,7 @@
             <div class="media">
 
                 <div class="media-left">
-                    <a href="/person/{{result.other_profile.username}}">
+                    <a href="/{{space}}/person/{{result.other_profile.username}}">
                         <img class="photo photo--small" src="{{ get_photo_url(result.other_profile) }}"/>
                     </a>
                 </div>
@@ -39,7 +39,7 @@
 
             <div class="content">
                 <p class="subtitle has-text-weight-bold">{{result.other_profile.first_name}} {{result.other_profile.last_name}}
-                    <a class="subtitle has-text-link" href="/person/{{result.other_profile.username}}">@{{result.other_profile.username}}</a>
+                    <a class="subtitle has-text-link" href="/{{space}}/person/{{result.other_profile.username}}">@{{result.other_profile.username}}</a>
                      - <b>{{ result.score | round(2) }}</b>
                 </p>
                 {% for match in result.res %}

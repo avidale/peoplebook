@@ -21,7 +21,7 @@
     <br>
 
     <div class="container">
-        <form method="POST" id="search_form" action="/search">
+        <form method="POST" id="search_form" action="/{{space}}/search">
         <div class="field has-addons">
             <div class="control is-expanded">
                 <input class="input has-text-grey" type="text" name="req_text" placeholder="Юрист">
@@ -46,14 +46,14 @@
                     <div class="media">
 
                         <div class="media-left">
-                            <a href="/person/{{result.username}}">
+                            <a href="/{{space}}/person/{{result.username}}">
                                 <img class="photo photo--small" src="{{ get_photo_url(result.profile) }}"/>
                             </a>
                         </div>
 
                         <div class="content">
                             <p class="subtitle has-text-weight-bold">{{result.profile.first_name}} {{result.profile.last_name}}
-                                <a class="subtitle has-text-link" href="/person/{{result.username}}">@{{result.username}}</a>
+                                <a class="subtitle has-text-link" href="/{{space}}/person/{{result.username}}">@{{result.username}}</a>
                             </p>
                             <p>{{ result.text }}</p>
                         </div>

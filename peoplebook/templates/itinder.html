@@ -8,7 +8,7 @@
 
 
 {% block navbar %}
-  {{ itinder_nav() }}
+  {{ itinder_nav(space=space) }}
 {% endblock %}
 
 
@@ -19,19 +19,19 @@
         <div class="columns is-mobile is-centered">
             <div class="column is-four-fifths">
                 <div>
-                    <a class="button is-large is-info is-fullwidth" href="/itinder_search">Найти собеседников</a>
+                    <a class="button is-large is-info is-fullwidth" href="/{{space}}/itinder_search">Найти собеседников</a>
                 </div>
                 <br>
                 <div>
-                    <a class="button is-large is-info is-fullwidth" href="/similarity">Найти тему для беседы</a>
+                    <a class="button is-large is-info is-fullwidth" href="/{{space}}/similarity">Найти тему для беседы</a>
                 </div>
                 <br>
                 <div>
-                    <a class="button is-large is-info is-fullwidth" href="/most_similar">Найти похожих на меня</a>
+                    <a class="button is-large is-info is-fullwidth" href="/{{space}}/most_similar">Найти похожих на меня</a>
                 </div>
                 <br>
                 <div>
-                    <a class="button is-large is-info is-fullwidth" href="/least_similar">Найти непохожих на меня</a>
+                    <a class="button is-large is-info is-fullwidth" href="/{{space}}/least_similar">Найти непохожих на меня</a>
                 </div>
             </div>
         </div>
