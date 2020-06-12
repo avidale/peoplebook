@@ -49,6 +49,7 @@ class Database:
         self.mongo_chat_waiting_list = self._mongo_db.get_collection('chat_waiting_list')
         self.mongo_whois = self._mongo_db.get_collection('whois')
         self.mongo_chat_members = self._mongo_db.get_collection('chat_members')
+        self.mongo_chats = self._mongo_db.get_collection('chats')
 
     def _update_cache(self, force=False):
         if not force and (datetime.now() - self._cache_time).total_seconds() < self.cache_ttl_seconds:
