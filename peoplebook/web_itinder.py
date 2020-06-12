@@ -24,6 +24,10 @@ def get_pb_dict(space=cfg.DEFAULT_SPACE):
 @itinder_bp.route('/<space>/similarity', methods=['POST', 'GET'])
 @login_required
 def similarity_page(one=None, another=None, space=cfg.DEFAULT_SPACE):
+    if not check_space(space):
+        return SPACE_NOT_FOUND
+    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+
     if not hasattr(current_app, 'profile_searcher'):
         return 'Feature not supported', 400
     ps: ProfileSearcher = current_app.profile_searcher.get(space)
@@ -75,6 +79,7 @@ def similarity_page(one=None, another=None, space=cfg.DEFAULT_SPACE):
         first_person=p1,
         second_person=p2,
         space=space,
+        space_cfg=space_cfg,
     )
 
 
@@ -89,6 +94,10 @@ def similarity_page_parametrized(one, another, space=cfg.DEFAULT_SPACE):
 @itinder_bp.route('/<space>/itinder_search', methods=['POST', 'GET'])
 @login_required
 def search_page(text=None, space=cfg.DEFAULT_SPACE):
+    if not check_space(space):
+        return SPACE_NOT_FOUND
+    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+
     if not hasattr(current_app, 'profile_searcher'):
         return 'Feature not supported', 400
     ps: ProfileSearcher = current_app.profile_searcher.get(space)
@@ -109,6 +118,7 @@ def search_page(text=None, space=cfg.DEFAULT_SPACE):
         req_text=req_text,
         results=results,
         space=space,
+        space_cfg=space_cfg,
     )
 
 
@@ -116,13 +126,25 @@ def search_page(text=None, space=cfg.DEFAULT_SPACE):
 @itinder_bp.route('/<space>/itinder')
 @login_required
 def itinder(space=cfg.DEFAULT_SPACE):
-    return render_template('itinder.html', space=space)
+    if not check_space(space):
+        return SPACE_NOT_FOUND
+    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+
+    return render_template(
+        'itinder.html',
+        space=space,
+        space_cfg=space_cfg,
+    )
 
 
 @itinder_bp.route('/most_similar', methods=['POST', 'GET'])
 @itinder_bp.route('/<space>/most_similar', methods=['POST', 'GET'])
 @login_required
 def most_similar_page(username=None, space=cfg.DEFAULT_SPACE):
+    if not check_space(space):
+        return SPACE_NOT_FOUND
+    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+
     if not hasattr(current_app, 'profile_searcher'):
         return 'Feature not supported', 400
     ps: ProfileSearcher = current_app.profile_searcher.get(space)
@@ -132,14 +154,20 @@ def most_similar_page(username=None, space=cfg.DEFAULT_SPACE):
     if username is None:
         username = get_current_username()
     if username not in ps.owner2texts:
-        return 'Profile not found', 404
+        return 'Your peoplebook profile was not found', 404
     rating = similarity_tools.rank_similarities(one=username, owner2texts=ps.owner2texts, matcher=ps.matcher)
     top = rating.head(10).to_dict('records')
     pb_dict = get_pb_dict(space=space)
     for result in top:
         result['other_profile'] = pb_dict.get(result['who'])
     profile = pb_dict.get(username)
-    return render_template('most_similar.html', results=top, profile=profile, space=space)
+    return render_template(
+        'most_similar.html',
+        results=top,
+        profile=profile,
+        space=space,
+        space_cfg=space_cfg,
+    )
 
 
 @itinder_bp.route('/most_similar/<username>', methods=['POST', 'GET'])
@@ -153,6 +181,10 @@ def most_similar_page_parametrized(username, space=cfg.DEFAULT_SPACE):
 @itinder_bp.route('/<space>/least_similar/<username>', methods=['POST', 'GET'])
 @login_required
 def least_similar_page(username=None, space=cfg.DEFAULT_SPACE):
+    if not check_space(space):
+        return SPACE_NOT_FOUND
+    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+
     if not hasattr(current_app, 'profile_searcher'):
         return 'Feature not supported', 400
     ps: ProfileSearcher = current_app.profile_searcher.get(space)
@@ -168,7 +200,13 @@ def least_similar_page(username=None, space=cfg.DEFAULT_SPACE):
     for result in top:
         result['other_profile'] = pb_dict.get(result['who'])
     profile = pb_dict.get(username)
-    return render_template('least_similar.html', results=top, profile=profile, space=space)
+    return render_template(
+        'least_similar.html',
+        results=top,
+        profile=profile,
+        space=space,
+        space_cfg=space_cfg,
+    )
 
 
 @itinder_bp.route('/least_similar/<username>', methods=['POST', 'GET'])
@@ -181,6 +219,10 @@ def least_similar_page_parametrized(username, space=cfg.DEFAULT_SPACE):
 @itinder_bp.route('/<space>/search', methods=['POST', 'GET'])
 @login_required
 def search(space=cfg.DEFAULT_SPACE):
+    if not check_space(space):
+        return SPACE_NOT_FOUND
+    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+
     if not hasattr(current_app, 'profile_searcher'):
         return 'Feature not supported', 400
     ps: ProfileSearcher = current_app.profile_searcher.get(space)
@@ -198,7 +240,7 @@ def search(space=cfg.DEFAULT_SPACE):
     else:
         req_text = None
         results = None
-    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+
     return render_template(
         'search.html',
         req_text=req_text,
