@@ -76,14 +76,14 @@
                 <a class="navbar-item" href="/">
                   <p>Пиплбук встречи</p>
                 </a>
-                <a class="navbar-item" href="/search">
-                  <p>Поиск</p>
-                </a>
             {% else%}
                 <a class="navbar-item" href="/{{ space_cfg.key }}/all">
                   <p>Сообщество {{ space_cfg.title }}</p>
                 </a>
             {% endif %}
+            <a class="navbar-item" href="/{{ space_cfg.key }}/search">
+              <p>Поиск</p>
+            </a>
        </div>
         <div class="navbar-menu">
             <div class="navbar-end">
@@ -104,7 +104,7 @@
 
 {% macro basic_subhead() %}
     <div class="container">
-        <h1 class="title" style="background-color:white; color:black; margin-left:0px"> Члены клуба Каппа Веди </h1>
+        <h1 class="title" style="background-color:white; color:black; margin-left:0px"> Члены сообщества </h1>
         <p class="subtitle" style="margin-left:10px">Найди человека из интересующей области</p>
     </div>
 {% endmacro %}
