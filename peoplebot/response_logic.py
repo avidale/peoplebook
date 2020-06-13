@@ -52,8 +52,10 @@ def respond(message: Message, database: Database, sender: BaseSender, space_cfg:
         if not message.from_user or not message.chat.id:
             return
         uo = get_or_insert_user(tg_user=message.from_user, space_name=space_cfg.key, database=database)
-        update_chat_data(
-            db=database, chat_id=message.chat.id, space=space_cfg.key,
+        chat_data = update_chat_data(
+            db=database,
+            chat_id=message.chat.id,
+            space=space_cfg.key,
             raw_data=serialize(message.chat),
         )
         update_chat_stats(user_object=uo, db=database, chat_id=message.chat.id)
@@ -94,6 +96,7 @@ def respond(message: Message, database: Database, sender: BaseSender, space_cfg:
                 message=message,
                 bot=bot,
                 sender=sender,
+                chat_data=chat_data,
             )
         return
 

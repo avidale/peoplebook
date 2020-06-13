@@ -2,6 +2,7 @@ import attr
 import time
 
 from utils.database import Database
+from utils.spaces import MembershipStatus
 
 
 @attr.s
@@ -42,6 +43,14 @@ class ChatData:
     raw_data: dict = attr.ib(default=None)
 
     # todo: set specific properties, such as whois settings
+    # None means using default settings propagated from the whole space
+    add_chat_members_to_community: str = attr.ib(default=None)  # should belong to MembershipStatus
+    require_whois: bool = attr.ib(default=None)
+    whois_tag: bool = attr.ib(default=None)
+    public_chat_intro_text: str = attr.ib(default=None)
+    public_chat_greeting_text: str = attr.ib(default=None)
+    add_whois_to_peoplebook: bool = attr.ib(default=None)
+    kick_timeout: int = attr.ib(default=None)
 
     @property
     def title(self):
@@ -68,7 +77,7 @@ class ChatData:
             return cls(**new_record)
 
 
-def update_chat_data(db: Database, chat_id: int, space: str, raw_data: dict):
+def update_chat_data(db: Database, chat_id: int, space: str, raw_data: dict) -> ChatData:
     filters = {'chat_id': chat_id, 'space': space}
     old_object = ChatData.from_record(
         record=db.mongo_chats.find_one(filters),

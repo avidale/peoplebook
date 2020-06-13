@@ -36,6 +36,8 @@ class SpaceConfig:
             whois_tag='#whois',
             public_chat_intro_text=None,
             public_chat_greeting_text=None,
+            add_whois_to_peoplebook=False,
+            kick_timeout=None,
             **other_data
     ):
         self.key = key
@@ -62,6 +64,8 @@ class SpaceConfig:
         self.whois_tag = whois_tag
         self.public_chat_intro_text = public_chat_intro_text  # before whois
         self.public_chat_greeting_text = public_chat_greeting_text  # after whois
+        self.add_whois_to_peoplebook = add_whois_to_peoplebook
+        self.kick_timeout = kick_timeout  # None means no kick
 
         self.other_data = other_data
 
@@ -97,29 +101,6 @@ class SpaceConfig:
             f'- назначать random coffee между участниками;' \
             f'- показывать пиплбук (список профилей членов сообщества);' \
             f'- назначать встречи сообщества и собирать на них гостей.'
-
-    def get_public_chat_intro_text(self):
-        if self.public_chat_intro_text:
-            return self.public_chat_intro_text
-        text = f'Добро пожаловать в чат сообщества {self.title}.\n' \
-            f'Пожалуйста, представьтесь сообществу.\n' \
-            f'Расскажите:\n' \
-            f'- чем вы занимаетесь или занимались;\n' \
-            f'- на какие темы с вами стоит поговорить;\n' \
-            f'- как с вами можно связаться.\n' \
-            f'Обязательно включите в своё сообщение тег {self.whois_tag}, иначе я не распознаю его.'
-        # todo: add the kick text.
-        return text
-
-    def get_public_chat_greeting_text(self):
-        if self.public_chat_greeting_text:
-            return self.public_chat_greeting_text
-        return 'Ура! Ваше приветствие распознано и появится в пиплбуке сообщества.'
-
-    def get_public_chat_failed_greeting_text(self):
-        return 'Спасибо, что вы представились! ' \
-               'Мне нравится ваше представление, но хотелось бы узнать о вас побольше. ' \
-               'Пожалуйста, отредактируйте ваше сообщение, добавив больше деталей.'
 
 
 def get_space_config(mongo_db, space_name) -> Optional[SpaceConfig]:

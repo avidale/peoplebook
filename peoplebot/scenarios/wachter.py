@@ -3,9 +3,11 @@ from telebot import TeleBot
 from telebot.types import Message
 
 from peoplebot.scenarios.peoplebook_from_whois import add_peoplebook_from_whois, validate_whois_text
+from peoplebot.scenarios.chat_stats import ChatData
 from utils.database import Database
 from utils.messaging import BaseSender
 from utils.spaces import SpaceConfig, MembershipStatus
+from utils.sugar import fill_none
 
 
 def do_wachter_check(
@@ -15,10 +17,14 @@ def do_wachter_check(
         message: Message,
         sender: BaseSender,
         bot: TeleBot,
+        chat_data: ChatData,
 ):
+    whois_tag = fill_none(chat_data.whois_tag, space_cfg.whois_tag)
+    adding_policy = fill_none(chat_data.add_chat_members_to_community, space_cfg.add_chat_members_to_community)
+
     if not database.is_at_least_guest(user_object=user_object):
         # todo: do the right thing if the bot itself was added to the chat (new_chat_members)
-        if not message.text or space_cfg.whois_tag not in message.text:
+        if not message.text or whois_tag not in message.text:
             waiting_filter = {
                 'tg_id': message.from_user.id,
                 'space': space_cfg.key,
@@ -29,7 +35,7 @@ def do_wachter_check(
             if waiting is None:
                 print('asking user for whois')
                 sender(
-                    text=space_cfg.get_public_chat_intro_text(),
+                    text=get_public_chat_intro_text(space=space_cfg, chat_data=chat_data),
                     reply_to=message,
                     database=database,
                     intent='ask_whois',
@@ -42,7 +48,7 @@ def do_wachter_check(
         elif not validate_whois_text(message.text):
             print('failed whois')
             sender(
-                text=space_cfg.get_public_chat_failed_greeting_text(),
+                text=get_public_chat_failed_greeting_text(space=space_cfg, chat_data=chat_data),
                 reply_to=message,
                 database=database,
                 intent='reply_whois_failed'
@@ -66,21 +72,22 @@ def do_wachter_check(
                     '$set': {'active': False},
                 }
             )
-            add_peoplebook_from_whois(
-                message=message,
-                database=database,
-                space_cfg=space_cfg,
-                bot=bot,
-            )
-            if space_cfg.add_chat_members_to_community == MembershipStatus.NONE:
+            if fill_none(chat_data.add_whois_to_peoplebook, space_cfg.add_whois_to_peoplebook):
+                add_peoplebook_from_whois(
+                    message=message,
+                    database=database,
+                    space_cfg=space_cfg,
+                    bot=bot,
+                )
+            if adding_policy == MembershipStatus.NONE:
                 pass
-            elif space_cfg.add_chat_members_to_community == MembershipStatus.GUEST:
+            elif adding_policy == MembershipStatus.GUEST:
                 database.add_guest(username=message.from_user.username, space_name=space_cfg.key)
             else:
                 # member or admin or owner => just member
                 database.add_member(username=message.from_user.username, space_name=space_cfg.key)
             sender(
-                text=space_cfg.get_public_chat_greeting_text(),
+                text=get_public_chat_greeting_text(space=space_cfg, chat_data=chat_data),
                 reply_to=message,
                 database=database,
                 intent='reply_whois'
@@ -89,3 +96,34 @@ def do_wachter_check(
         # todo: don't print it
         pass
         print('user {} is already a member of community {}'.format(user_object.get('username'), space_cfg.key))
+
+
+def get_public_chat_intro_text(space: SpaceConfig, chat_data: ChatData):
+    if chat_data.public_chat_intro_text:
+        return chat_data.public_chat_intro_text
+    if space.public_chat_intro_text:
+        return space.public_chat_intro_text
+    whois_tag = fill_none(chat_data.whois_tag, space.whois_tag)
+    text = f'Добро пожаловать в чат сообщества {space.title}.\n' \
+        f'Пожалуйста, представьтесь сообществу.\n' \
+        f'Расскажите:\n' \
+        f'- чем вы занимаетесь или занимались;\n' \
+        f'- на какие темы с вами стоит поговорить;\n' \
+        f'- как с вами можно связаться.\n' \
+        f'Обязательно включите в своё сообщение тег {whois_tag}, иначе я не распознаю его.'
+    # todo: add the kick text.
+    return text
+
+
+def get_public_chat_greeting_text(space: SpaceConfig, chat_data: ChatData):
+    if chat_data.public_chat_greeting_text:
+        return chat_data.public_chat_greeting_text
+    if space.public_chat_greeting_text:
+        return space.public_chat_greeting_text
+    return 'Ура! Ваше приветствие распознано и появится в пиплбуке сообщества.'
+
+
+def get_public_chat_failed_greeting_text(space: SpaceConfig, chat_data: ChatData):
+    return 'Спасибо, что вы представились! ' \
+           'Мне нравится ваше представление, но хотелось бы узнать о вас побольше. ' \
+           'Пожалуйста, отредактируйте ваше сообщение, добавив больше деталей.'
