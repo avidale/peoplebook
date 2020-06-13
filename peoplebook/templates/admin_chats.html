@@ -1,0 +1,90 @@
+{% extends 'basic_template.html' %}
+{% from 'admin_macros.html' import admin_nav %}
+
+
+{% block title %}
+  <title> Сообщество {{ space.title }} - Админка  </title>
+{% endblock %}
+
+{% block navbar %}
+  {{ admin_nav(space=space) }}
+{% endblock %}
+
+{% block content %}
+<section>
+    <div class="container">
+        <h1>Опасная зона! Настройка чатов для сообщества {{ space.title }} </h1>
+        <br>
+        {% if update_status %}
+        <div>
+            <b>{{ update_status }}</b>
+        </div>
+        {% endif %}
+        {% if choice_form %}
+            <br>
+            <form action="" method="post" novalidate>
+                {{ choice_form.hidden_tag() }}
+                {% for field in choice_form %}
+                    {% if field.type != "CSRFTokenField" and field.type != "SubmitField" and field.type != "HiddenField" %}
+                        <div>
+                            {{ field.label }}<br>
+                            {% if field.description %}
+                                <small>{{ field.description }}<br></small>
+                            {% endif %}
+                            {{ field }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                <p>{{ choice_form.submit_chat_choice() }}</p>
+            </form>
+        {% endif %}
+
+        {% if chat_form %}
+            <br>
+            <div>
+                Любое поле можно оставить пустым - тогда оно заполнится значением по умолчанию.
+            </div>
+            <br>
+            <form action="" method="post" novalidate>
+                {{ chat_form.hidden_tag() }}
+                {% for field in chat_form %}
+                    {% if field.type != "CSRFTokenField" and field.type != "SubmitField" and field.type != "HiddenField" %}
+                        <div>
+                            {{ field.label }}<br>
+                            {% if field.description %}
+                                <small>{{ field.description }}<br></small>
+                            {% endif %}
+                            {{ field }}
+                            {% if field.errors %}
+                                <ul class=errors>
+                                {% for error in field.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                <p>{{ chat_form.submit_chat_settings() }}</p>
+            </form>
+        {% endif %}
+
+        {% if defaults %}
+            <br>
+            <div>
+                <h2> Значения по умолчанию (их можно настроить на главной странице): </h2>
+                <table>
+                    {% for pair in defaults %}
+                        <tr>
+                            <td>{{ pair[0] }}</td>
+                            <td>{{ pair[1] }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+
+{% endblock %}

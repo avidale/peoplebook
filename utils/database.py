@@ -2,9 +2,10 @@ import logging
 
 from datetime import datetime
 from pymongo import MongoClient
-from typing import Dict
+from typing import Dict, List, Optional
 
 from utils import matchers
+from utils.chat_data import ChatData
 from utils.matchers import normalize_username
 from utils.spaces import SpaceConfig
 
@@ -141,6 +142,17 @@ class Database:
             {'$set': {'is_guest': True}},
             upsert=True
         )
+
+    def get_chats_for_space(self, space_name) -> List[ChatData]:
+        return [
+            ChatData.from_record(record=record, chat_id=None, space=space_name)
+            for record in self.mongo_chats.find({'space': space_name})
+        ]
+
+    def get_chat(self, space_name, chat_id) -> Optional[ChatData]:
+        record = self.mongo_chats.find_one({'space': space_name, 'chat_id': chat_id})
+        if record:
+            return ChatData.from_record(record=record, chat_id=chat_id, space=space_name)
 
 
 class LoggedMessage:

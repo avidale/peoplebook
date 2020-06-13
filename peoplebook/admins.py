@@ -1,18 +1,44 @@
-from flask import Blueprint, current_app, render_template
+from flask import Blueprint, current_app, render_template, request
 from werkzeug.datastructures import MultiDict
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, BooleanField, SubmitField, TextAreaField
+from wtforms import StringField, BooleanField, SubmitField, TextAreaField, SelectField, IntegerField, HiddenField
 from wtforms.validators import DataRequired
 
+from utils.chat_data import ChatData
 from utils.database import Database
+from utils.spaces import MEMBERSHIP_STATUSES
+from utils import wachter_utils
+
 from peoplebook.web import SPACE_NOT_FOUND, get_current_username
 
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
+NONE = 'none'
+YES = 'yes'
+NO = 'no'
+TERNARY_TUPLES = [(NONE, 'Использовать значение по умолчанию'), (YES, 'Да'), (NO, 'Нет')]
 
-class LoginForm(FlaskForm):
+
+def bool_to_ternary(x):
+    if x is None:
+        return NONE
+    return YES if x else NO
+
+
+def ternary_to_bool(x):
+    if x == NONE:
+        return None
+    elif x == YES:
+        return True
+    elif x == NO:
+        return False
+    else:
+        raise ValueError(f'Value {x} cannot be converted from ternary to boolean')
+
+
+class SpaceSettingsForm(FlaskForm):
     # key,
     title = StringField('Название сообщества', validators=[DataRequired()])
     bot_token = StringField('Токен телеграм-бота сообщества', validators=[DataRequired()])
@@ -39,6 +65,28 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Обновить данные')
 
 
+class ChatsChoiceForm(FlaskForm):
+    chat_id = SelectField('Выберите чат для настройки')
+    submit_chat_choice = SubmitField('Выбрать чат для настройки')
+
+
+class ChatSettingsForm(FlaskForm):
+    chat_id = HiddenField()
+    add_chat_members_to_community = SelectField(
+        'До какого статуса поднимать участников чата',
+        choices=MEMBERSHIP_STATUSES
+    )
+    require_whois = SelectField('Требовать ли представления в чате', choices=TERNARY_TUPLES)
+    whois_tag = StringField('Тег в представлении участника (например, #whois)')
+    public_chat_intro_text = TextAreaField('Ответ бота на добавление участника в чат')
+    public_chat_greeting_text = TextAreaField('Ответ бота на представление участника в чате')
+    add_whois_to_peoplebook = SelectField('Добавлять ли представления участников в пиплбук', choices=TERNARY_TUPLES)
+    kick_timeout: int = IntegerField(
+        'Через сколько минут удалять из чата не представившихся участников (0 - не удалять)',
+    )
+    submit_chat_settings = SubmitField('Сохранить настройки чата')
+
+
 @admin_bp.route('/<space>/details', methods=['GET', 'POST'])
 def space_details(space):
     db: Database = current_app.database
@@ -50,10 +98,10 @@ def space_details(space):
         # ony admins of the space can access the settings page
         return SPACE_NOT_FOUND
 
-    form = LoginForm()
+    form = SpaceSettingsForm()
     update_status = None
     if not form.is_submitted():
-        form = LoginForm(MultiDict(space_cfg.__dict__))
+        form = SpaceSettingsForm(MultiDict(space_cfg.__dict__))
     if form.validate_on_submit():
         update_dict = {
             k: v
@@ -70,3 +118,99 @@ def space_details(space):
         update_status=update_status,
         space=space_cfg,
     )
+
+
+@admin_bp.route('/<space>/chats', methods=['GET', 'POST'])
+def chats_page(space):
+    db: Database = current_app.database
+    space_cfg = db.get_space(space)
+    if not space_cfg:
+        return SPACE_NOT_FOUND
+    username = get_current_username()
+    if username not in space_cfg.admins and username != space_cfg.owner_username:
+        # ony admins of the space can access the settings page
+        return SPACE_NOT_FOUND
+
+    chats = db.get_chats_for_space(space_name=space_cfg.key)
+
+    choice_form = ChatsChoiceForm()
+    choice_form.chat_id.choices = [(chat.chat_id, chat.title) for chat in chats]
+
+    chat_form = ChatSettingsForm()
+    chat_form.add_chat_members_to_community.choices = MEMBERSHIP_STATUSES
+
+    update_status = None
+    the_chat: ChatData = None
+    chat_id = None
+
+    if choice_form.submit_chat_choice.data and choice_form.is_submitted():
+        chat_id = int(choice_form.chat_id.data)
+        update_status = f'Что-то было выбрано : {chat_id}'
+    elif chat_form.submit_chat_settings.data and chat_form.is_submitted():
+        chat_id = int(choice_form.chat_id.data)
+        update_status = f'Был обновлён чат : {chat_id}'
+    elif not chats:
+        update_status = 'Ваш бот пока не добавлен ни в один чат или не имеет к ним доступа.'
+    else:
+        update_status = 'Выберите чат'
+
+    if chat_id is not None:
+        the_chat = db.get_chat(space_name=space_cfg.key, chat_id=chat_id)
+        chat_form.chat_id.data = chat_id
+    if the_chat:
+        update_status = f'Настраиваем чат: {the_chat.title}'
+        if chat_form.submit_chat_settings.data and chat_form.is_submitted():
+            update_status = f'Пытаемся обновить чат: {the_chat.title}, но есть ошибки.'
+        else:
+            chat_form.add_chat_members_to_community.data = the_chat.add_chat_members_to_community
+            chat_form.require_whois.data = bool_to_ternary(the_chat.require_whois)
+            chat_form.whois_tag.data = the_chat.whois_tag or ''
+            chat_form.public_chat_intro_text.data = the_chat.public_chat_intro_text or ''
+            chat_form.public_chat_greeting_text.data = the_chat.public_chat_greeting_text or ''
+            chat_form.add_whois_to_peoplebook.data = bool_to_ternary(the_chat.add_whois_to_peoplebook)
+            chat_form.kick_timeout.data = the_chat.kick_timeout or 0
+    else:
+        chat_form = None
+
+    if chat_form and chat_form.submit_chat_settings.data and chat_form.validate_on_submit():
+        update_status = f'Обновился чат: {the_chat.title}'
+        the_update = {
+            'add_chat_members_to_community': chat_form.add_chat_members_to_community.data,
+            'require_whois': ternary_to_bool(chat_form.require_whois.data),
+            'whois_tag': chat_form.whois_tag.data or None,
+            'public_chat_intro_text': chat_form.public_chat_intro_text.data or None,
+            'public_chat_greeting_text': chat_form.public_chat_greeting_text.data or None,
+            'add_whois_to_peoplebook': ternary_to_bool(chat_form.add_whois_to_peoplebook.data),
+            'kick_timeout': int(chat_form.kick_timeout.data) or None,
+        }
+
+        db.mongo_chats.update_one(
+            {'space': space, 'chat_id': chat_id},
+            {'$set': the_update}
+        )
+
+    empty_chat = ChatData(chat_id=None, space=space)
+
+    defaults = [
+        ['До какого статуса поднимать участников чата', 'Не менять статус'],
+        ['Требовать ли представления в чате', bool_to_ternary(space_cfg.require_whois)],
+        ['Тег в представлении участника', space_cfg.whois_tag],
+        ['Ответ бота на добавление участника',
+         wachter_utils.get_public_chat_greeting_text(space=space_cfg, chat_data=empty_chat)],
+        ['Ответ бота на представление участника',
+         wachter_utils.get_public_chat_intro_text(space=space_cfg, chat_data=empty_chat)],
+        ['Добавлять ли представления участников в пиплбук', bool_to_ternary(space_cfg.add_whois_to_peoplebook)],
+        ['Таймаут в минутах на удаление не представившихся (0 - нет таймаута)', space_cfg.kick_timeout or 0],
+    ]
+
+    return render_template(
+        'admin_chats.html',
+        fields=space_cfg.__dict__,
+        choice_form=choice_form,
+        chat_form=chat_form,
+        update_status=update_status,
+        space=space_cfg,
+        the_chat=the_chat,
+        defaults=defaults,
+    )
+

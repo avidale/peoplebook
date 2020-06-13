@@ -112,3 +112,7 @@ a:hover {
     margin-left: 0px;
     padding-left: 30px;
 }
+
+.errors {
+    color: #ff0000;
+}

@@ -12,8 +12,7 @@ from utils.multiverse import Multiverse
 from utils.serialization import serialize
 from utils.spaces import SpaceConfig, MembershipStatus
 
-
-from peoplebot.scenarios.chat_stats import update_chat_stats, tag_everyone, update_chat_data
+from peoplebot.scenarios.chat_stats import update_chat_data, update_chat_stats, tag_everyone
 from peoplebot.scenarios.events import try_invitation, try_event_usage, try_event_creation, try_event_edition
 from peoplebot.scenarios.peoplebook import try_peoplebook_management
 from peoplebot.scenarios.wachter import do_wachter_check

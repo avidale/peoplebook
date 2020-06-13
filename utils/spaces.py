@@ -15,6 +15,13 @@ class MembershipStatus:
     OWNER = 'owner'
 
 
+MEMBERSHIP_STATUSES = [
+    (MembershipStatus.NONE, 'Не менять статус'),
+    (MembershipStatus.GUEST, 'Поднять до гостя сообщества'),
+    (MembershipStatus.MEMBER, 'Поднять до члена сообщества'),
+]
+
+
 class SpaceConfig:
     def __init__(
             self,

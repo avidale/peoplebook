@@ -3,11 +3,13 @@ from telebot import TeleBot
 from telebot.types import Message
 
 from peoplebot.scenarios.peoplebook_from_whois import add_peoplebook_from_whois, validate_whois_text
-from peoplebot.scenarios.chat_stats import ChatData
+from utils.chat_data import ChatData
 from utils.database import Database
 from utils.messaging import BaseSender
 from utils.spaces import SpaceConfig, MembershipStatus
 from utils.sugar import fill_none
+from utils.wachter_utils import get_public_chat_intro_text, get_public_chat_greeting_text, \
+    get_public_chat_failed_greeting_text
 
 
 def do_wachter_check(
@@ -96,34 +98,3 @@ def do_wachter_check(
         # todo: don't print it
         pass
         print('user {} is already a member of community {}'.format(user_object.get('username'), space_cfg.key))
-
-
-def get_public_chat_intro_text(space: SpaceConfig, chat_data: ChatData):
-    if chat_data.public_chat_intro_text:
-        return chat_data.public_chat_intro_text
-    if space.public_chat_intro_text:
-        return space.public_chat_intro_text
-    whois_tag = fill_none(chat_data.whois_tag, space.whois_tag)
-    text = f'Добро пожаловать в чат сообщества {space.title}.\n' \
-        f'Пожалуйста, представьтесь сообществу.\n' \
-        f'Расскажите:\n' \
-        f'- чем вы занимаетесь или занимались;\n' \
-        f'- на какие темы с вами стоит поговорить;\n' \
-        f'- как с вами можно связаться.\n' \
-        f'Обязательно включите в своё сообщение тег {whois_tag}, иначе я не распознаю его.'
-    # todo: add the kick text.
-    return text
-
-
-def get_public_chat_greeting_text(space: SpaceConfig, chat_data: ChatData):
-    if chat_data.public_chat_greeting_text:
-        return chat_data.public_chat_greeting_text
-    if space.public_chat_greeting_text:
-        return space.public_chat_greeting_text
-    return 'Ура! Ваше приветствие распознано и появится в пиплбуке сообщества.'
-
-
-def get_public_chat_failed_greeting_text(space: SpaceConfig, chat_data: ChatData):
-    return 'Спасибо, что вы представились! ' \
-           'Мне нравится ваше представление, но хотелось бы узнать о вас побольше. ' \
-           'Пожалуйста, отредактируйте ваше сообщение, добавив больше деталей.'
