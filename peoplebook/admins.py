@@ -213,4 +213,3 @@ def chats_page(space):
         the_chat=the_chat,
         defaults=defaults,
     )
-
