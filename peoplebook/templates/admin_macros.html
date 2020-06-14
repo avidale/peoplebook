@@ -1,0 +1,12 @@
+{% macro admin_nav(space) %}
+    <nav class="bd-navbar navbar has-shadow" role="navigation" aria-label="main navigation">
+      <div class="navbar-brand">
+        <a class="navbar-item" href="/admin/{{space}}/details">
+          <p>Базовые настройки</p>
+        </a>
+        <a class="navbar-item" href="/admin/{{space.key}}/chats">
+          <p>Настройки отдельных чатов</p>
+        </a>
+      </div>
+    </nav>
+{% endmacro %}

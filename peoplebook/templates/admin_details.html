@@ -1,13 +1,15 @@
 {% extends 'basic_template.html' %}
+{% from 'admin_macros.html' import admin_nav %}
 
 {% block title %}
   <title> Сообщество {{ space.title }} - Админка  </title>
 {% endblock %}
 
-
+{% block navbar %}
+  {{ admin_nav(space=space) }}
+{% endblock %}
 
 {% block content %}
-
 <section>
     <div class="container">
         <h1>Опасная зона! Настройка параметров сообщества {{ space.title }} </h1>
