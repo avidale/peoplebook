@@ -1,3 +1,4 @@
+import time
 from datetime import datetime
 from telebot import TeleBot
 from telebot.types import Message
@@ -10,6 +11,7 @@ from utils.spaces import SpaceConfig, MembershipStatus
 from utils.sugar import fill_none
 from utils.wachter_utils import get_public_chat_intro_text, get_public_chat_greeting_text, \
     get_public_chat_failed_greeting_text
+from utils import wachter_utils
 
 
 def do_wachter_check(
@@ -98,3 +100,57 @@ def do_wachter_check(
         # todo: don't print it
         pass
         print('user {} is already a member of community {}'.format(user_object.get('username'), space_cfg.key))
+
+
+def kick_all_space(
+        db: Database,
+        space_cfg: SpaceConfig,
+        sender: BaseSender,
+        bot: TeleBot,
+):
+    for record in db.mongo_chats.find({'space': space_cfg.key}):
+        chat_data = ChatData.from_record(
+            record=record,
+            chat_id=None,
+            space=space_cfg.key,
+        )
+        kick_timeout = wachter_utils.get_kick_timeout(space=space_cfg, chat_data=chat_data)
+        if not kick_timeout:
+            continue
+        for item in db.mongo_chat_waiting_list.find({
+            'space': space_cfg.key,
+            'chat_id': chat_data.chat_id,
+            'active': True,
+        }):
+            now = datetime.utcnow()
+            prev = datetime.fromisoformat(item.get('timestamp', str(now)))
+            diff = (now-prev).total_seconds() / 60
+            if diff < kick_timeout:
+                continue
+            user_id = item['tg_id']
+            chat_membership = bot.get_chat_member(chat_id=chat_data.chat_id, user_id=user_id)
+            status = chat_membership.status
+            # Can be “creator”, “administrator”, “member”, “restricted”, “left” or “kicked”
+            if chat_membership in {'member', 'restricted'}:
+                sender(
+                    user_id=chat_data.chat_id,
+                    text='Удаляю вас из чата из-за отсутствия представления.',
+                    database=db,
+                    intent='kick',
+                )
+                bot.kick_chat_member(
+                    chat_id=chat_data.chat_id,
+                    user_id=user_id,
+                    until_date=int(time.time()) + 60 * 5  # after 5 minutes the user can retry
+                )
+            else:
+                print(f'cannot kick {item}, because their chat status is {status}')
+            db.mongo_chat_waiting_list.update_many(
+                {
+                    'space': space_cfg.key,
+                    'chat_id': chat_data.chat_id,
+                    'active': True,
+                }, {
+                    '$set': {'active': False}
+                }
+            )

@@ -32,3 +32,9 @@ def get_public_chat_failed_greeting_text(space: SpaceConfig, chat_data: ChatData
     return 'Спасибо, что вы представились! ' \
            'Мне нравится ваше представление, но хотелось бы узнать о вас побольше. ' \
            'Пожалуйста, отредактируйте ваше сообщение, добавив больше деталей.'
+
+
+def get_kick_timeout(space: SpaceConfig, chat_data: ChatData):
+    if chat_data.kick_timeout is not None:
+        return chat_data.kick_timeout
+    return space.kick_timeout or 0

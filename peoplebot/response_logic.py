@@ -15,7 +15,7 @@ from utils.spaces import SpaceConfig, MembershipStatus
 from peoplebot.scenarios.chat_stats import update_chat_data, update_chat_stats, tag_everyone
 from peoplebot.scenarios.events import try_invitation, try_event_usage, try_event_creation, try_event_edition
 from peoplebot.scenarios.peoplebook import try_peoplebook_management
-from peoplebot.scenarios.wachter import do_wachter_check
+from peoplebot.scenarios.wachter import do_wachter_check, kick_all_space
 from peoplebot.scenarios.conversation import try_conversation, fallback
 from peoplebot.scenarios.dog_mode import doggy_style
 from peoplebot.scenarios.push import try_queued_messages
@@ -168,6 +168,19 @@ class NewMultiverse(Multiverse):
         self.app.route("/{}/restart-coffee/".format(ADMIN_URL_PREFIX))(self.force_restart_coffee)
         self.app.route("/{}/send-events/".format(ADMIN_URL_PREFIX))(self.do_event_management)
         self.app.route("/{}/wakeup/".format(ADMIN_URL_PREFIX))(self.wake_up)
+        self.app.route("/{}/frequent-wakeup/".format(ADMIN_URL_PREFIX))(self.frequent_wake_up)
+
+    def frequent_wake_up(self):
+        for space_name, space in self.spaces_dict.items():
+            if space_name not in self.senders_dict:
+                continue
+            kick_all_space(
+                db=self.db,
+                sender=self.senders_dict[space_name],
+                space_cfg=space,
+                bot=self.bots_dict[space_name],
+            )
+        return "Частая встряска произошла!", 200
 
     def wake_up(self):
         self.all_random_coffee()
