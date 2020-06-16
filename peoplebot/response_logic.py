@@ -39,12 +39,13 @@ def respond(message: Message, database: Database, sender: BaseSender, space_cfg:
         message.message_id, space_cfg.key, message.content_type, message.text
     ))
     # avoid duplicate response to some Telegram messages
-    if message.message_id in PROCESSED_MESSAGES[space_cfg.key] and not edited:
+    joint_id = (message.message_id, message.chat.id)
+    if joint_id in PROCESSED_MESSAGES[space_cfg.key] and not edited:
         print('ignoring a repeated message')
         return
     elif edited:
         print('processing an edited message')
-    PROCESSED_MESSAGES[space_cfg.key].add(message.message_id)
+    PROCESSED_MESSAGES[space_cfg.key].add(joint_id)
 
     if message.chat.type != 'private':
         print('got a message from public chat', message.chat)
