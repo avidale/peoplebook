@@ -84,6 +84,7 @@ def do_wachter_check(
                 }
             )
             if fill_none(chat_data.add_whois_to_peoplebook, space_cfg.add_whois_to_peoplebook):
+                print('trying adding to peoplebook from whois (if it is empty)')
                 add_peoplebook_from_whois(
                     message=message,
                     database=database,
@@ -91,12 +92,15 @@ def do_wachter_check(
                     bot=bot,
                 )
             if adding_policy == MembershipStatus.NONE:
+                print('do not add user of the chat to the club due to empty adding policy')
                 pass
             elif adding_policy == MembershipStatus.GUEST:
                 database.add_guest(username=message.from_user.username, space_name=space_cfg.key)
+                print('make user of the chat a guest due to adding policy')
             else:
                 # member or admin or owner => just member
                 database.add_member(username=message.from_user.username, space_name=space_cfg.key)
+                print('make user of the chat a member due to adding policy')
             sender(
                 text=get_public_chat_greeting_text(space=space_cfg, chat_data=chat_data),
                 reply_to=message,

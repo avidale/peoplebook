@@ -20,6 +20,7 @@ def add_peoplebook_from_whois(
     fltr = {'username': message.from_user.username, 'space': space_cfg.key}
     existing_page = database.mongo_peoplebook.find_one(fltr)
     if existing_page and not rewrite:
+        print('the peoplebook page already exists, not rewriting it')
         return
     if bot:
         user_photo = profile_photo_url_from_message(message=message, bot=bot)
