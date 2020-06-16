@@ -1,4 +1,5 @@
 from typing import Optional
+from peoplebot.scenarios.peoplebook_auth import make_pb_url
 
 
 class FeatureName:
@@ -100,14 +101,19 @@ class SpaceConfig:
         return f'Это бот сообщества {self.title}.\n' \
             f'Чтобы получить к нему доступ, обратитесь к администратору сообщества.'
 
-    def get_text_help_authorized(self):
+    def get_text_help_authorized(self, user_object=None):
         if self.text_help_authorized:
-            return self.text_help_authorized
-        return f'Это бот сообщества {self.title}. ' \
-            f'Я умею:' \
-            f'- назначать random coffee между участниками;' \
-            f'- показывать пиплбук (список профилей членов сообщества);' \
-            f'- назначать встречи сообщества и собирать на них гостей.'
+            result = self.text_help_authorized
+        else:
+            result = f'Это бот сообщества {self.title}. ' \
+                f'\nЯ умею:' \
+                f'\n- назначать random coffee между участниками;' \
+                f'\n- показывать пиплбук (список профилей членов сообщества);' \
+                f'\n- назначать встречи сообщества и собирать на них гостей.'
+        if user_object is not None:
+            url = make_pb_url('/{}/all'.format(self.key), user_object['tg_id'])
+            result = result + f'\n\n<a href="{url}">Авторизоваться и посмотреть пиплбук</a>'
+        return result
 
 
 def get_space_config(mongo_db, space_name) -> Optional[SpaceConfig]:
