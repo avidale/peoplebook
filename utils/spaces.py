@@ -110,7 +110,7 @@ class SpaceConfig:
                 f'\n- назначать random coffee между участниками;' \
                 f'\n- показывать пиплбук (список профилей членов сообщества);' \
                 f'\n- назначать встречи сообщества и собирать на них гостей.'
-        if user_object is not None:
+        if user_object is not None and user_object.get('tg_id'):
             url = make_pb_url('/{}/all'.format(self.key), user_object['tg_id'])
             result = result + f'\n\n<a href="{url}">Авторизоваться и посмотреть пиплбук</a>'
         return result

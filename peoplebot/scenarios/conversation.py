@@ -44,5 +44,5 @@ def fallback(ctx: Context, database: Database):
         ctx.response = ctx.space.get_text_help_unauthorized()
     else:
         ctx.intent = Intents.OTHER
-        ctx.response = ctx.space.get_text_help_authorized()
+        ctx.response = ctx.space.get_text_help_authorized(user_object=ctx.user_object)
     return ctx
