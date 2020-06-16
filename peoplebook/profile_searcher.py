@@ -86,13 +86,14 @@ class ProfileSearcher:
         return top
 
 
-def load_ft():
-    with open('similarity/fasttext_extract.pkl', 'rb') as f:
+def load_ft(
+        exact_path='similarity/fasttext_extract.pkl',
+        model_path='similarity/araneum_new_compressed.model',
+):
+    with open(exact_path, 'rb') as f:
         main_w2v = pickle.load(f)
 
-    ft_small = gensim.models.fasttext.FastTextKeyedVectors.load(
-        'similarity/araneum_new_compressed.model'
-    )
+    ft_small = gensim.models.fasttext.FastTextKeyedVectors.load(model_path)
 
     w2v = similarity_tools.FallbackW2V(main_w2v, ft_small)
     return w2v

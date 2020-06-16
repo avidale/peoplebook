@@ -5,6 +5,8 @@ from utils.spaces import SpaceConfig
 
 from utils.photo import profile_photo_url_from_message
 
+from similarity.parse_whois import WHOIS_SEGMENTER_MODEL, segmentize
+
 
 def add_peoplebook_from_whois(
         message: Message,
@@ -39,14 +41,15 @@ def add_peoplebook_from_whois(
 
 
 def parse_whois_text(text):
-    # todo: implement me properly
-    return {
-        'first_name': 'Anonymous',
-        'last_name': 'Anonymous',
-        'activity': text,
-        'topics': '',
-        'contacts': '',
-    }
+    if not WHOIS_SEGMENTER_MODEL:
+        return {
+            'first_name': 'Anonymous',
+            'last_name': 'Anonymous',
+            'activity': text,
+            'topics': '',
+            'contacts': '',
+        }
+    return segmentize(model=WHOIS_SEGMENTER_MODEL, text=text)
 
 
 def validate_whois_text(text):
