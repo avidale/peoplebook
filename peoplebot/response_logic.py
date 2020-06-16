@@ -35,9 +35,11 @@ logger.setLevel(logging.DEBUG)
 
 def respond(message: Message, database: Database, sender: BaseSender, space_cfg: SpaceConfig, bot=None, edited=False):
     # todo: make it less dependent on telebot Message class structure
-    logger.info('Got message {} in space {} with type {} and text {}'.format(
-        message.message_id, space_cfg.key, message.content_type, message.text
-    ))
+    logger.info(
+        f'Got message {message.message_id} in space {space_cfg.key} '
+        f'from user {message.from_user.username} / {message.from_user.id}  and chat {message.chat.title} '
+        f'with type {message.content_type} and text {message.text}'
+    )
     # avoid duplicate response to some Telegram messages
     joint_id = (message.message_id, message.chat.id)
     if joint_id in PROCESSED_MESSAGES[space_cfg.key] and not edited:
