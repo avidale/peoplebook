@@ -14,6 +14,10 @@ from similarity import matchers, basic_nlu, similarity_tools
 class ProfileSearcher:
     def __init__(self, w2v, records):
         self.w2v = w2v
+        if not records:
+            self.fitted = False
+            return
+        self.fitted = True
         self.prepare_matchers(records=records)
         self.prepare_df(records=records)
 
@@ -38,8 +42,10 @@ class ProfileSearcher:
         t = time.time()
         print('start getting searcher data')
         df = pd.DataFrame(records)
-        df.topics.fillna('', inplace=True)
-        df.activity.fillna('', inplace=True)
+        if 'topics' in df.columns:
+            df.topics.fillna('', inplace=True)
+        if 'activity' in df.columns:
+            df.activity.fillna('', inplace=True)
         self.df = df
 
         parts, owners, normals = extract_all_chunks(df)
