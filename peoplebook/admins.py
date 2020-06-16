@@ -62,6 +62,30 @@ class SpaceSettingsForm(FlaskForm):
     text_help_authorized = TextAreaField('Сообщение-help для членов сообщества')
     text_help_unauthorized = TextAreaField('Сообщение-help внешних пользователей')
     text_after_messages = TextAreaField('Прибаутка в собщениях бота')
+
+    # wachter settings
+    add_chat_members_to_community = SelectField(
+        'До какого статуса поднимать участников чата',
+        choices=MEMBERSHIP_STATUSES
+    )
+    require_whois = BooleanField('Требовать ли представления в чате')
+    whois_tag = StringField(
+        'Тег в представлении участника (например, #whois)',
+        description='По умолчанию будет использоваться #whois'
+    )
+    public_chat_intro_text = TextAreaField(
+        'Ответ бота на добавление участника в чат',
+        description='Если не заполнить, бот сам составит сообщение'
+    )
+    public_chat_greeting_text = TextAreaField(
+        'Ответ бота на представление участника в чате',
+        description='Если не заполнить, бот сам составит сообщение'
+    )
+    add_whois_to_peoplebook = BooleanField('Добавлять ли представления участников в пиплбук')
+    kick_timeout = IntegerField(
+        'Через сколько минут удалять из чата не представившихся участников (0 - не удалять)',
+    )
+
     submit = SubmitField('Обновить данные')
 
 
@@ -81,7 +105,7 @@ class ChatSettingsForm(FlaskForm):
     public_chat_intro_text = TextAreaField('Ответ бота на добавление участника в чат')
     public_chat_greeting_text = TextAreaField('Ответ бота на представление участника в чате')
     add_whois_to_peoplebook = SelectField('Добавлять ли представления участников в пиплбук', choices=TERNARY_TUPLES)
-    kick_timeout: int = IntegerField(
+    kick_timeout = IntegerField(
         'Через сколько минут удалять из чата не представившихся участников (0 - не удалять)',
     )
     submit_chat_settings = SubmitField('Сохранить настройки чата')
@@ -101,7 +125,9 @@ def space_details(space):
     form = SpaceSettingsForm()
     update_status = None
     if not form.is_submitted():
-        form = SpaceSettingsForm(MultiDict(space_cfg.__dict__))
+        md = MultiDict(space_cfg.__dict__)
+        md['kick_timeout'] = md['kick_timeout'] or 0
+        form = SpaceSettingsForm(md)
     if form.validate_on_submit():
         update_dict = {
             k: v
