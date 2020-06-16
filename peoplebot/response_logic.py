@@ -90,16 +90,15 @@ def respond(message: Message, database: Database, sender: BaseSender, space_cfg:
         elif space_cfg.guest_chat_id and message.chat.id == space_cfg.guest_chat_id:
             database.mongo_membership.update_one(user_filter, {'$set': {'is_guest': True}}, upsert=True)
             print('adding user {} to the community guests'.format(user_filter))
-        elif space_cfg.add_chat_members_to_community != MembershipStatus.NONE or space_cfg.require_whois:
-            do_wachter_check(
-                user_object=uo,
-                database=database,
-                space_cfg=space_cfg,
-                message=message,
-                bot=bot,
-                sender=sender,
-                chat_data=chat_data,
-            )
+        do_wachter_check(
+            user_object=uo,
+            database=database,
+            space_cfg=space_cfg,
+            message=message,
+            bot=bot,
+            sender=sender,
+            chat_data=chat_data,
+        )
         return
 
     if bot is not None:

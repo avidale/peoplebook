@@ -85,6 +85,16 @@ class Database:
             return True
         return False
 
+    def get_top_status(self, user_object):
+        if self.is_admin(user_object=user_object):
+            return 'admin'
+        elif self.is_member(user_object=user_object):
+            return 'member'
+        elif self.is_guest(user_object=user_object):
+            return 'guest'
+        else:
+            return 'psina'
+
     def is_member(self, user_object):
         username = normalize_username(user_object.get('username') or 'anonymous')
         space = user_object.get('space') or 'kv'

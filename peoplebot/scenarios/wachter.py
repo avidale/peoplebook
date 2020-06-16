@@ -25,7 +25,14 @@ def do_wachter_check(
 ):
     whois_tag = fill_none(chat_data.whois_tag, space_cfg.whois_tag)
     adding_policy = fill_none(chat_data.add_chat_members_to_community, space_cfg.add_chat_members_to_community)
-
+    require_whois = fill_none(chat_data.require_whois, space_cfg.require_whois)
+    if adding_policy == MembershipStatus.NONE and not require_whois:
+        print('this space|chat does not add chat members to community and does not require whois; skipping wachter')
+        return
+    print(
+        f'starting trying wachter check for chat {chat_data.title} '
+        f'and user {user_object.get("username")} with status {database.get_top_status(user_object)}'
+    )
     if not database.is_at_least_guest(user_object=user_object):
         # todo: do the right thing if the bot itself was added to the chat (new_chat_members)
         if not message.text or whois_tag not in message.text:
