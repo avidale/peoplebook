@@ -658,7 +658,7 @@ def try_event_edition(ctx: Context, database: Database):
     elif ctx.text == '/invitation_statuses_excel':
         ctx.intent = 'EVENT_GET_INVITATION_STATUSES_EXCEL'
         ctx.response = 'Формирую выгрузку...'
-        ctx.file_to_send = event_to_file(event_code, database=database)
+        ctx.file_to_send = event_to_file(event_code, database=database, space=ctx.space)
     elif ctx.text == '/broadcast':
         ctx.intent = 'EVENT_BROADCAST'
         ctx.response = 'Вы точно хотите отправить сообщение всем людям, подтвердившим участие во встрече {}?' \
@@ -930,18 +930,14 @@ def daily_event_management(database: Database, sender: BaseSender, space: SpaceC
                 continue
             if invitation.get('payment_status') != InvitationStatuses.PAYMENT_PAID and \
                     event['days_to'] in {0, 1, 3, 5, 7, 14, 21}:
-                text = 'Здравствуйте, {}! Осталось всего {} дней до очередной встречи {} - /{}.' \
+                name = user_account.get('first_name', 'товарищ ' + user_account.get('username', 'Анонимус'))
+                text = f'Здравствуйте, {name}! Осталось всего {event["days_to"] + 1} ' \
+                       f'дней до очередной встречи {space.title} - /{invitation["code"]}.' \
                        '\nКажется, вы всё ещё не оплатили своё участие во встрече. ' \
                        'Пожалуйста, сделайте это заранее!' \
                        '\n Если вы уже оплатили, пожалуйста, сообщите об этом, ' \
                        'нажав кнопку "Сообщить об оплате".' \
-                       '{}'.format(
-                            space.title,
-                            user_account.get('first_name', 'товарищ ' + user_account.get('username', 'Анонимус')),
-                            event['days_to'] + 1,
-                            invitation['code'],
-                            space.text_after_messages
-                        )
+                       f'{space.text_after_messages}'
                 intent = EventIntents.PAYMENT_REMINDER
                 suggests = ['Сообщить об оплате'] + make_standard_suggests(database=database, user_object=user_account)
                 if sender(text=text, database=database, suggests=suggests, user_id=user_account['tg_id']):
@@ -957,11 +953,9 @@ def daily_event_management(database: Database, sender: BaseSender, space: SpaceC
                     )
                 time.sleep(BATCH_MESSAGE_TIMEOUT)
             elif event['days_to'] in {0, 5}:
-                text = 'Здравствуйте, {}! Осталось всего {} дней до очередной встречи {}\n'.format(
-                    space.title,
-                    user_account.get('first_name', 'товарищ ' + user_account.get('username', 'Анонимус')),
-                    event['days_to'] + 1
-                )
+                name = user_account.get('first_name', 'товарищ ' + user_account.get('username', 'Анонимус'))
+                days_to = event['days_to'] + 1
+                text = f'Здравствуйте, {name}! Осталось всего {days_to} дней до очередной встречи {space.title}\n'
                 text = text + format_event_description(event, user_tg_id=user_account['tg_id'], space_name=space.key)
                 text = text + '\nСоветую вам полистать пиплбук встречи заранее, чтобы нетворкаться на ней эффективнее.'
                 text = text + '\n' + space.text_after_messages + '\U0001f60e'
@@ -1055,8 +1049,8 @@ def event_to_df(event_code, database, space: SpaceConfig):
     return df
 
 
-def event_to_file(event_code, database):
-    df = event_to_df(event_code, database)
+def event_to_file(event_code, database, space):
+    df = event_to_df(event_code, database, space=space)
     filename = 'data_{}.xlsx'.format(event_code)
     df.to_excel(filename)
     return filename
