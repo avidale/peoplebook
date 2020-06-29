@@ -373,6 +373,9 @@ def sent_invitation_to_user(username, event_code, database: Database, sender: Ba
     user_account = database.mongo_users.find_one({'username': username, 'space': space.key})
     if user_account is None:
         return False
+    if user_account.get('deactivated'):
+        print('user {} is deactivated, skipping it'.format(user_account))
+        return False
     text, intent, suggests = make_invitation(
         invitation=invitation, database=database, user_tg_id=user_account['tg_id'], space=space
     )
@@ -927,6 +930,9 @@ def daily_event_management(database: Database, sender: BaseSender, space: SpaceC
                 {'username': invitation['username'], 'space': space.key}
             )
             if user_account is None:
+                continue
+            if user_account.get('deactivated'):
+                print('user {} is deactivated, skipping it'.format(user_account))
                 continue
             if invitation.get('payment_status') != InvitationStatuses.PAYMENT_PAID and \
                     event['days_to'] in {0, 1, 3, 5, 7, 14, 21}:
