@@ -1,4 +1,5 @@
 import random
+import datetime
 
 import config as cfg
 
@@ -233,6 +234,13 @@ def search(space=cfg.DEFAULT_SPACE):
         return SPACE_NOT_FOUND
     if request.form and request.form.get('req_text'):
         req_text = request.form['req_text']
+        req_logs = mongo_db.get_collection('search_requests')
+        req_logs.insert_one({
+            'text': req_text,
+            'space': space,
+            'time': datetime.datetime.now(),
+            'username': get_current_username(),
+        })
         results = ps.searcher.lookup(req_text)
         pb_dict = get_pb_dict(space=space)
         for r in results:
