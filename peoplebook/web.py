@@ -83,7 +83,7 @@ def peoplebook_for_event(event_code, space=cfg.DEFAULT_SPACE):
     the_event = mongo_events.find_one({'code': event_code, 'space': space_cfg.key})
     if the_event is None:
         return 'Такого события не найдено!'
-    profiles = get_profiles_for_event(event_code)
+    profiles = get_profiles_for_event(event_code, space_id=space_cfg.key)
     # profiles = [p for rp in raw_profiles for p in rp.get('profiles', [])]
     return render_template(
         'backend_peoplebook.html',

@@ -59,7 +59,7 @@ def get_current_username():
             return u.username
 
 
-def get_profiles_for_event(event_code):
+def get_profiles_for_event(event_code, space_id):
     raw_profiles = list(mongo_participations.aggregate([
         {
             '$lookup': {
@@ -72,7 +72,7 @@ def get_profiles_for_event(event_code):
             '$match': {'code': event_code, 'status': 'ACCEPT'}
         }
     ]))
-    profiles = [p for rp in raw_profiles for p in rp.get('profiles', [])]
+    profiles = [p for rp in raw_profiles for p in rp.get('profiles', []) if p.get('space') == space_id]
     return profiles
 
 
