@@ -100,6 +100,7 @@ def peoplebook_for_event(event_code, space=cfg.DEFAULT_SPACE):
 def peoplebook_for_all_members(space=cfg.DEFAULT_SPACE):
     if not check_space(space):
         return SPACE_NOT_FOUND
+    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
     raw_profiles = list(mongo_membership.aggregate([
         {
             '$lookup': {
@@ -109,11 +110,10 @@ def peoplebook_for_all_members(space=cfg.DEFAULT_SPACE):
                 'as': 'profiles'
             }
         }, {
-            '$match': {'is_member': True}
+            '$match': {'is_member': True, 'space': space_cfg.key}
         }
     ]))
-    profiles = [p for rp in raw_profiles for p in rp.get('profiles', [])]
-    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+    profiles = [p for rp in raw_profiles for p in rp.get('profiles', []) if p.get('space') == space_cfg.key]
     return render_template(
         'backend_peoplebook.html',
         title='Члены клуба {}'.format(space_cfg.title),
@@ -143,8 +143,11 @@ def peoplebook_for_all_members_and_guests(space=cfg.DEFAULT_SPACE):
                     'localField': 'username',
                     'foreignField': 'username',
                     'as': 'profiles'
-                }
-            }
+                },
+            },
+            {
+                '$match': {'space': space_cfg.key},
+            },
         ]))
         profiles = [p for rp in raw_profiles for p in rp.get('profiles', []) if p.get('space') == space]
     else:
