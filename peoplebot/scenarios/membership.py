@@ -64,8 +64,14 @@ def try_membership_management(ctx: Context, database: Database):
         ctx.response = resp
     elif re.match('(добавь|добавить)( нов(ых|ого))? (члена|членов)', ctx.text_normalized):
         ctx.intent = 'FRIEND_OR_MEMBER_ADD_TRY'
-        ctx.response = 'Напишите "добавить членов клуба", ' \
-                       'чтобы добавить членов в Каппа Веди первый (маленькую группу). \n' \
-                       'Напишите "добавить членов сообщества", ' \
-                       'чтобы добавить членов в Каппа Веди (большую группу).'  # todo: customize this message
+        if ctx.space.key == 'kv':
+            ctx.response = 'Напишите "добавить членов клуба", ' \
+                           'чтобы добавить членов в Каппа Веди первый (маленькую группу). \n' \
+                           'Напишите "добавить членов сообщества", ' \
+                           'чтобы добавить членов в Каппа Веди (большую группу).'
+            ctx.suggests.append('добавить членов клуба')
+            ctx.suggests.append('добавить членов сообщества')
+        else:
+            ctx.response = 'Напишите "добавить членов сообщества", чтобы добавить членов.'
+            ctx.suggests.append('добавить членов сообщества')
     return ctx
