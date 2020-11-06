@@ -19,7 +19,7 @@ def make_standard_suggests(database: Database, user_object):
     if database.is_admin(user_object):
         if space.supports(FeatureName.EVENTS):
             suggests.append('Создать встречу')
-        suggests.append('Добавить членов клуба')
+        suggests.append('Добавить членов сообщества')
         if space.key == 'kv':
             # todo: make it configurable
             suggests.append('Добавить членов сообщества')
