@@ -119,7 +119,7 @@ class SpaceConfig:
 
     @property
     def community_is_split(self) -> bool:
-        return self.key == DEFAULT_SPACE
+        return self.key == DEFAULT_SPACE or self.key == 'test'
 
 
 def get_space_config(mongo_db, space_name) -> Optional[SpaceConfig]:

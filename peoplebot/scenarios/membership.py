@@ -85,7 +85,7 @@ def try_membership_management(ctx: Context, database: Database):
             _add_member(ctx=ctx, database=database)
     elif re.match('(добавь|добавить)( нов(ых|ого))? (члена|членов)', ctx.text_normalized):
         ctx.intent = 'FRIEND_OR_MEMBER_ADD_TRY'
-        if ctx.space.key == DEFAULT_SPACE:
+        if ctx.space.community_is_split:
             ctx.response = 'Напишите "добавить членов клуба", ' \
                            'чтобы добавить членов в Каппа Веди первый (маленькую группу). \n' \
                            'Напишите "добавить членов сообщества", ' \
