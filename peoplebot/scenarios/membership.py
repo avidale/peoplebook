@@ -1,6 +1,7 @@
 
 import re
 
+from config import DEFAULT_SPACE
 from utils import matchers
 
 from utils.database import Database
@@ -61,30 +62,30 @@ def try_membership_management(ctx: Context, database: Database):
     # member management
     if re.match('(добавь|добавить)( нов(ых|ого))? (члена|членов)( в)? клуба?', ctx.text_normalized):
         ctx.intent = 'MEMBER_ADD_INIT'
-        if ctx.space.key == 'kv':
+        if ctx.space.community_is_split:
             ctx.response = 'Введите телеграмовский логин/логины новых членов КЛУБА через пробел.'
         else:
             ctx.response = 'Введите телеграмовский логин/логины новых членов сообщества через пробел.'
     elif ctx.last_intent == 'MEMBER_ADD_INIT':
-        if ctx.space.key == 'kv':
+        if ctx.space.community_is_split:
             _add_member(ctx=ctx, database=database, club_name='КЛУБА')
         else:
             _add_member(ctx=ctx, database=database)
     elif re.match('(добавь|добавить)( нов(ых|ого))? (члена|членов)( в)? сообществ[оа]', ctx.text_normalized):
         ctx.intent = 'FRIEND_ADD_INIT'
-        if ctx.space.key == 'kv':
+        if ctx.space.community_is_split:
             ctx.response = 'Введите телеграмовский логин/логины новых членов СООБЩЕСТВА через пробел.'
         else:
             ctx.response = 'Введите телеграмовский логин/логины новых членов сообщества через пробел.'
     elif ctx.last_intent == 'FRIEND_ADD_INIT':
         ctx.intent = 'FRIEND_ADD_COMPLETE'
-        if ctx.space.key == 'kv':
+        if ctx.space.community_is_split:
             _add_guest(ctx=ctx, database=database)
         else:
             _add_member(ctx=ctx, database=database)
     elif re.match('(добавь|добавить)( нов(ых|ого))? (члена|членов)', ctx.text_normalized):
         ctx.intent = 'FRIEND_OR_MEMBER_ADD_TRY'
-        if ctx.space.key == 'kv':
+        if ctx.space.key == DEFAULT_SPACE:
             ctx.response = 'Напишите "добавить членов клуба", ' \
                            'чтобы добавить членов в Каппа Веди первый (маленькую группу). \n' \
                            'Напишите "добавить членов сообщества", ' \

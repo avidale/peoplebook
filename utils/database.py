@@ -4,6 +4,7 @@ from datetime import datetime
 from pymongo import MongoClient
 from typing import Dict, List, Optional
 
+from config import DEFAULT_SPACE
 from utils import matchers
 from utils.chat_data import ChatData
 from utils.matchers import normalize_username
@@ -77,7 +78,7 @@ class Database:
 
     def is_admin(self, user_object):
         username = normalize_username(user_object.get('username') or 'anonymous')
-        space_name = user_object.get('space') or 'kv'
+        space_name = user_object.get('space') or DEFAULT_SPACE
         if space_name not in self._cached_spaces:
             return False
         space = self._cached_spaces[space_name]
@@ -97,7 +98,7 @@ class Database:
 
     def is_member(self, user_object):
         username = normalize_username(user_object.get('username') or 'anonymous')
-        space = user_object.get('space') or 'kv'
+        space = user_object.get('space') or DEFAULT_SPACE
         key = (username, space)
         self._update_cache()
         return self._cached_mongo_membership.get(key, {}).get('is_member')
@@ -106,7 +107,7 @@ class Database:
         # todo: check case of username here and everywhere
         self._update_cache()
         username = normalize_username(user_object.get('username') or 'anonymous')
-        space = user_object.get('space') or 'kv'
+        space = user_object.get('space') or DEFAULT_SPACE
         key = (username, space)
         mem = self._cached_mongo_membership.get(key, {})
         if mem.get('is_guest'):

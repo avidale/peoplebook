@@ -642,7 +642,7 @@ def try_event_edition(ctx: Context, database: Database):
         event_members = list(database.mongo_participations.find({'code': event_code, 'space': ctx.space.key}))
         if len(event_members) == 0:
             ctx.response = 'Пока в этой встрече совсем нет участников.'
-            if ctx.space.key == 'kv':
+            if ctx.space.key == DEFAULT_SPACE:
                 ctx.response = ctx.response + '\nЕсли вы есть, будьте первыми!!!'
         else:
             statuses = [InvitationStatuses.translate(em['status'], em.get('payment_status')) for em in event_members]

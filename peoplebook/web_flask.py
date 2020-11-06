@@ -2,6 +2,8 @@ import os
 import pymongo
 import random
 from autolink import linkify
+
+from config import DEFAULT_SPACE
 from peoplebook.models import User
 import hashlib
 
@@ -26,7 +28,7 @@ login_manager.login_message = None
 
 
 history_configs = {
-    'kv':{
+    DEFAULT_SPACE: {
       "current": "apr2019",
       "current_text": "27 апреля 2019",
       "history": {

@@ -1,4 +1,6 @@
 from typing import Optional
+
+from config import DEFAULT_SPACE
 from peoplebot.scenarios.peoplebook_auth import make_pb_url
 
 
@@ -89,7 +91,7 @@ class SpaceConfig:
         if feature == FeatureName.COFFEE:
             return True
         elif feature == FeatureName.EVENTS:
-            return self.key == 'kv'
+            return self.key in {'kv', 'phoenix'}
         elif feature == FeatureName.PEOPLEBOOK:
             return True
         else:
@@ -114,6 +116,10 @@ class SpaceConfig:
             url = make_pb_url('/{}/all'.format(self.key), user_object['tg_id'])
             result = result + f'\n\n<a href="{url}">Авторизоваться и посмотреть пиплбук</a>'
         return result
+
+    @property
+    def community_is_split(self) -> bool:
+        return self.key == DEFAULT_SPACE
 
 
 def get_space_config(mongo_db, space_name) -> Optional[SpaceConfig]:

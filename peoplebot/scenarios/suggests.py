@@ -20,8 +20,7 @@ def make_standard_suggests(database: Database, user_object):
         if space.supports(FeatureName.EVENTS):
             suggests.append('Создать встречу')
         suggests.append('Добавить членов сообщества')
-        if space.key == 'kv':
-            # todo: make it configurable
+        if space.community_is_split:
             suggests.append('Добавить членов сообщества')
 
     return suggests
