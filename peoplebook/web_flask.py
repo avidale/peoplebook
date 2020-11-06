@@ -25,15 +25,17 @@ login_manager.login_view = "login"
 login_manager.login_message = None
 
 
-history_config = {
-  "current": "apr2019",
-  "current_text": "27 апреля 2019",
-  "history": {
-    "apr2019": "27 апреля 2019",
-    "april2019": "27 апреля 2019",
-    "march2019": "30 марта 2019",
-    "feb2019": "2 марта 2019"
-  }
+history_configs = {
+    'kv':{
+      "current": "apr2019",
+      "current_text": "27 апреля 2019",
+      "history": {
+        "apr2019": "27 апреля 2019",
+        "april2019": "27 апреля 2019",
+        "march2019": "30 марта 2019",
+        "feb2019": "2 марта 2019"
+      }
+    }
 }
 
 

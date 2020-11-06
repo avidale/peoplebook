@@ -8,7 +8,7 @@ from flask_login import login_required, login_user, logout_user, current_user
 
 from peoplebook.web_flask import app, get_users, get_profiles_for_event, get_current_username
 from peoplebook.web_flask import mongo_events, mongo_participations, mongo_membership, mongo_peoplebook, mongo_db
-from peoplebook.web_flask import history_config
+from peoplebook.web_flask import history_configs
 
 
 from utils.database import Database
@@ -46,13 +46,16 @@ def home(space=cfg.DEFAULT_SPACE):
         if len(who_comes) >= 1:  # one participant is enough to show the event - but this may be revised
             return peoplebook_for_event(event['code'])
     space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
-    return render_template(
-        'peoplebook.html',
-        period=history_config['current'],
-        period_text=history_config['current_text'],
-        space_cfg=space_cfg,
-        user=current_user,
-    )
+    history_config = history_configs.get('key')
+    if history_config and history_config.get('current'):
+        return render_template(
+            'peoplebook.html',
+            period=history_config['current'],
+            period_text=history_config['current_text'],
+            space_cfg=space_cfg,
+            user=current_user,
+        )
+    return peoplebook_for_all_members_and_guests(space=space)
 
 
 @app.route('/history/<period>')
@@ -62,7 +65,9 @@ def history(period, space=cfg.DEFAULT_SPACE):
     if not check_space(space):
         return SPACE_NOT_FOUND
     space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
-    if period in history_config['history']:
+    history_config = history_configs.get(space)
+
+    if history_config and period in history_config['history']:
         return render_template(
             'peoplebook.html',
             period=period,
