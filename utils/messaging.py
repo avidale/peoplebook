@@ -116,8 +116,14 @@ class TelegramSender(BaseSender):
             if 'bot was blocked by the user' in str(e) or 'chat not found' in str(e):
                 database.mongo_users.update_one(
                     {'tg_id': user_id, 'space': self.space.key},
-                    {'$set': {'deactivated': True, 'deactivate_reason': str(e)}}
+                    {'$set': {
+                        'deactivated': True,
+                        'deactivate_reason': str(e),
+                        'wants_next_coffee': False,
+                    }}
                 )
+                if notify_on_error and self.admin_uid is not None:
+                    self.bot.send_message(self.admin_uid, 'Deactivating user {} {}'.format(user_id, username))
             if notify_on_error and self.admin_uid is not None:
                 self.bot.send_message(self.admin_uid, error)
             return False

@@ -32,6 +32,7 @@ def generate_good_pairs(database: Database, space: SpaceConfig, now, decay=0.5):
     free_users = [
         str(user['tg_id'])
         for user in database.mongo_users.find({'wants_next_coffee': True, 'space': space.key})
+        if not user.get('deactivated', False)
     ]
     # we deliberately use all the spaces here to avoid same pairs across different spaces
     prev_coffee_pairs = list(database.mongo_coffee_pairs.find({}))
