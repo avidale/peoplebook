@@ -122,7 +122,7 @@ def members_to_file(database: Database, space: SpaceConfig):
     df = pd.DataFrame(users)
     fdf = df[
         ['tg_id', 'username', 'first_name', 'last_name', 'pb_first_name', 'pb_last_name']
-        + ['activity', 'topics', 'contacts', 'photo']
+        + ['activity', 'topics', 'contacts', 'photo', 'wants_next_coffee']
         ]
     filename = f'members_{space.key}.xlsx'
     fdf.to_excel(filename)
