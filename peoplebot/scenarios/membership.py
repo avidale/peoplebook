@@ -1,4 +1,4 @@
-
+import pandas as pd
 import re
 
 from config import DEFAULT_SPACE
@@ -6,6 +6,7 @@ from utils import matchers
 
 from utils.database import Database
 from utils.dialogue_management import Context
+from utils.spaces import SpaceConfig
 
 
 def _add_member(ctx: Context, database: Database, club_name='сообщества'):
@@ -95,4 +96,34 @@ def try_membership_management(ctx: Context, database: Database):
         else:
             ctx.intent = 'MEMBER_ADD_INIT'
             ctx.response = 'Введите телеграмовский логин/логины новых членов сообщества через пробел.'
+    elif re.match('.*список (всех )?(участников|членов)', ctx.text_normalized):
+        ctx.intent = 'MEMBER_DOWNLOAD_LIST'
+        ctx.response = 'Готовлю выгрузку участников сообщества, сейчас пришлю.'
+        ctx.file_to_send = members_to_file(database=database, space=ctx.space)
+
     return ctx
+
+
+def members_to_file(database: Database, space: SpaceConfig):
+    users = list(database.mongo_users.find({'space': space.key}))
+    pb = {u['username']: u for u in database.mongo_peoplebook.find({'space': space.key})}
+
+    for u in users:
+        if not u['username']:
+            continue
+        uu = pb.get(u['username'])
+        if not uu:
+            continue
+        u['pb_first_name'] = uu.get('first_name')
+        u['pb_last_name'] = uu.get('last_name')
+        for k in ['activity', 'topics', 'contacts', 'photo']:
+            u[k] = uu.get(k)
+
+    df = pd.DataFrame(users)
+    fdf = df[
+        ['tg_id', 'username', 'first_name', 'last_name', 'pb_first_name', 'pb_last_name']
+        + ['activity', 'topics', 'contacts', 'photo']
+        ]
+    filename = f'members_{space.key}.xlsx'
+    fdf.to_excel(filename)
+    return filename
