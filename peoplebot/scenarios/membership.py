@@ -6,6 +6,7 @@ from utils import matchers
 
 from utils.database import Database
 from utils.dialogue_management import Context
+from utils.matchers import normalize_username
 from utils.spaces import SpaceConfig
 
 
@@ -57,6 +58,9 @@ def _add_guest(ctx: Context, database: Database):
 def try_membership_management(ctx: Context, database: Database):
     if not database.is_at_least_member(ctx.user_object):
         return ctx
+
+    new_admin = '(сделай админом|дай админку|добавь в админы (?P<un>@[a-zA-Z0-9_]+)$'
+
     # todo: add guest management
     if not database.is_admin(ctx.user_object):
         return ctx
@@ -96,11 +100,29 @@ def try_membership_management(ctx: Context, database: Database):
         else:
             ctx.intent = 'MEMBER_ADD_INIT'
             ctx.response = 'Введите телеграмовский логин/логины новых членов сообщества через пробел.'
+
     elif re.match('.*список (всех )?(участников|членов)', ctx.text_normalized):
         ctx.intent = 'MEMBER_DOWNLOAD_LIST'
         ctx.response = 'Готовлю выгрузку участников сообщества, сейчас пришлю.'
         ctx.file_to_send = members_to_file(database=database, space=ctx.space)
 
+    elif re.match('.*список (всех )?(админов|администраторов)', ctx.text_normalized):
+        ctx.intent = 'ADMINS_LIST'
+        ctx.response = 'Админы такие: ' + ', '.join(f'@{a}' for a in ctx.space.admins)
+
+    elif re.match(new_admin, ctx.text):
+        ctx.intent = 'ADMINS_ADD'
+        un = re.match(new_admin, ctx.text).groupdict().get('un')
+        if not un:
+            ctx.response = 'Не понял, кого сделать админом, простите.'
+        else:
+            un = normalize_username(un)
+            if un in ctx.space.admins:
+                ctx.response = f'@{un} уже админ!'
+            else:
+                ctx.space.admins.append(un)
+                database.mongo_spaces.update_one({'key': ctx.space.key}, {'$set': {'admins': ctx.space.admins}})
+                ctx.response = f'Окей, делаю @{un} админом данного сообщества!'
     return ctx
 
 
