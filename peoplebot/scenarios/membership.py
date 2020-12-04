@@ -59,7 +59,7 @@ def try_membership_management(ctx: Context, database: Database):
     if not database.is_at_least_member(ctx.user_object):
         return ctx
 
-    new_admin = '(сделай админом|дай админку|добавь в админы (?P<un>@[a-zA-Z0-9_]+)$'
+    new_admin = '(сделай админом|дай админку|добавь в админы) (?P<un>@[a-zA-Z0-9_]+)$'
 
     # todo: add guest management
     if not database.is_admin(ctx.user_object):
