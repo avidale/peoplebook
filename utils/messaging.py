@@ -113,7 +113,10 @@ class TelegramSender(BaseSender):
                 'space: {}'.format(self.space.key),
                 'error: {}'.format(e),
             ])
-            if 'bot was blocked by the user' in str(e) or 'chat not found' in str(e):
+            if 'bot was blocked by the user' in str(e) \
+                    or 'chat not found' in str(e) \
+                    or 'user is deactivated' in str(e) \
+                    or "bot can't initiate conversation" in str(e):
                 database.mongo_users.update_one(
                     {'tg_id': user_id, 'space': self.space.key},
                     {'$set': {
