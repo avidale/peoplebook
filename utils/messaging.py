@@ -130,3 +130,8 @@ class TelegramSender(BaseSender):
             if notify_on_error and self.admin_uid is not None:
                 self.bot.send_message(self.admin_uid, error)
             return False
+
+
+def reactivate_user_object(uo):
+    uo['deactivated'] = False
+    uo['deactivate_reason'] = None

@@ -7,7 +7,7 @@ from telebot.types import Message
 
 from utils.database import Database, LoggedMessage, get_or_insert_user
 from utils.dialogue_management import Context
-from utils.messaging import BaseSender
+from utils.messaging import BaseSender, reactivate_user_object
 from utils.multiverse import Multiverse
 from utils.serialization import serialize
 from utils.spaces import SpaceConfig, MembershipStatus
@@ -134,11 +134,16 @@ def respond(message: Message, database: Database, sender: BaseSender, space_cfg:
 
     assert ctx.intent is not None
     assert ctx.response is not None
+
+    update = ctx.make_update()
+    # unblock the user, because the message is sent again
+    reactivate_user_object(update['$set'])
+
     database.update_user_object(
         username_or_id=message.from_user.id,
         space_name=space_cfg.key,
         use_id=True,
-        change=ctx.make_update(),
+        change=update,
     )
     user_object = get_or_insert_user(tg_uid=message.from_user.id, space_name=space_cfg.key, database=database)
 
