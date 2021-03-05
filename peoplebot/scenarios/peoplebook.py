@@ -88,7 +88,7 @@ def try_peoplebook_management(ctx: Context, database: Database):
             ctx.response = 'Так, я не понял. Профиль-то создавать? Ответьте "да" или "нет", пожалуйста.'
             ctx.suggests.append('Да!')
             ctx.suggests.append('Нет!')
-    elif ctx.last_expected_intent == PB.PEOPLEBOOK_SET_FIRST_NAME:
+    elif ctx.last_expected_intent == PB.PEOPLEBOOK_SET_FIRST_NAME and not ctx.text.startswith('/'):
         ctx.intent = PB.PEOPLEBOOK_SET_FIRST_NAME
         if len(ctx.text_normalized) > 0:
             database.mongo_peoplebook.update_one(
@@ -100,7 +100,7 @@ def try_peoplebook_management(ctx: Context, database: Database):
         else:
             ctx.response = 'Получилось что-то странное, попробуйте ещё раз!'
             ctx.expected_intent = PB.PEOPLEBOOK_SET_FIRST_NAME
-    elif ctx.last_expected_intent == PB.PEOPLEBOOK_SET_LAST_NAME:
+    elif ctx.last_expected_intent == PB.PEOPLEBOOK_SET_LAST_NAME and not ctx.text.startswith('/'):
         ctx.intent = PB.PEOPLEBOOK_SET_LAST_NAME
         if len(ctx.text_normalized) > 0:
             database.mongo_peoplebook.update_one(
@@ -112,7 +112,7 @@ def try_peoplebook_management(ctx: Context, database: Database):
         else:
             ctx.response = 'Что-то маловато для фамилии, попробуйте ещё.'
             ctx.expected_intent = PB.PEOPLEBOOK_SET_LAST_NAME
-    elif ctx.last_expected_intent == PB.PEOPLEBOOK_SET_ACTIVITY:
+    elif ctx.last_expected_intent == PB.PEOPLEBOOK_SET_ACTIVITY and not ctx.text.startswith('/'):
         ctx.intent = PB.PEOPLEBOOK_SET_ACTIVITY
         if len(ctx.text) >= 4:
             database.mongo_peoplebook.update_one(
@@ -124,7 +124,7 @@ def try_peoplebook_management(ctx: Context, database: Database):
         else:
             ctx.response = 'Кажется, этого маловато. Надо повторить.'
             ctx.expected_intent = PB.PEOPLEBOOK_SET_ACTIVITY
-    elif ctx.last_expected_intent == PB.PEOPLEBOOK_SET_TOPICS:
+    elif ctx.last_expected_intent == PB.PEOPLEBOOK_SET_TOPICS and not ctx.text.startswith('/'):
         ctx.intent = PB.PEOPLEBOOK_SET_TOPICS
         if len(ctx.text) >= 4:
             database.mongo_peoplebook.update_one(
@@ -140,7 +140,7 @@ def try_peoplebook_management(ctx: Context, database: Database):
         else:
             ctx.response = 'Попробуйте рассказать более развёрнуто.'
             ctx.expected_intent = PB.PEOPLEBOOK_SET_TOPICS
-    elif ctx.last_expected_intent == PB.PEOPLEBOOK_SET_PHOTO:
+    elif ctx.last_expected_intent == PB.PEOPLEBOOK_SET_PHOTO and not ctx.text.startswith('/'):
         ctx.intent = PB.PEOPLEBOOK_SET_PHOTO
         try:
             photo_url = photo_url_from_message(message=ctx.message, bot=ctx.bot)
@@ -172,7 +172,7 @@ def try_peoplebook_management(ctx: Context, database: Database):
                                'Пожалуйста, пришлите мне фотографию либо прямую ссылку на неё.\n'
                 ctx.response = ctx.response + '\nКак загружать фото:\n' + PHOTO_INSTRUCTION + '\n\n'
                 ctx.expected_intent = PB.PEOPLEBOOK_SET_PHOTO if within else PB.PEOPLEBOOK_SHOW_PROFILE
-    elif ctx.last_expected_intent == PB.PEOPLEBOOK_SET_CONTACTS:
+    elif ctx.last_expected_intent == PB.PEOPLEBOOK_SET_CONTACTS and not ctx.text.startswith('/'):
         ctx.intent = PB.PEOPLEBOOK_SET_CONTACTS
         database.mongo_peoplebook.update_one(
             {'username': ctx.user_object['username'], 'space': ctx.space.key},
