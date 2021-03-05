@@ -1,5 +1,5 @@
 {% extends 'basic_template.html' %}
-{% from 'macros.html' import peoplebook_profile, basic_nav %}
+{% from 'macros.html' import peoplebook_profile, basic_nav with context %}
 
 {% block title %}
   <title> {{ profile.first_name}} {{ profile.last_name }} </title>

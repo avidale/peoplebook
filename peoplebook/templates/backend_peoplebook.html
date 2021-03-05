@@ -1,5 +1,5 @@
 {% extends 'basic_template.html' %}
-{% from 'macros.html' import peoplebook_profile, get_photo_url, basic_nav %}
+{% from 'macros.html' import peoplebook_profile, get_photo_url, basic_nav with context %}
 {% set new_profiles = profiles | preprocess_profiles %}
 
 
@@ -27,7 +27,8 @@
   </div>
   <div class="people">
     {% for profile in new_profiles %}
-      {{ peoplebook_profile(profile, show_contacts=(space_cfg.key != "kv")) }}
+      {# show_contacts=(space_cfg.key != "kv") , if we want to hide contacts for a particular space #}
+      {{ peoplebook_profile(profile, show_contacts=True) }}
     {% endfor %}
   </div>
 </div>

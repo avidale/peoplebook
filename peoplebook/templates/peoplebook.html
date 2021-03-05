@@ -1,5 +1,5 @@
 {% extends 'basic_template.html' %}
-{% from 'macros.html' import basic_nav %}
+{% from 'macros.html' import basic_nav with context %}
 
 {% block title %}
   <title>Пиплбук встречи {{ space_cfg.title }} {{ period_text }}</title>

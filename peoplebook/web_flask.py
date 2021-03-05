@@ -85,6 +85,20 @@ def linkify_filter(s):
     return linkify(s)
 
 
+@app.context_processor
+def add_nonempty_text():
+    def is_nonempty_text(text, min_len=2) -> bool:
+        if not text:
+            return False
+        text = text.strip().lower()
+        if text in {'-', 'нет', '...'}:
+            return False
+        if text.startswith('/set_pb'):
+            return False
+        return len(text) >= min_len
+    return dict(is_nonempty_text=is_nonempty_text)
+
+
 @app.template_filter('preprocess_profiles')
 def preprocess_profiles(profiles):
     # we omit the profiles with too few fields set

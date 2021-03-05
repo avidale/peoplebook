@@ -48,12 +48,15 @@
                         <a href="https://t.me/{{ profile.username }}">@{{ profile.username }}</a>
                     </p>
                 </div>
-
-                <div class="label">Чем занимаюсь</div>
-                <div class="answer"> {{ profile.activity  | linkify_filter | safe }} </div> {# todo: split into chunks #}
-                <div class="label">О чем могу рассказать</div>
-                <div class="answer">{{ profile.topics  | linkify_filter | safe }}</div>
-                {% if show_contacts and profile.contacts %}
+                {% if is_nonempty_text(profile.activity) %}
+                    <div class="label">Чем занимаюсь</div>
+                    <div class="answer"> {{ profile.activity  | linkify_filter | safe }} </div> {# todo: split into chunks #}
+                {% endif %}
+                {% if is_nonempty_text(profile.topics) %}
+                    <div class="label">О чем могу рассказать</div>
+                    <div class="answer">{{ profile.topics  | linkify_filter | safe }}</div>
+                {% endif %}
+                {% if show_contacts and is_nonempty_text(profile.contacts) %}
                     <div class="label">Контакты</div>
                     <div class="answer">{{ profile.contacts  | linkify_filter | safe }}</div>
                 {% endif %}
