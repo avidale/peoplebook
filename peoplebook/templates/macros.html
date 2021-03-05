@@ -53,7 +53,7 @@
                 <div class="answer"> {{ profile.activity  | linkify_filter | safe }} </div> {# todo: split into chunks #}
                 <div class="label">О чем могу рассказать</div>
                 <div class="answer">{{ profile.topics  | linkify_filter | safe }}</div>
-                {% if show_contacts %}
+                {% if show_contacts and profile.contacts %}
                     <div class="label">Контакты</div>
                     <div class="answer">{{ profile.contacts  | linkify_filter | safe }}</div>
                 {% endif %}
