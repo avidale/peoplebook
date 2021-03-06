@@ -20,6 +20,7 @@ gunicorn
 autolink
 flask-login
 textdistance
+nltk
 numpy
 pyemd
 scikit-learn

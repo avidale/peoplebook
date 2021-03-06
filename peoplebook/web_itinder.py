@@ -107,7 +107,7 @@ def search_page(text=None, space=cfg.DEFAULT_SPACE):
 
     if request.form and request.form.get('req_text'):
         req_text = request.form['req_text']
-        results = ps.searcher.lookup(req_text)
+        results = ps.lookup(req_text)
         pb_dict = get_pb_dict(space=space)
         for r in results:
             r['profile'] = pb_dict.get(r['username'], {})
@@ -241,7 +241,7 @@ def search(space=cfg.DEFAULT_SPACE):
             'time': datetime.datetime.now(),
             'username': get_current_username(),
         })
-        results = ps.searcher.lookup(req_text)
+        results = ps.lookup(req_text)
         pb_dict = get_pb_dict(space=space)
         for r in results:
             r['profile'] = pb_dict.get(r['username'], {})

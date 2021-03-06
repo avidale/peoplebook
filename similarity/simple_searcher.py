@@ -2,10 +2,12 @@ import math
 
 from collections import Counter, defaultdict
 from functools import lru_cache
+from typing import List, Dict
+
 from nltk import wordpunct_tokenize, SnowballStemmer
 
 
-class Searcher:
+class SimpleSearcher:
     def __init__(self, k=1.5, b=0.75):
         self.k = k
         self.b = b
@@ -21,12 +23,23 @@ class Searcher:
             words = [self.stem(w) for w in words]
         return words
 
+    def setup(self, texts, owners):
+        """ texts: list of texts, owners: list of ids """
+        self.texts = texts
+        self.owners = owners
+        paragraphs = {i: text for i, text in enumerate(texts)}
+        self.fit(paragraphs=paragraphs)
+        return self
+
     def fit(self, paragraphs):
+        """" paragraphs: dict with ids as keys and texts as values """
         inverse_index = defaultdict(set)
         text_frequencies = Counter()
         text_lengths = Counter()
+        self.direct_index = dict()
         for p_id, p in paragraphs.items():
             tokens = self.tokenize(p)
+            self.direct_index[p_id] = tokens
             text_lengths[p_id] = len(tokens)
             for w in tokens:
                 inverse_index[w].add(p_id)
@@ -55,7 +68,7 @@ class Searcher:
 
         return tfidfs
 
-    def get_okapis(self, query):
+    def get_okapis(self, query, normalize=False):
         words = self.tokenize(query)
         matches = [(w, d) for w in words for d in self.inverse_index[w]]
 
@@ -63,7 +76,28 @@ class Searcher:
         for w, d in matches:
             tfidfs[d] += self.get_okapi_idf(w) * self.get_okapi_tf(w, d)
 
-        return tfidfs
+        if not normalize:
+            return tfidfs
+
+        result = Counter()
+        for d, numerator in tfidfs.items():
+            denom = 1e-10
+            for w in self.direct_index[d]:
+                denom += self.get_okapi_idf(w) * self.get_okapi_tf(w, d)
+            result[d] = min(1.0, numerator / denom)
+        return result
+
+    def lookup(self, text, max_count=50, normalize_scores=True) -> List[Dict]:
+        top = self.get_okapis(text, normalize=normalize_scores)
+        results = [
+            {
+                'username': self.owners[doc_id],
+                'text': self.texts[doc_id],
+                'score': score,
+            }
+            for doc_id, score in top.most_common(max_count)
+        ]
+        return results
 
 
 def make_bigrams(words):

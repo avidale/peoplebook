@@ -9,6 +9,7 @@ from collections import defaultdict
 
 from similarity.semantic_search import SemanticSearcher, get_searcher_data, extract_all_chunks
 from similarity import matchers, basic_nlu, similarity_tools
+from similarity.simple_searcher import SimpleSearcher
 
 
 class ProfileSearcher:
@@ -55,6 +56,10 @@ class ProfileSearcher:
         self.searcher = SemanticSearcher()
         self.searcher.setup(**searcher_data, vectorizer=self.text2vec)
 
+        # simple searcher
+        self.simple_searcher = SimpleSearcher()
+        self.simple_searcher.setup(texts=parts, owners=owners)
+
         # most similar people
         # todo: make it updateable
         preprocessed = [self.matcher.preprocess(p) for p in tqdm(searcher_data['texts'])]
@@ -71,6 +76,24 @@ class ProfileSearcher:
         self.user_vecs = np.stack(self.new_matcher._texts)
         self.sims = np.dot(self.user_vecs, self.user_vecs.T)
         self.dissimilar_pairs = similarity_tools.assign_pairs(self.sims, n_pairs=20)
+
+    def lookup(self, req_text, unicalize=True):
+        smart_results = self.searcher.lookup(req_text)
+        simple_results = self.simple_searcher.lookup(req_text, normalize_scores=False)
+
+        total_results = smart_results + simple_results
+        total_results = sorted(total_results, key=lambda x: x['score'], reverse=True)
+
+        if unicalize:
+            unique_people = []
+            unique_people_id = set()
+            for item in total_results:
+                if item['username'] not in unique_people_id:
+                    unique_people.append(item)
+                    unique_people_id.add(item['username'])
+            total_results = unique_people
+
+        return total_results
 
     def text2vec(self, t):
         v = self.w2vmatcher.preprocess(t)
