@@ -28,7 +28,7 @@ def check_space(space_name):
     username = get_current_username()
     if not username:
         return False
-    uo = {'username': username, 'tg_id': current_user.id, 'space': space_name}
+    uo = {'username': username, 'tg_id': int(current_user.id), 'space': space_name}
     if not db.is_at_least_guest(uo):
         logger.info(f'Rejecting the user {current_user.__dict__} '
                     f'with id {current_user.id} and name {username} '
