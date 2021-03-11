@@ -118,8 +118,8 @@ def peoplebook_for_all_members(space=cfg.DEFAULT_SPACE):
         {
             '$lookup': {
                 'from': 'peoplebook',
-                'localField': 'username',
-                'foreignField': 'username',
+                'localField': 'tg_id',
+                'foreignField': 'tg_id',
                 'as': 'profiles'
             }
         }, {
@@ -153,8 +153,8 @@ def peoplebook_for_all_members_and_guests(space=cfg.DEFAULT_SPACE):
             {
                 '$lookup': {
                     'from': 'peoplebook',
-                    'localField': 'username',
-                    'foreignField': 'username',
+                    'localField': 'tg_id',
+                    'foreignField': 'tg_id',
                     'as': 'profiles'
                 },
             },
