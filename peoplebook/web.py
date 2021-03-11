@@ -1,6 +1,7 @@
 import pymongo
 from peoplebook.models import User
 
+import logging
 import config as cfg
 
 from flask import render_template, abort, request, redirect, url_for, current_app
@@ -15,6 +16,9 @@ from peoplebook.web_flask import history_configs
 from utils.database import Database
 from utils.spaces import get_space_config
 
+
+logger = logging.getLogger(__name__)
+
 SPACE_NOT_FOUND = 'Сообщество не найдено', 404
 
 
@@ -26,6 +30,9 @@ def check_space(space_name):
         return False
     uo = {'username': username, 'tg_id': current_user.id, 'space': space_name}
     if not db.is_at_least_guest(uo):
+        logger.info(f'Rejecting the user {current_user.__dict__} '
+                    f'with id {current_user.id} and name {username} '
+                    f'from space {space_name}')
         return False
     return True
 
