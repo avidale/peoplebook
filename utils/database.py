@@ -2,7 +2,7 @@ import logging
 
 from datetime import datetime
 from pymongo import MongoClient
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from config import DEFAULT_SPACE
 from utils import matchers
@@ -13,7 +13,7 @@ from utils.spaces import SpaceConfig
 logger = logging.getLogger(__name__)
 
 
-def make_multidict(items, keys):
+def make_multidict(items, keys) -> Dict[Tuple, List]:
     result = {}
     for item in items:
         key = tuple(item[key_name] for key_name in keys)
@@ -58,10 +58,15 @@ class Database:
             return
         logger.info('updating database cache...')
         self._cache_time = datetime.now()
-        self._cached_mongo_membership = {
-            (item['username'], item['space']): item
-            for item in self.mongo_membership.find({})
-        }
+
+        self._cached_mongo_membership = {}
+        for item in self.mongo_membership.find({}):
+            if item.get('tg_id') is not None:
+                self._cached_mongo_membership[(item['tg_id'], item['space'])] = item
+            if item.get('username') is not None:
+                self._cached_mongo_membership[(item['username'], item['space'])] = item
+
+        # todo: add tg_id as keys as well
         self._cached_mongo_participations = make_multidict(
             self.mongo_participations.find({}), keys=['username', 'space']
         )
@@ -71,7 +76,10 @@ class Database:
         }
 
     def is_at_least_guest(self, user_object):
-        return self.is_guest(user_object) or self.is_member(user_object) or self.is_admin(user_object)
+        return self.is_guest(user_object) or self.is_friend(user_object) or self.is_member(user_object) or self.is_admin(user_object)
+
+    def is_at_least_friend(self, user_object):
+        return self.is_friend(user_object) or self.is_member(user_object) or self.is_admin(user_object)
 
     def is_at_least_member(self, user_object):
         return self.is_member(user_object) or self.is_admin(user_object)
@@ -96,25 +104,48 @@ class Database:
         else:
             return 'psina'
 
-    def is_member(self, user_object):
+    def _get_cached_mongo_membership(self, user_object) -> Dict:
+        tg_id = normalize_username(user_object.get('tg_id') or 'anonymous')
         username = normalize_username(user_object.get('username') or 'anonymous')
         space = user_object.get('space') or DEFAULT_SPACE
-        key = (username, space)
         self._update_cache()
-        return self._cached_mongo_membership.get(key, {}).get('is_member')
+        mem = self._cached_mongo_membership.get((tg_id, space), {})
+        if not mem:
+            mem = self._cached_mongo_membership.get((username, space), {})
+        return mem
 
-    def is_guest(self, user_object):
-        # todo: check case of username here and everywhere
-        self._update_cache()
-        username = normalize_username(user_object.get('username') or 'anonymous')
-        space = user_object.get('space') or DEFAULT_SPACE
-        key = (username, space)
-        mem = self._cached_mongo_membership.get(key, {})
-        if mem.get('is_guest'):
+    def is_member(self, user_object):
+        mem = self._get_cached_mongo_membership(user_object)
+        if mem.get('is_member'):
             return True
         if mem.get('is_member'):
             return True
-        if key in self._cached_mongo_participations:
+        return False
+
+    def is_friend(self, user_object):
+        mem = self._get_cached_mongo_membership(user_object)
+        if mem.get('is_friend'):
+            return True
+        if mem.get('is_friend'):
+            return True
+        return False
+
+    def is_guest(self, user_object):
+        mem = self._get_cached_mongo_membership(user_object)
+
+        tg_id = normalize_username(user_object.get('tg_id') or 'anonymous')
+        username = normalize_username(user_object.get('username') or 'anonymous')
+        space = user_object.get('space') or DEFAULT_SPACE
+
+        if mem.get('is_guest'):
+            return True
+        if mem.get('is_friend'):
+            return True
+        if mem.get('is_member'):
+            return True
+        if (tg_id, space) in self._cached_mongo_participations:
+            return True
+        if (username, space) in self._cached_mongo_participations:
             return True
         return False
 
@@ -140,16 +171,23 @@ class Database:
             filters['username'] = username_or_id
         self.mongo_users.update_one(filters, change or {})
 
-    def add_member(self, username, space_name):
+    def add_member(self, tg_id, space_name):
         self.mongo_membership.update_one(
-            {'username': username, 'space': space_name},
+            {'tg_id': tg_id, 'space': space_name},
             {'$set': {'is_member': True}},
             upsert=True
         )
 
-    def add_guest(self, username, space_name):
+    def add_friend(self, tg_id, space_name):
         self.mongo_membership.update_one(
-            {'username': username, 'space': space_name},
+            {'tg_id': tg_id, 'space': space_name},
+            {'$set': {'is_friend': True}},
+            upsert=True
+        )
+
+    def add_guest(self, tg_id, space_name):
+        self.mongo_membership.update_one(
+            {'tg_id': tg_id, 'space': space_name},
             {'$set': {'is_guest': True}},
             upsert=True
         )
@@ -164,6 +202,26 @@ class Database:
         record = self.mongo_chats.find_one({'space': space_name, 'chat_id': chat_id})
         if record:
             return ChatData.from_record(record=record, chat_id=chat_id, space=space_name)
+
+    def find_peoplebook_profile(self, space_name, username=None, tg_id=None) -> Optional[Dict]:
+        if not username and not tg_id:
+            return
+        the_profile = None
+        if tg_id:
+            the_profile = self.mongo_peoplebook.find_one(
+                {'tg_id': tg_id, 'space': space_name}
+            )
+        if username and not the_profile:
+            the_profile = self.mongo_peoplebook.find_one(
+                {'username': username, 'space': space_name}
+            )
+        return the_profile
+
+    def update_peoplebook_profile(
+            self, space_name, username=None, tg_id=None,
+
+    ):
+        pass
 
 
 class LoggedMessage:

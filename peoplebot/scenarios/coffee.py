@@ -78,7 +78,8 @@ def remind_about_coffee(
     user_id = user_obj['tg_id']
     match_texts = []
     for m in matches:
-        in_pb = database.mongo_peoplebook.find_one({'username': m, 'space': space.key})
+        in_pb = database.find_peoplebook_profile(space_name=space.key, username=m, tg_id=m)
+        # todo: find page by tg_id if it is not found by username
         if in_pb:
             match_texts.append('@{} (<a href="{}">пиплбук</a>)'.format(
                 m, make_pb_url('/{}/person/{}'.format(space.key, m), user_id)
@@ -104,8 +105,10 @@ def remind_about_coffee(
             '\nНадеюсь, вы уже договорились о встрече?	\U0001f609'
         intent = INTENT_COFFEE_PUSH_REMIND
     if response is not None:
-        user_in_pb = database.mongo_peoplebook.find_one(
-            {'username': user_obj.get('username'), 'space': space.key}
+        user_in_pb = database.find_peoplebook_profile(
+            space_name=space.key,
+            username=user_obj.get('username'),
+            tg_id=user_obj.get('tg_id'),
         )
         if not user_in_pb:
             response = response + '\n\nКстати, кажется, вас нет в пиплбуке, а жаль: ' \

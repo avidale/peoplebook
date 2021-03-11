@@ -13,6 +13,7 @@ class FeatureName:
 class MembershipStatus:
     NONE = 'none'
     GUEST = 'guest'
+    FRIEND = 'friend'
     MEMBER = 'member'
     ADMIN = 'admin'
     OWNER = 'owner'
@@ -21,7 +22,8 @@ class MembershipStatus:
 MEMBERSHIP_STATUSES = [
     (MembershipStatus.NONE, 'Не менять статус'),
     (MembershipStatus.GUEST, 'Поднять до гостя сообщества'),
-    (MembershipStatus.MEMBER, 'Поднять до члена сообщества'),
+    (MembershipStatus.FRIEND, 'Поднять до простого члена сообщества'),
+    (MembershipStatus.MEMBER, 'Поднять до привилегированного члена сообщества'),
 ]
 
 

@@ -95,11 +95,14 @@ def do_wachter_check(
                 print('do not add user of the chat to the club due to empty adding policy')
                 pass
             elif adding_policy == MembershipStatus.GUEST:
-                database.add_guest(username=message.from_user.username, space_name=space_cfg.key)
+                database.add_guest(tg_id=message.from_user.id, space_name=space_cfg.key)
                 print('make user of the chat a guest due to adding policy')
+            elif adding_policy == MembershipStatus.FRIEND:
+                database.add_friend(tg_id=message.from_user.id, space_name=space_cfg.key)
+                print('make user of the chat a "friend" (unprivileged member) due to adding policy')
             else:
                 # member or admin or owner => just member
-                database.add_member(username=message.from_user.username, space_name=space_cfg.key)
+                database.add_member(tg_id=message.from_user.id, space_name=space_cfg.key)
                 print('make user of the chat a member due to adding policy')
             sender(
                 text=get_public_chat_greeting_text(space=space_cfg, chat_data=chat_data),

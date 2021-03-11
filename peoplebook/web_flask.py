@@ -12,6 +12,8 @@ from flask_login import LoginManager, current_user
 
 from flask_wtf import CSRFProtect
 
+from utils.global_database import DATABASE, MONGO_URL
+
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('APP_KEY')
@@ -41,7 +43,6 @@ history_configs = {
 }
 
 
-MONGO_URL = os.environ.get('MONGODB_URI')
 mongo_client = pymongo.MongoClient(MONGO_URL)
 mongo_db = mongo_client.get_default_database()
 mongo_events = mongo_db.get_collection('events')

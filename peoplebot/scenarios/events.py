@@ -143,7 +143,11 @@ def try_invitation(ctx: Context, database: Database):
             new_status = InvitationStatuses.ACCEPT
             ctx.intent = EventIntents.ACCEPT
             ctx.response = 'Ура! Я очень рад, что вы согласились прийти!'
-            the_peoplebook = database.mongo_peoplebook.find_one({'username': ctx.username, 'space': ctx.space.key})
+            the_peoplebook = database.find_peoplebook_profile(
+                space_name=ctx.space.key,
+                username=ctx.username,
+                tg_id=ctx.user_object['tg_id']
+            )
             event_url = make_pb_url('/{}/event/{}'.format(ctx.space.key, event_code), user_tg_id)
             if the_peoplebook is None:
                 t = '\nЧтобы встреча прошла продуктивнее, пожалуйста, заполните свою страничку в ' \
@@ -646,6 +650,7 @@ def try_event_edition(ctx: Context, database: Database):
                 ctx.response = ctx.response + '\nЕсли вы есть, будьте первыми!!!'
         else:
             statuses = [InvitationStatuses.translate(em['status'], em.get('payment_status')) for em in event_members]
+            # todo: use uid when checking for members
             descriptions = '\n'.join([
                 '@{} - {}'.format(em['username'], st) +
                 ('' if 'invitor' not in em or database.is_at_least_member({'username': em['username']})

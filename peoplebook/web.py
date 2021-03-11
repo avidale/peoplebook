@@ -8,6 +8,7 @@ from flask_login import login_required, login_user, logout_user, current_user
 
 from peoplebook.web_flask import app, get_users, get_profiles_for_event, get_current_username
 from peoplebook.web_flask import mongo_events, mongo_participations, mongo_membership, mongo_peoplebook, mongo_db
+from peoplebook.web_flask import DATABASE
 from peoplebook.web_flask import history_configs
 
 
@@ -23,7 +24,7 @@ def check_space(space_name):
     username = get_current_username()
     if not username:
         return False
-    uo = {'username': username, 'space': space_name}
+    uo = {'username': username, 'tg_id': current_user.id, 'space': space_name}
     if not db.is_at_least_guest(uo):
         return False
     return True
@@ -174,7 +175,9 @@ def peoplebook_for_person(username, space=cfg.DEFAULT_SPACE):
     if not check_space(space):
         return SPACE_NOT_FOUND
     space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
-    the_profile = mongo_peoplebook.find_one({'username': username, 'space': space_cfg.key})
+    the_profile = DATABASE.find_peoplebook_profile(
+        username=username, tg_id=username, space_name=space_cfg.key
+    )
     if the_profile is None:
         return 'Такого профиля в пиплбуке не найдено!\n' \
                'Можно написать https://t.me/{} и предложить заполнить его!'.format(username)

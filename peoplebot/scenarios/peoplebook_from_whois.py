@@ -19,6 +19,9 @@ def add_peoplebook_from_whois(
     uo = get_or_insert_user(space_name=space_cfg.key, database=database, tg_user=message.from_user)
     fltr = {'username': message.from_user.username, 'space': space_cfg.key}
     existing_page = database.mongo_peoplebook.find_one(fltr)
+    if not existing_page:
+        fltr = {'username': message.from_user.id, 'space': space_cfg.key}
+        existing_page = database.mongo_peoplebook.find_one(fltr)
     if existing_page and not rewrite:
         print('the peoplebook page already exists, not rewriting it')
         return
@@ -30,6 +33,7 @@ def add_peoplebook_from_whois(
     database.mongo_peoplebook.update_one(
         fltr,
         {'$set': {
+            'tg_id': uo.get('tg_id'),
             'first_name': uo.get('first_name') or uo.get('username') or parsed['first_name'],
             'last_name': uo.get('last_name') or parsed['last_name'],
             'activity': parsed['activity'],

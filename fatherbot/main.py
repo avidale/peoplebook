@@ -10,7 +10,7 @@ from utils.dialogue_management import Context
 from utils.messaging import BaseSender, TelegramSender
 from utils.spaces import SpaceConfig
 
-from peoplebot.new_main import DATABASE
+from utils.global_database import DATABASE
 
 from fatherbot.space_creation import CREATE_A_SPACE, space_creation
 

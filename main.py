@@ -4,7 +4,8 @@ import os
 import sentry_sdk
 
 from fatherbot.main import father_bot, father_bot_bp, set_father_webhook
-from peoplebot.new_main import MULTIVERSE, DATABASE, BASE_URL
+from peoplebot.new_main import MULTIVERSE, BASE_URL
+from utils.global_database import DATABASE
 from peoplebook.web import app
 
 from peoplebook.web_itinder import itinder_bp, get_pb_dict
