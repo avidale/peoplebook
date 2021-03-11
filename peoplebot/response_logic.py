@@ -48,6 +48,7 @@ def respond(message: Message, database: Database, sender: BaseSender, space_cfg:
     elif edited:
         logger.info(f'processing an edited message {message.message_id}')
     PROCESSED_MESSAGES[space_cfg.key].add(joint_id)
+    logger.info('TMP 1')
 
     if message.chat.type != 'private':
         logger.info(f'got a message from public chat {message.chat}')
@@ -101,12 +102,16 @@ def respond(message: Message, database: Database, sender: BaseSender, space_cfg:
         )
         return
 
+    logger.info('TMP 2')
     if bot is not None:
         bot.send_chat_action(message.chat.id, 'typing')
+        logger.info('TMP 3')
     else:
         logger.warning(f'the bot seems to be missing for space {space_cfg.key}')
 
+    logger.info('TMP 4')
     uo = get_or_insert_user(tg_user=message.from_user, space_name=space_cfg.key, database=database)
+    logger.info('TMP 5')
     user_id = message.chat.id
     LoggedMessage(
         text=message.text, user_id=user_id, from_user=True, database=database, username=uo.get('username'),
@@ -116,6 +121,7 @@ def respond(message: Message, database: Database, sender: BaseSender, space_cfg:
         space=space_cfg,
         text=message.text, user_object=uo, sender=sender, message=message, bot=bot,
     )
+    logger.info('TMP 6')
 
     for handler in [
         try_queued_messages,
@@ -133,15 +139,17 @@ def respond(message: Message, database: Database, sender: BaseSender, space_cfg:
     ]:
         ctx = handler(ctx, database=database)
         if ctx.intent is not None:
-            logger.debug(f'resulting handler: {handler.__name__}')
+            logger.info(f'resulting handler: {handler.__name__}')
             break
-
+    logger.info('TMP 7')
     assert ctx.intent is not None
     assert ctx.response is not None
 
     update = ctx.make_update()
     # unblock the user, because the message is sent again
     reactivate_user_object(update['$set'])
+
+    logger.info('TMP 8')
 
     database.update_user_object(
         username_or_id=message.from_user.id,
@@ -150,6 +158,7 @@ def respond(message: Message, database: Database, sender: BaseSender, space_cfg:
         change=update,
     )
     user_object = get_or_insert_user(tg_uid=message.from_user.id, space_name=space_cfg.key, database=database)
+    logger.info('TMP 9')
 
     # context-independent suggests (they are always below the dependent ones)
     ctx.suggests.extend(make_standard_suggests(database=database, user_object=user_object))
