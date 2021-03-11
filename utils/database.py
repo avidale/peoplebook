@@ -106,7 +106,7 @@ class Database:
             return 'psina'
 
     def _get_cached_mongo_membership(self, user_object) -> Dict:
-        tg_id = normalize_username(user_object.get('tg_id') or 'anonymous')
+        tg_id = user_object.get('tg_id') or 'anonymous'
         username = normalize_username(user_object.get('username') or 'anonymous')
         space = user_object.get('space') or DEFAULT_SPACE
         self._update_cache()

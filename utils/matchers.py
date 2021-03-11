@@ -40,6 +40,8 @@ def is_like_no(text):
 
 
 def normalize_username(username):
+    if not isinstance(username, str):
+        return username
     if username is not None:
         return username.lower().strip().strip('@')
     return None
