@@ -43,14 +43,14 @@ def respond(message: Message, database: Database, sender: BaseSender, space_cfg:
     # avoid duplicate response to some Telegram messages
     joint_id = (message.message_id, message.chat.id)
     if joint_id in PROCESSED_MESSAGES[space_cfg.key] and not edited:
-        print('ignoring a repeated message')
+        logger.info(f'ignoring a repeated message {message.message_id}')
         return
     elif edited:
-        print('processing an edited message')
+        logger.info(f'processing an edited message {message.message_id}')
     PROCESSED_MESSAGES[space_cfg.key].add(joint_id)
 
     if message.chat.type != 'private':
-        print('got a message from public chat', message.chat)
+        logger.info(f'got a message from public chat {message.chat}')
         if not message.from_user or not message.chat.id:
             return
         uo = get_or_insert_user(tg_user=message.from_user, space_name=space_cfg.key, database=database)
@@ -103,6 +103,9 @@ def respond(message: Message, database: Database, sender: BaseSender, space_cfg:
 
     if bot is not None:
         bot.send_chat_action(message.chat.id, 'typing')
+    else:
+        logger.warning(f'the bot seems to be missing for space {space_cfg.key}')
+
     uo = get_or_insert_user(tg_user=message.from_user, space_name=space_cfg.key, database=database)
     user_id = message.chat.id
     LoggedMessage(
@@ -131,6 +134,7 @@ def respond(message: Message, database: Database, sender: BaseSender, space_cfg:
         ctx = handler(ctx, database=database)
         if ctx.intent is not None:
             break
+        logger.debug(f'resulting handler: {handler.__name__}')
 
     assert ctx.intent is not None
     assert ctx.response is not None
