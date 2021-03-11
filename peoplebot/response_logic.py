@@ -133,8 +133,8 @@ def respond(message: Message, database: Database, sender: BaseSender, space_cfg:
     ]:
         ctx = handler(ctx, database=database)
         if ctx.intent is not None:
+            logger.debug(f'resulting handler: {handler.__name__}')
             break
-        logger.debug(f'resulting handler: {handler.__name__}')
 
     assert ctx.intent is not None
     assert ctx.response is not None

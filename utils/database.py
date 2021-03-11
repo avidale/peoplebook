@@ -76,7 +76,8 @@ class Database:
         }
 
     def is_at_least_guest(self, user_object):
-        return self.is_guest(user_object) or self.is_friend(user_object) or self.is_member(user_object) or self.is_admin(user_object)
+        return self.is_guest(user_object) or self.is_friend(user_object) \
+               or self.is_member(user_object) or self.is_admin(user_object)
 
     def is_at_least_friend(self, user_object):
         return self.is_friend(user_object) or self.is_member(user_object) or self.is_admin(user_object)
