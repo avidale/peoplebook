@@ -1,4 +1,6 @@
 import os
+import time
+
 import telebot
 
 from flask import Blueprint, Flask, request
@@ -15,6 +17,9 @@ from fatherbot.space_creation import CREATE_A_SPACE, space_creation
 
 FATHER_BOT_USERNAME = 'the_peoplebot'
 FATHER_BOT_TOKEN = os.getenv('FATHER_BOT_TOKEN', '')
+
+
+WEBHOOK_PATH = '/telebot_webhook/' + FATHER_BOT_TOKEN
 
 
 space = SpaceConfig(key='main', title='The meta space')
@@ -99,9 +104,16 @@ def process_message(message: telebot.types.Message):
     respond(message=message, database=DATABASE, bot=father_bot, sender=sender, space_cfg=space)
 
 
-@father_bot_bp.route('/telebot_webhook/' + FATHER_BOT_TOKEN, methods=['POST'])
+@father_bot_bp.route(WEBHOOK_PATH, methods=['POST'])
 def get_message():
     father_bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
+    return "!", 200
+
+
+def set_father_webhook(base_url):
+    father_bot.remove_webhook()
+    time.sleep(1.5)
+    father_bot.set_webhook(url=base_url + WEBHOOK_PATH)
     return "!", 200
 
 

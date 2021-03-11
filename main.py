@@ -3,8 +3,8 @@ import logging
 import os
 import sentry_sdk
 
-from fatherbot.main import father_bot, father_bot_bp
-from peoplebot.new_main import MULTIVERSE, DATABASE
+from fatherbot.main import father_bot, father_bot_bp, set_father_webhook
+from peoplebot.new_main import MULTIVERSE, DATABASE, BASE_URL
 from peoplebook.web import app
 
 from peoplebook.web_itinder import itinder_bp, get_pb_dict
@@ -46,6 +46,7 @@ def run_bot_and_book():
         if not args.nobot:
             MULTIVERSE.set_web_hooks()
             app.register_blueprint(MULTIVERSE.app)
+            set_father_webhook(BASE_URL)
         if not args.nosearch:
             ft = load_ft()
             searchers = {
