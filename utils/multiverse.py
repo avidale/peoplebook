@@ -33,7 +33,7 @@ class Multiverse:
 
         self.app = Blueprint('bot_app', __name__)
         self.bot_url_prefix = bot_url_prefix  # todo: move it into the blueprint
-        self.app.route(self.bot_url_prefix + '<bot_token>', methods=['POST'])(
+        self.app.route(f'/{self.bot_url_prefix}<bot_token>', methods=['POST'])(
             self.common_updates_processor
         )
 
