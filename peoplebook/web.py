@@ -182,8 +182,12 @@ def peoplebook_for_person(username, space=cfg.DEFAULT_SPACE):
     if not check_space(space):
         return SPACE_NOT_FOUND
     space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+    if username and username.isnumeric():
+        tg_id = int(username)
+    else:
+        tg_id = None
     the_profile = DATABASE.find_peoplebook_profile(
-        username=username, tg_id=username, space_name=space_cfg.key
+        username=username, tg_id=tg_id, space_name=space_cfg.key
     )
     if the_profile is None:
         return 'Такого профиля в пиплбуке не найдено!\n' \
