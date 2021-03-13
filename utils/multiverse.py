@@ -1,3 +1,4 @@
+import logging
 import telebot
 
 from flask import Blueprint, request
@@ -6,6 +7,9 @@ from typing import Dict
 from utils.database import Database
 from utils.messaging import BaseSender, TelegramSender
 from utils.spaces import SpaceConfig
+
+
+logger = logging.getLogger(__name__)
 
 
 ALL_CONTENT_TYPES = [
@@ -35,6 +39,7 @@ class Multiverse:
         for raw_config in self.db.mongo_spaces.find({}):
             space = SpaceConfig.from_record(raw_config)
             self.spaces_dict[space.key] = space
+            logger.info(f'creating a space: {space.key}')
 
     def bot_url_suffix(self, space_name):
         space = self.spaces_dict[space_name]
@@ -65,6 +70,7 @@ class Multiverse:
         """ Setup a telegram bot for each space """
         for space_name, space in self.spaces_dict.items():
             if not space.bot_token:
+                logger.info(f'for space {space.key} no bot token exists, skipping it')
                 continue
             bot = telebot.TeleBot(token=space.bot_token)
             self.bots_dict[space_name] = bot
@@ -80,6 +86,7 @@ class Multiverse:
             self.app.route(self.bot_url_suffix(space_name), methods=['POST'])(
                 self.make_updates_processor(bot, function_suffix=space_name)
             )
+            logger.info(f'have created a bot for space {space.key}')
             # self.app.route("/" + self.restart_webhook_url)(self.telegram_web_hook)
         self.add_custom_handlers()
 
