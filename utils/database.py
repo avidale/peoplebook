@@ -90,7 +90,6 @@ class Database:
             for record in self.mongo_spaces.find({})
         }
 
-
     def is_at_least_guest(self, user_object):
         return self.is_guest(user_object) or self.is_friend(user_object) \
                or self.is_member(user_object) or self.is_admin(user_object)
