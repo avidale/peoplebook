@@ -28,11 +28,14 @@ class Multiverse:
         self.base_url = base_url
         self.spaces_dict: Dict[str, SpaceConfig] = {}
         self.bots_dict: Dict[str, telebot.TeleBot] = {}
+        self.token2bot: Dict[str, telebot.TeleBot] = {}
         self.senders_dict: Dict[str, BaseSender] = {}
 
         self.app = Blueprint('bot_app', __name__)
-        # todo: maybe add a common route for all bots
         self.bot_url_prefix = bot_url_prefix  # todo: move it into the blueprint
+        self.app.route(self.bot_url_prefix + '<bot_token>', methods=['POST'])(
+            self.common_updates_processor
+        )
 
     def init_spaces(self):
         """ Create/update a config for each space """
@@ -61,6 +64,13 @@ class Multiverse:
         updates_processor.__name__ = updates_processor.__name__ + '__' + function_suffix
         return updates_processor
 
+    def common_updates_processor(self, bot_token):
+        bot = self.token2bot.get(bot_token)
+        if not bot:
+            return 'bot not found!', 404
+        bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
+        return "!", 200
+
     def make_message_handler(self, space_name, edited=False):
         def process_message(msg):
             space = self.db.get_space(space_name)
@@ -75,6 +85,7 @@ class Multiverse:
                 continue
             bot = telebot.TeleBot(token=space.bot_token)
             self.bots_dict[space_name] = bot
+            self.token2bot[space.bot_token] = bot
             sender = TelegramSender(space=space, bot=bot, timeout=timeout_between_messages)
             self.senders_dict[space_name] = sender
 
@@ -94,4 +105,6 @@ class Multiverse:
     def set_web_hooks(self):
         for space_name, bot in self.bots_dict.items():
             bot.remove_webhook()
-            bot.set_webhook(self.base_url + self.bot_url_suffix(space_name))
+            url = self.base_url + self.bot_url_suffix(space_name)
+            bot.set_webhook(url)
+            logger.info(f'have created a bot webhook for space {space_name} at {url}')
