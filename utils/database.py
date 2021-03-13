@@ -306,6 +306,20 @@ class Database:
             })
             self.mongo_participations.insert_one(the_update)
 
+    def where_user_is_admin(self, username, tg_id) -> List[SpaceConfig]:
+        result = []
+        for space in self._cached_spaces.values():
+            if tg_id and tg_id == space.owner_uid:
+                result.append(space)
+                continue
+            if username and username == space.owner_username:
+                result.append(space)
+                continue
+            if username and username in space.admins:
+                result.append(space)
+                continue
+        return result
+
 
 class LoggedMessage:
     def __init__(

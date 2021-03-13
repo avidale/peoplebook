@@ -5,6 +5,7 @@ import telebot
 
 from flask import Blueprint, Flask, request
 
+from fatherbot.fatherbot_info import info_respond
 from utils.database import Database, get_or_insert_user, LoggedMessage
 from utils.dialogue_management import Context
 from utils.messaging import BaseSender, TelegramSender
@@ -44,19 +45,21 @@ MAIN_HELP = """Привет, человек!
 Чтобы зарегистрировать новое сообщество или управлять имеющимися, воспользуйтесь кнопками.
 """
 
+DEFAULT_SUGGESTS = [CREATE_A_SPACE]
+
 
 def first_respond(ctx: Context, database: Database):
     if ctx.text in {'/help', '/start'} or not ctx.text:
         ctx.intent = 'intro'
         ctx.response = MAIN_HELP
-        ctx.suggests = [CREATE_A_SPACE]
+        ctx.suggests = DEFAULT_SUGGESTS
     return ctx
 
 
 def fallback_respond(ctx: Context, database: Database):
     ctx.intent = 'fallback'
     ctx.response = MAIN_HELP
-    ctx.suggests = [CREATE_A_SPACE]
+    ctx.suggests = DEFAULT_SUGGESTS
     return ctx
 
 
@@ -81,11 +84,16 @@ def respond(message, database: Database, sender: BaseSender, space_cfg: SpaceCon
     for handler in [
         first_respond,
         space_creation,
+        info_respond,
         fallback_respond,
     ]:
         ctx = handler(ctx, database=database)
         if ctx.intent is not None:
             break
+
+    for s in DEFAULT_SUGGESTS:
+        if s not in ctx.suggests:
+            ctx.suggests.append(s)
 
     database.update_user_object(
         username_or_id=message.from_user.id,
