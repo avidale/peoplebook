@@ -96,14 +96,17 @@ class Database:
         return False
 
     def get_top_status(self, user_object):
+        # todo: use normalized status names
         if self.is_admin(user_object=user_object):
             return 'admin'
         elif self.is_member(user_object=user_object):
             return 'member'
+        elif self.is_friend(user_object=user_object):
+            return 'friend'
         elif self.is_guest(user_object=user_object):
             return 'guest'
         else:
-            return 'psina'
+            return 'underdog'
 
     def _get_cached_mongo_membership(self, user_object) -> Dict:
         tg_id = user_object.get('tg_id') or 'anonymous'

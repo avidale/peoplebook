@@ -255,6 +255,7 @@ def try_event_usage(ctx: Context, database: Database):
             if database.is_admin(ctx.user_object):
                 ctx.suggests.append('Пригласить всех членов клуба')
                 ctx.suggests.append('Пригласить всех членов сообщества')
+                ctx.suggests.append('Пригласить всех членов и гостей сообщества')
     elif event_code is not None and (
             ctx.text == '/engage' or re.match('^(участвовать|принять участие)( в этой встрече)?$', ctx.text_normalized)
     ):
@@ -498,6 +499,7 @@ def try_event_creation(ctx: Context, database: Database):
             # todo: deduplicate this as well
             the_event = database.mongo_events.find_one({'code': event_code, 'space': ctx.space.key})
             community = 'сообществ' in ctx.text_normalized or 'community' in ctx.text
+            large = 'членов и гостей сообщества' in ctx.text_normalized
             if the_event is None:
                 ctx.intent = 'EVENT_INVITE_NOT_FOUND'
                 ctx.response = 'Извините, события "{}" не найдено. Выберите другое.'.format(event_code)
@@ -505,24 +507,34 @@ def try_event_creation(ctx: Context, database: Database):
                 ctx.intent = 'EVENT_INVITE_IN_THE_PAST'
                 ctx.response = 'Событие "{}" уже состоялось, вы не можете приглашать гостей.'.format(event_code)
             else:
-                ctx.intent = 'INVITE_EVERYONE_COMMUNITY' if community else 'INVITE_EVERYONE'
-                ctx.response = 'Действительно пригласить всех членов {} на встречу "{}"?'.format(
-                    'Сообщества' if community else 'Клуба',
-                    event_code,
-                )
+                if large:
+                    ctx.intent = 'INVITE_EVERYONE_GUESTS'
+                    who = 'и гостей Сообщества'
+                elif community:
+                    ctx.intent = 'INVITE_EVERYONE_COMMUNITY'
+                    who = 'Сообщества'
+                else:
+                    ctx.intent = 'INVITE_EVERYONE'
+                    who = 'Клуба'
+                ctx.response = f'Действительно пригласить всех членов {who} на встречу "{event_code}"?'
                 ctx.suggests.extend(['Да', 'Нет'])
         elif ctx.last_intent in {'INVITE_EVERYONE', 'INVITE_EVERYONE_COMMUNITY'} \
                 and matchers.is_like_no(ctx.text_normalized):
             ctx.intent = 'INVITE_EVERYONE_NOT_CONFIRM'
             ctx.response = 'Ладно.'
-        elif ctx.last_intent in {'INVITE_EVERYONE', 'INVITE_EVERYONE_COMMUNITY'} \
+        elif ctx.last_intent in {'INVITE_EVERYONE', 'INVITE_EVERYONE_COMMUNITY', 'INVITE_EVERYONE_GUESTS'} \
                 and matchers.is_like_yes(ctx.text_normalized):
             ctx.intent = 'INVITE_EVERYONE_CONFIRM'
             community = (ctx.last_intent == 'INVITE_EVERYONE_COMMUNITY')
+            large = (ctx.last_intent == 'INVITE_EVERYONE_GUESTS')
             r = 'Приглашаю всех членов {}...\n'.format('Сообщества' if community else 'Клуба')
             for member in database.mongo_membership.find({'space': ctx.space.key}):
-                if community:
-                    if not member.get('is_member') and not member.get('is_guest'):
+
+                if large:
+                    if not member.get('is_member') and not member.get('is_friend') and not member.get('is_guest'):
+                        continue
+                elif community:
+                    if not member.get('is_member') and not member.get('is_friend'):
                         continue
                 else:
                     if not member.get('is_member'):

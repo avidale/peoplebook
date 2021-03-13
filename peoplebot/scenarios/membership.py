@@ -11,6 +11,7 @@ from utils.spaces import SpaceConfig
 
 
 def _add_member(ctx: Context, database: Database, club_name='сообщества'):
+    # todo: add telegram id if it is possible
     ctx.intent = 'MEMBER_ADD_COMPLETE'
     logins = [matchers.normalize_username(c.strip(',').strip('@').lower()) for c in ctx.text.split()]
     resp = 'Вот что получилось:'
@@ -33,7 +34,8 @@ def _add_member(ctx: Context, database: Database, club_name='сообществ�
     ctx.response = resp
 
 
-def _add_guest(ctx: Context, database: Database):
+def _add_friend(ctx: Context, database: Database):
+    # todo: add telegram id if it is possible
     logins = [matchers.normalize_username(c.strip(',').strip('@').lower()) for c in ctx.text.split()]
     resp = 'Вот что получилось:'
     for login in logins:
@@ -48,7 +50,7 @@ def _add_guest(ctx: Context, database: Database):
         else:
             database.mongo_membership.update_one(
                 {'username': login, 'space': ctx.space.key},
-                {'$set': {'is_guest': True}},
+                {'$set': {'is_friend': True}},
                 upsert=True
             )
             resp = resp + '\n@{} успешно добавлен(а) в список членов СООБЩЕСТВА (но не КЛУБА).'.format(login)
@@ -85,7 +87,7 @@ def try_membership_management(ctx: Context, database: Database):
     elif ctx.last_intent == 'FRIEND_ADD_INIT':
         ctx.intent = 'FRIEND_ADD_COMPLETE'
         if ctx.space.community_is_split:
-            _add_guest(ctx=ctx, database=database)
+            _add_friend(ctx=ctx, database=database)
         else:
             _add_member(ctx=ctx, database=database)
     elif re.match('(добавь|добавить)( нов(ых|ого))? (члена|членов)', ctx.text_normalized):
@@ -131,6 +133,7 @@ def members_to_file(database: Database, space: SpaceConfig):
     pb = {u['username']: u for u in database.mongo_peoplebook.find({'space': space.key})}
 
     for u in users:
+        u['status'] = database.get_top_status(u)
         if not u['username']:
             continue
         uu = pb.get(u['username'])
@@ -142,10 +145,14 @@ def members_to_file(database: Database, space: SpaceConfig):
             u[k] = uu.get(k)
 
     df = pd.DataFrame(users)
-    fdf = df[
-        ['tg_id', 'username', 'first_name', 'last_name', 'pb_first_name', 'pb_last_name']
-        + ['activity', 'topics', 'contacts', 'photo', 'wants_next_coffee']
-        ]
+    columns = [
+        'tg_id', 'username', 'first_name', 'last_name',
+        'status',
+        'pb_first_name', 'pb_last_name',
+        'activity', 'topics', 'contacts', 'photo', 'wants_next_coffee',
+
+    ]
+    fdf = df[columns]
     filename = f'members_{space.key}.xlsx'
     fdf.to_excel(filename)
     return filename

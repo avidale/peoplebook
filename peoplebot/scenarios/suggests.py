@@ -21,7 +21,7 @@ def make_standard_suggests(database: Database, user_object):
             suggests.append('Создать встречу')
         suggests.append('Добавить членов сообщества')
         if space.community_is_split:
-            suggests.append('Добавить членов сообщества')
+            suggests.append('Добавить членов клуба')
         suggests.append('Выгрузить список членов')
 
     return suggests
