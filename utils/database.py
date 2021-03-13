@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 def make_multidict(items, keys) -> Dict[Tuple, List]:
     result = {}
     for item in items:
+        if any(key_name not in item for key_name in keys):
+            continue
         key = tuple(item[key_name] for key_name in keys)
         if key not in result:
             result[key] = []
@@ -77,7 +79,7 @@ class Database:
         )
         self._cached_mongo_participations.update(
             make_multidict(
-                participations, keys=['key', 'space']
+                participations, keys=['tg_id', 'space']
             )
         )
         self._cached_spaces: Dict[str, SpaceConfig] = {
