@@ -15,12 +15,11 @@ def add_peoplebook_from_whois(
         bot: TeleBot,
         rewrite=False,
 ):
-    # todo: find peoplebook proofile by looking at the user_object (username or user id)
     uo = get_or_insert_user(space_name=space_cfg.key, database=database, tg_user=message.from_user)
     fltr = {'username': message.from_user.username, 'space': space_cfg.key}
     existing_page = database.mongo_peoplebook.find_one(fltr)
     if not existing_page:
-        fltr = {'username': message.from_user.id, 'space': space_cfg.key}
+        fltr = {'tg_id': message.from_user.id, 'space': space_cfg.key}
         existing_page = database.mongo_peoplebook.find_one(fltr)
     if existing_page and not rewrite:
         print('the peoplebook page already exists, not rewriting it')
@@ -33,6 +32,7 @@ def add_peoplebook_from_whois(
     database.mongo_peoplebook.update_one(
         fltr,
         {'$set': {
+            'username': uo.get('username'),
             'tg_id': uo.get('tg_id'),
             'first_name': uo.get('first_name') or uo.get('username') or parsed['first_name'],
             'last_name': uo.get('last_name') or parsed['last_name'],

@@ -10,68 +10,14 @@ from peoplebot.scenarios.suggests import make_standard_suggests
 from peoplebot.scenarios.peoplebook_auth import make_pb_url
 from utils.database import Database
 from utils.dialogue_management import Context
+from utils.events import InvitationStatuses
 from utils.messaging import BaseSender
 from utils.spaces import SpaceConfig
 from utils import matchers
 
-from config import BATCH_MESSAGE_TIMEOUT
+from config import BATCH_MESSAGE_TIMEOUT, DEFAULT_SPACE
 
 DETAILED_HEAD_SIZE = 3
-
-
-class InvitationStatuses:
-    NOT_SENT = 'NOT_SENT'
-    NOT_ANSWERED = 'NOT_ANSWERED'
-    ON_HOLD = 'ON_HOLD'
-    ACCEPT = 'ACCEPT'
-    REJECT = 'REJECT'
-    NOT_ANSWERED_OVERDUE = 'NOT_ANSWERED_OVERDUE'
-    ON_HOLD_OVERDUE = 'ON_HOLD_OVERDUE'
-    NOT_SENT_OVERDUE = 'NOT_SENT_OVERDUE'
-
-    PAYMENT_PAID = 'PAID'
-    PAYMENT_NOT_PAID = 'NOT_PAID'
-
-    @classmethod
-    def translate(cls, status, payment_status=None):
-        d = {
-            cls.NOT_SENT: 'не получено',
-            cls.NOT_ANSWERED: 'без ответа',
-            cls.ON_HOLD: 'думает',
-            cls.ACCEPT: 'да',
-            cls.REJECT: 'нет',
-            cls.ON_HOLD_OVERDUE: 'так и не решил(а)',
-            cls.NOT_SENT_OVERDUE: 'так и не получено',
-            cls.NOT_ANSWERED_OVERDUE: 'так и нет ответа'
-        }
-        result = d.get(status, 'какой-то непонятный статус')
-        if status == cls.ACCEPT and payment_status != cls.PAYMENT_PAID:
-            result = result + ' (не оплачено)'
-        return result
-
-    @classmethod
-    def translate_second_person(cls, status):
-        d = {
-            cls.NOT_SENT: 'Вы не участвуете',
-            cls.NOT_ANSWERED: 'Вы пока не решили, участвовать ли',
-            cls.ON_HOLD: 'Вы пока не решили, участвовать ли',
-            cls.ACCEPT: 'Вы участвуете',
-            cls.REJECT: 'Вы не участвуете',
-            cls.ON_HOLD_OVERDUE: 'Вы не участвовали',
-            cls.NOT_SENT_OVERDUE: 'Вы не участвовали',
-            cls.NOT_ANSWERED_OVERDUE: 'Вы не участвовали'
-        }
-        return d.get(status, 'какой-то непонятный статус')
-
-    @classmethod
-    def undecided_states(cls):
-        return [cls.NOT_SENT, cls.NOT_ANSWERED, cls.ON_HOLD]
-
-    @classmethod
-    def make_overdue(cls, status):
-        if status.endswith('_OVERDUE'):
-            return status
-        return status + '_OVERDUE'
 
 
 class EventIntents:
@@ -91,8 +37,12 @@ def is_future_event(event, may_be_today=True):
 def render_full_event(ctx: Context, database: Database, the_event):
     response = format_event_description(the_event, user_tg_id=ctx.user_object['tg_id'], space_name=ctx.space.key)
     the_participation = database.mongo_participations.find_one(
-        {'username': ctx.user_object['username'], 'code': the_event['code'], 'space': ctx.space.key}
+        {'tg_id': ctx.user_object['tg_id'], 'code': the_event['code'], 'space': ctx.space.key}
     )
+    if not the_participation:
+        the_participation = database.mongo_participations.find_one(
+            {'username': ctx.user_object['username'], 'code': the_event['code'], 'space': ctx.space.key}
+        )
     is_future = is_future_event(the_event)
     if the_participation is None or the_participation.get('status') != InvitationStatuses.ACCEPT:
         response = response + '\nВы не участвуете.'
@@ -131,9 +81,16 @@ def make_invitation(invitation, database: Database, user_tg_id, space: SpaceConf
 
 def try_invitation(ctx: Context, database: Database):
     user_tg_id = ctx.user_object.get('tg_id', '')
+
+    # todo: check if the event is in the future
     deferred_invitation = database.mongo_participations.find_one(
         {'username': ctx.username, 'status': InvitationStatuses.NOT_SENT, 'space': ctx.space.key}
-    )  # todo: check if the event is in the future
+    )
+    if not deferred_invitation:
+        deferred_invitation = database.mongo_participations.find_one(
+            {'tg_id': ctx.tg_id, 'status': InvitationStatuses.NOT_SENT, 'space': ctx.space.key}
+        )
+
     if ctx.last_intent in {EventIntents.INVITE, EventIntents.DID_NOT_PARSE}:
         new_status = None
         event_code = ctx.user_object.get('event_code')
@@ -186,6 +143,12 @@ def try_invitation(ctx: Context, database: Database):
         resp, intent, suggests = make_invitation(
             deferred_invitation, database=database, user_tg_id=user_tg_id, space=ctx.space,
         )
+        if not deferred_invitation.get('tg_id'):
+            # when inviting the user, tg_id was not known, so we insert it now
+            database.mongo_participations.update_many(
+                {'username': ctx.username},
+                {'$set': {'tg_id': ctx.tg_id}}
+            )
         ctx.response = resp
         ctx.intent = intent
         ctx.suggests.extend(suggests)
@@ -336,48 +299,109 @@ def try_event_usage(ctx: Context, database: Database):
             f = 'Текст "{}" не похож на логин в телеграме. Если хотите попробовать снова, нажмите /invite опять.'
             ctx.response = f.format(the_login)
         else:
-            existing_membership = database.mongo_membership.find_one(
-                {'username': the_login, 'space': ctx.space.key}
+            user_account = database.mongo_users.find_one({'username': the_login, 'space': ctx.space.key})
+
+            status = add_invitation_to_a_user(
+                database=database,
+                tg_id=(user_account or {}).get('tg_id'),
+                username=the_login,
+                event_code=event_code,
+                space=ctx.space,
+                invitor=ctx.username,
+                sender=ctx.sender,
             )
-            existing_invitation = database.mongo_participations.find_one(
-                {'username': the_login, 'code': event_code, 'space': ctx.space.key}
-            )
-            if existing_invitation is not None:
+
+            if status == 'приглашение уже было сделано':
                 ctx.response = 'Пользователь @{} уже получал приглашение на эту встречу!'.format(the_login)
             else:
-                user_account = database.mongo_users.find_one({'username': the_login, 'space': ctx.space.key})
-                never_used_this_bot = user_account is None
-                if existing_membership is None:
-                    database.mongo_membership.update_one(
-                        {'username': the_login, 'space': ctx.space.key},
-                        {'$set': {'is_guest': True}},
-                        upsert=True
-                    )
-                database.mongo_participations.update_one(
-                    {'username': the_login, 'code': event_code, 'space': ctx.space.key},
-                    {'$set': {'status': InvitationStatuses.NOT_SENT, 'invitor': ctx.user_object['username']}},
-                    upsert=True
-                )
                 r = 'Юзер @{} был добавлен в список участников встречи!'.format(the_login)
-                if never_used_this_bot:
+                if status == 'не в боте':
                     r = r + '\nПередайте ему/ей ссылку на меня (@{}), '.format(ctx.space.bot_username) + \
-                        'чтобы подтвердить участие и заполнить пиплб' \
-                        'ук (увы, бот не может писать первым).'
-                else:
-                    sent_invitation_to_user(the_login, event_code, database, ctx.sender, space=ctx.space)
+                        'чтобы подтвердить участие и заполнить пиплбук (увы, бот не может писать первым).'
+                elif status == 'не получилось':
+                    r = r + '\nНе получилось отправить ему/ей сообщение с приглашением. ' \
+                            'Пожалуйста, сделайте это самостоятельно и попросите написать мне. Спасибо!'
                 ctx.response = r
     return ctx
 
 
-def sent_invitation_to_user(username, event_code, database: Database, sender: BaseSender, space: SpaceConfig):
-    invitation = database.mongo_participations.find_one(
-        {'username': username, 'code': event_code, 'space': space.key}
+def add_invitation_to_a_user(
+        username, tg_id, event_code,
+        database: Database,
+        space: SpaceConfig,
+        sender: BaseSender,
+        invitor: str,
+) -> str:
+    """ Add an invitation to mongo_participations and try sending the invitation
+    resulting status is: one of
+    - 'не удалось идентифицировать пользователя' (нет логина или айди)
+    - 'приглашение уже было сделано'
+    - 'нет в боте' (приглашение создано, но не отправлено, т.к. юзера пока нет в боте)
+    - 'не получилось' (приглашение создано, но не отправлено по какой-то другой причине)
+    - 'успех' (sent_invitation_to_user called successfully)
+    """
+    if not username and not tg_id:
+        return 'не удалось идентифицировать пользователя'
+
+    user_account = None
+    if username:
+        user_account = database.mongo_users.find_one({'username': username, 'space': space.key})
+    if tg_id and not user_account:
+        user_account = database.mongo_users.find_one({'tg_id': tg_id, 'space': space.key})
+    if user_account and user_account.get('tg_id') and not tg_id:
+        tg_id = user_account.get('tg_id')
+
+    existing_membership = database.find_membership(username=username, tg_id=tg_id, space_name=space.key)
+    if existing_membership is None:
+        # maybe it is not right to make user a guest just on sending the invitation
+        o = {'username': username, 'space': space.key, 'tg_id': tg_id, 'is_guest': True}
+        if username:
+            o['username'] = username
+        if tg_id:
+            o['tg_id'] = tg_id
+        database.mongo_membership.insert_one(o)
+
+    the_invitation = database.find_invitation(
+        space_name=space.key, username=username, tg_id=tg_id, event_code=event_code
     )
+    if the_invitation is not None:
+        status = 'приглашение уже было сделано'
+    else:
+        key = {'code': event_code, 'space': space.key}
+        if username:
+            key['username'] = username
+        if tg_id:
+            key['tg_id'] = tg_id
+        database.mongo_participations.update_one(
+            key,
+            {'$set': {'status': InvitationStatuses.NOT_SENT, 'invitor': invitor, 'tg_id': tg_id}},
+            upsert=True
+        )
+        never_used_this_bot = user_account is None
+        if never_used_this_bot:
+            status = 'нет в боте'
+        else:
+            success = sent_invitation_to_user(
+                username=username, tg_id=tg_id,
+                event_code=event_code, database=database, sender=sender,
+                space=space,
+            )
+            status = 'успех' if success else 'не получилось'
+    return status
+
+
+def sent_invitation_to_user(
+        username, tg_id, event_code, database: Database, sender: BaseSender, space: SpaceConfig
+) -> bool:
+    """ Try to send an existing invitation to a user, and return status """
+    invitation = database.find_invitation(space_name=space.key, username=username, tg_id=tg_id, event_code=event_code)
     if invitation is None:
         return False
-    user_account = database.mongo_users.find_one({'username': username, 'space': space.key})
+
+    user_account = database.find_user(space_name=space.key, username=username, tg_id=tg_id)
     if user_account is None:
         return False
+
     if user_account.get('deactivated'):
         print('user {} is deactivated, skipping it'.format(user_account))
         return False
@@ -539,24 +563,16 @@ def try_event_creation(ctx: Context, database: Database):
                 else:
                     if not member.get('is_member'):
                         continue
-                # todo: deduplicate the code with single-member invitation
-                the_login = member['username']
-                the_invitation = database.mongo_participations.find_one(
-                    {'username': the_login, 'code': event_code, 'space': ctx.space.key}
+                status = add_invitation_to_a_user(
+                    database=database,
+                    tg_id=member.get('tg_id'),
+                    username=member.get('username'),
+                    event_code=event_code,
+                    space=ctx.space,
+                    invitor=ctx.username,
+                    sender=ctx.sender,
                 )
-                if the_invitation is not None:
-                    status = 'приглашение уже было сделано'
-                else:
-                    database.mongo_participations.update_one(
-                        {'username': the_login, 'code': event_code, 'space': ctx.space.key},
-                        {'$set': {'status': InvitationStatuses.NOT_SENT, 'invitor': ctx.username}}, upsert=True
-                    )
-                    success = sent_invitation_to_user(
-                        username=the_login, event_code=event_code, database=database, sender=ctx.sender,
-                        space=ctx.space,
-                    )
-                    status = 'успех' if success else 'не получилось'
-                r = r + '\n  @{}: {}'.format(member['username'], status)
+                r = r + '\n  @{}: {}'.format(member.get('username') or member.get('tg_id'), status)
             ctx.response = r
     return ctx
 
@@ -819,8 +835,8 @@ def try_event_edition(ctx: Context, database: Database):
             ctx.response = 'Окей, не будем делать запись об оплате\n' + render_full_event(ctx, database, the_event)
         else:
             extracted_username = matchers.normalize_username(ctx.text)
-            participation = database.mongo_participations.find_one(
-                {'username': extracted_username, 'code': event_code, 'space': ctx.space.key}
+            participation = database.find_invitation(
+                space_name=ctx.space.key, event_code=event_code, username=extracted_username, tg_id=None
             )
             if participation is None:
                 ctx.intent = 'EVENT_OTHER_PAYMENT_STATUS_USER_NOT_FOUND'
@@ -851,17 +867,19 @@ def try_event_edition(ctx: Context, database: Database):
                            'Пожалуйста, следующим сообщением опишите способ оплаты: ' \
                            'сумма, карта, и т.п.'.format(target_username)
             ctx.expected_intent = 'EVENT_OTHER_PAYMENT_STATUS_SET_INFO'
-            database.mongo_participations.update_one(
-                {'username': target_username, 'code': event_code, 'space': ctx.space.key},
-                {'$set': {'payment_status': InvitationStatuses.PAYMENT_PAID}}, upsert=True
+            database.update_participation(
+                space_name=ctx.space.key, username=target_username, event_code=event_code,
+                the_update={'payment_status': InvitationStatuses.PAYMENT_PAID},
+                tg_id=None,  # it will be recovered automatically
             )
         elif ctx.text_normalized == 'нет':
             ctx.intent = 'EVENT_OTHER_PAYMENT_STATUS_SET_NO'
             ctx.response = 'Отлично, записали, что @{} не оплатил(а) встречу.\n'.format(target_username) \
                            + render_full_event(ctx, database, the_event)
-            database.mongo_participations.update_one(
-                {'username': target_username, 'code': event_code, 'space': ctx.space.key},
-                {'$set': {'payment_status': InvitationStatuses.PAYMENT_NOT_PAID}}, upsert=True
+            database.update_participation(
+                space_name=ctx.space.key, username=target_username, event_code=event_code,
+                the_update={'payment_status': InvitationStatuses.PAYMENT_NOT_PAID},
+                tg_id=None,  # it will be recovered automatically
             )
         elif ctx.text_normalized == 'отмена':
             ctx.intent = 'EVENT_OTHER_PAYMENT_STATUS_CANCEL'
@@ -878,9 +896,10 @@ def try_event_edition(ctx: Context, database: Database):
         else:
             ctx.intent = 'EVENT_OTHER_PAYMENT_STATUS_SET_INFO'
             ctx.response = 'Хорошо, запомню эту информацию. Спасибо!'
-            database.mongo_participations.update_one(
-                {'username': target_username, 'code': event_code, 'space': ctx.space.key},
-                {'$set': {'payment_details': ctx.text}}, upsert=True
+            database.update_participation(
+                space_name=ctx.space.key, username=target_username, event_code=event_code,
+                the_update={'payment_details': ctx.text},
+                tg_id=None,  # it will be recovered automatically
             )
     return ctx
 
@@ -938,7 +957,9 @@ def daily_event_management(database: Database, sender: BaseSender, space: SpaceC
             if random.random() <= remind_probability:
                 # todo: make a custom header (with days to event)
                 sent_invitation_to_user(
-                    username=inv['username'], event_code=event['code'], database=database, sender=sender,
+                    username=inv['username'],
+                    tg_id=inv.get('tg_id'),
+                    event_code=event['code'], database=database, sender=sender,
                     space=space,
                 )
                 time.sleep(BATCH_MESSAGE_TIMEOUT)

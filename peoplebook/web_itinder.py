@@ -18,6 +18,7 @@ itinder_bp = Blueprint('itinder', __name__)
 
 
 def get_pb_dict(space=cfg.DEFAULT_SPACE):
+    # todo: start using tg_id instead
     return {p['username']: p for p in mongo_peoplebook.find({'space': space}) if p['username']}
 
 

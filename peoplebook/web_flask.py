@@ -78,6 +78,26 @@ def get_profiles_for_event(event_code, space_id):
         }
     ]))
     profiles = [p for rp in raw_profiles for p in rp.get('profiles', []) if p.get('space') == space_id]
+
+    # add more profiles by matching them by tg_id
+    tg_ids = {p.get('tg_id') for p in profiles if p.get('tg_id') is not None}
+    more_profiles = list(mongo_participations.aggregate([
+        {
+            '$lookup': {
+                'from': 'peoplebook',
+                'localField': 'tg_id',
+                'foreignField': 'tg_id',
+                'as': 'profiles'
+            }
+        }, {
+            '$match': {'code': event_code, 'status': 'ACCEPT'}
+        }
+    ]))
+    for rp in more_profiles:
+        for p in rp.get('profiles', []):
+            if p.get('space') == space_id:
+                if p.get('tg_id') and p['tg_id'] not in tg_ids:
+                    profiles.append(p)
     return profiles
 
 

@@ -11,6 +11,7 @@ class Context:
     ):
         self.user_object = user_object
         self.username = user_object.get('username', '')
+        self.tg_id = user_object.get('tg_id')
         self.last_intent = user_object.get('last_intent', '')
         self.last_expected_intent = user_object.get('last_expected_intent', '')
         self.text = text or ''

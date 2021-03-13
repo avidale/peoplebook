@@ -1,3 +1,4 @@
+import copy
 import logging
 
 from datetime import datetime
@@ -7,6 +8,7 @@ from typing import Dict, List, Optional, Tuple
 from config import DEFAULT_SPACE
 from utils import matchers
 from utils.chat_data import ChatData
+from utils.events import InvitationStatuses
 from utils.matchers import normalize_username
 from utils.spaces import SpaceConfig
 
@@ -66,9 +68,17 @@ class Database:
             if item.get('username') is not None:
                 self._cached_mongo_membership[(item['username'], item['space'])] = item
 
-        # todo: add tg_id as keys as well
+        participations = [
+            p for p in self.mongo_participations.find({})
+            if p.get('status') in InvitationStatuses.success_states()
+        ]
         self._cached_mongo_participations = make_multidict(
-            self.mongo_participations.find({}), keys=['username', 'space']
+            participations, keys=['username', 'space']
+        )
+        self._cached_mongo_participations.update(
+            make_multidict(
+                participations, keys=['key', 'space']
+            )
         )
         self._cached_spaces: Dict[str, SpaceConfig] = {
             record['key']: SpaceConfig.from_record(record)
@@ -212,6 +222,8 @@ class Database:
             return
         the_profile = None
         if tg_id:
+            if isinstance(tg_id, str) and tg_id.isnumeric():
+                tg_id = int(tg_id)
             the_profile = self.mongo_peoplebook.find_one(
                 {'tg_id': tg_id, 'space': space_name}
             )
@@ -225,7 +237,72 @@ class Database:
             self, space_name, username=None, tg_id=None,
 
     ):
+        # todo: complete it and use in scenarios
         pass
+
+    def find_user(self, space_name, username, tg_id) -> Optional[Dict]:
+        result = None
+        if username:
+            result = self.mongo_users.find_one(
+                {'username': username, 'space': space_name}
+            )
+        if tg_id and not result:
+            result = self.mongo_users.find_one(
+                {'tg_id': tg_id, 'space': space_name}
+            )
+        return result
+
+    def find_invitation(self, space_name, event_code, username, tg_id) -> Optional[Dict]:
+        the_invitation = None
+        if not tg_id:
+            target_user = self.find_user(space_name=space_name, username=username, tg_id=None)
+            tg_id = (target_user or {}).get('tg_id')
+
+        if username:
+            the_invitation = self.mongo_participations.find_one(
+                {'username': username, 'code': event_code, 'space': space_name}
+            )
+        if tg_id and not the_invitation:
+            the_invitation = self.mongo_participations.find_one(
+                {'tg_id': tg_id, 'code': event_code, 'space': space_name}
+            )
+        return the_invitation
+
+    def find_membership(self, space_name, username, tg_id) -> Optional[Dict]:
+        result = None
+        if username:
+            result = self.mongo_membership.find_one(
+                {'username': username, 'space': space_name}
+            )
+        if tg_id and not result:
+            result = self.mongo_membership.find_one(
+                {'tg_id': tg_id, 'space': space_name}
+            )
+        return result
+
+    def update_participation(self, space_name, username, tg_id, event_code, the_update):
+        """ Update a participation - and its username or tg_id, if needed. Insert one, if needed."""
+        if not username and not tg_id:
+            return
+        if not tg_id:
+            target_user = self.find_user(space_name=space_name, username=username, tg_id=None)
+            tg_id = (target_user or {}).get('tg_id')
+
+        the_update = copy.deepcopy(the_update)
+        if username:
+            the_update['username'] = username
+        if tg_id:
+            the_update['tg_id'] = tg_id
+
+        p = self.find_invitation(space_name=space_name, username=username, tg_id=tg_id, event_code=event_code)
+        if p:
+            self.mongo_participations.update_one({'_id': p.get('_id')}, {'$set': the_update})
+        else:
+            the_update.update({
+                'space': space_name,
+                'code': event_code,
+            })
+            self.mongo_participations.insert_one(the_update)
 
 
 class LoggedMessage:
@@ -280,12 +357,20 @@ def get_or_insert_user(space_name, tg_user=None, tg_uid=None, database: Database
     found = database.mongo_users.find_one({'tg_id': uid, 'space': space_name})
     if found is not None:
         if tg_user is not None and found.get('username') != matchers.normalize_username(tg_user.username):
-            # todo: when updating username, keep track of old usernames and/or rewrite
-            #  - peoplebook
-            #  - membership
-            # todo: update usernames in multiple spaces
-            database.mongo_users.update_one(
-                {'tg_id': uid, 'space': space_name},
+            database.mongo_users.update_many(
+                {'tg_id': uid},
+                {'$set': {'username': matchers.normalize_username(tg_user.username)}}
+            )
+            database.mongo_membership.update_many(
+                {'tg_id': uid},
+                {'$set': {'username': matchers.normalize_username(tg_user.username)}}
+            )
+            database.mongo_peoplebook.update_many(
+                {'tg_id': uid},
+                {'$set': {'username': matchers.normalize_username(tg_user.username)}}
+            )
+            database.mongo_participations.update_many(
+                {'tg_id': uid},
                 {'$set': {'username': matchers.normalize_username(tg_user.username)}}
             )
             found = database.mongo_users.find_one({'tg_id': uid, 'space': space_name})
