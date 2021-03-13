@@ -61,7 +61,8 @@ def space_creation(ctx: Context, database: Database):
         ctx.response = 'Отличное название, так и запишем! ' \
                        '\nТеперь придумайте код сообщества. ' \
                        '\nОн должен состоять из латинских букв и цифр в нижнем регистре ' \
-                       '(их можно разделять дефисом или символом "_").'
+                       '(их можно разделять дефисом или символом "_").' \
+                       '\nЭтот код станет частью адреса сообщества на сайте.'
         ctx.suggests.append(CANCEL)
         space_to_create['title'] = ctx.text
         ctx.the_update = {'$set': {'space_to_create': space_to_create}}
@@ -102,12 +103,18 @@ def space_creation(ctx: Context, database: Database):
         key = space_to_create.get('key')
         ctx.intent = INTENT_SET_BOT_TOKEN
         database.mongo_spaces.update_one({'key': key}, {'$set': {'bot_token': ctx.text}})
-        # todo: make the multiverse fully update itself
-        # from peoplebot.new_main import MULTIVERSE
-        # MULTIVERSE.create_bots()
-        # MULTIVERSE.set_web_hooks()
+
+        from peoplebot.new_main import MULTIVERSE
+        MULTIVERSE.init_spaces()
+        MULTIVERSE.create_bots()
         ctx.response = 'Всё готово! ' \
-                       'Теперь переходите к созданному вами боту и начинайте управлять вашим сообществом.'
+                       'Теперь переходите к созданному вами боту и начинайте управлять вашим сообществом.' \
+                       '\n\nЧто вы можете сделать:' \
+                       '\n - Написать боту, чтобы понять, как он работает;' \
+                       '\n - Добавить через бота членов в сообщество;' \
+                       '\n - Заполнить через бота свою страничку в пиплбуке;' \
+                       '\n - Пройти по ссылке выше и заполнить настройки сообщества;' \
+                       '\n\nЕсли что-то будет непонятно, пишите @cointegrated.'
         # todo: ask for bot's username
         # todo: add a scenario of filling the peoplebook
         # todo: add a scenario of adding members
