@@ -41,6 +41,7 @@ class SpaceConfig:
             owner_username='cointegrated',
             admins=None,
             text_help_authorized=None,  # todo: default one
+            text_help_guests=None,  # todo: default one
             text_help_unauthorized=None,  # todo: default one
             text_after_messages='',
             add_chat_members_to_community=MembershipStatus.NONE,
@@ -65,6 +66,7 @@ class SpaceConfig:
 
         # basic NLG setup
         self.text_help_authorized = text_help_authorized
+        self.text_help_guests = text_help_guests
         self.text_help_unauthorized = text_help_unauthorized
         if text_after_messages.strip() and not text_after_messages.startswith('\n'):
             text_after_messages = '\n' + text_after_messages
@@ -104,6 +106,11 @@ class SpaceConfig:
             return self.text_help_unauthorized
         return f'Это бот сообщества {self.title}.\n' \
             f'Чтобы получить к нему доступ, обратитесь к администратору сообщества.'
+
+    def get_text_help_guests(self):
+        if self.text_help_guests:
+            return self.text_help_guests
+        return self.get_text_help_unauthorized()
 
     def get_text_help_authorized(self, user_object=None):
         if self.text_help_authorized:

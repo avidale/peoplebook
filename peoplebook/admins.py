@@ -60,7 +60,8 @@ class SpaceSettingsForm(FlaskForm):
     # owner_username = 'cointegrated',
     # admins = None,
     text_help_authorized = TextAreaField('Сообщение-help для членов сообщества')
-    text_help_unauthorized = TextAreaField('Сообщение-help внешних пользователей')
+    text_help_guests = TextAreaField('Сообщение-help для гостей сообщества')
+    text_help_unauthorized = TextAreaField('Сообщение-help для внешних пользователей')
     text_after_messages = TextAreaField('Прибаутка в собщениях бота')
 
     # wachter settings
