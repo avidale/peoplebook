@@ -47,7 +47,7 @@ def about_peoplebook():
 @login_required
 def home(space=cfg.DEFAULT_SPACE):
     if not check_space(space):
-        return SPACE_NOT_FOUND
+        return redirect(url_for(about_peoplebook))
     all_events = mongo_events.find({'space': space}).sort('date', pymongo.DESCENDING)
     for event in all_events:
         who_comes = list(mongo_participations.find({'code': event['code'], 'status': 'ACCEPT', 'space': space}))

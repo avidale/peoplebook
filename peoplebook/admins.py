@@ -185,7 +185,7 @@ def chats_page(space):
         the_chat = db.get_chat(space_name=space_cfg.key, chat_id=chat_id)
         chat_form.chat_id.data = chat_id
     if the_chat:
-        update_status = f'Настраиваем чат: {the_chat.title}'
+        update_status = f'Настраиваем чат: {the_chat.title} ({the_chat.chat_id})'
         if chat_form.submit_chat_settings.data and chat_form.is_submitted():
             update_status = f'Пытаемся обновить чат: {the_chat.title}, но есть ошибки.'
         else:

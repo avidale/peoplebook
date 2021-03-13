@@ -26,6 +26,7 @@ def run_bot_and_book():
     parser.add_argument('--space', type=str, help='The space for which to run the polling bot')
     parser.add_argument('--nobot', action='store_true', help='Do not run the bots (peoplebook only)')
     parser.add_argument('--nosearch', action='store_true', help='Do not run the semantic search engine')
+    parser.add_argument('--debug', action='store_true', help='Run the server in the debug mode')
     args = parser.parse_args()
     if args.poll:
         # todo: don't run the searcher here because it is slow
@@ -59,7 +60,7 @@ def run_bot_and_book():
         app.register_blueprint(itinder_bp)
         app.register_blueprint(admin_bp)
         app.register_blueprint(father_bot_bp)
-        app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
+        app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=args.debug)
 
 
 if __name__ == '__main__':

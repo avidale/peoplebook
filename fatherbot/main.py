@@ -5,7 +5,8 @@ import telebot
 
 from flask import Blueprint, Flask, request
 
-from fatherbot.fatherbot_info import info_respond
+from config import PEOPLEBOOK_ROOT
+from fatherbot.fatherbot_info import info_respond, MY_CLUBS
 from utils.database import Database, get_or_insert_user, LoggedMessage
 from utils.dialogue_management import Context
 from utils.messaging import BaseSender, TelegramSender
@@ -30,7 +31,7 @@ sender = TelegramSender(bot=father_bot, space=space, timeout=0.3)
 father_bot_bp = Blueprint('father_bot', __name__)
 
 
-MAIN_HELP = """Привет, человек!
+MAIN_HELP = f"""Привет, человек!
 Я - главный пиплбот.
 
 Я умею создавать пиплбуки и пиплботов для ваших сообществ и помогаю вам управлять ими.
@@ -40,12 +41,12 @@ MAIN_HELP = """Привет, человек!
 Пипблот - это бот, который знает участников сообщества,
 собирает их случайные пары для random coffee и сообщает им о мероприятиях.
 
-Подробнее вы можете почитать на сайте http://main.peoplebook.space/about.
+Подробнее вы можете почитать на сайте {PEOPLEBOOK_ROOT}/about.
 
 Чтобы зарегистрировать новое сообщество или управлять имеющимися, воспользуйтесь кнопками.
 """
 
-DEFAULT_SUGGESTS = [CREATE_A_SPACE]
+DEFAULT_SUGGESTS = [CREATE_A_SPACE, MY_CLUBS]
 
 
 def first_respond(ctx: Context, database: Database):
