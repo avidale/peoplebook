@@ -31,6 +31,7 @@ class Multiverse:
         self.senders_dict: Dict[str, BaseSender] = {}
 
         self.app = Blueprint('bot_app', __name__)
+        # todo: maybe add a common route for all bots
         self.bot_url_prefix = bot_url_prefix  # todo: move it into the blueprint
 
     def init_spaces(self):

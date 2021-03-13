@@ -103,10 +103,13 @@ def space_creation(ctx: Context, database: Database):
         key = space_to_create.get('key')
         ctx.intent = INTENT_SET_BOT_TOKEN
         database.mongo_spaces.update_one({'key': key}, {'$set': {'bot_token': ctx.text}})
+        database.update_spaces_cache()
 
         from peoplebot.new_main import MULTIVERSE
         MULTIVERSE.init_spaces()
         MULTIVERSE.create_bots()
+        # todo: maybe force adding a route
+        MULTIVERSE.set_web_hooks()
         ctx.response = 'Всё готово! ' \
                        'Теперь переходите к созданному вами боту и начинайте управлять вашим сообществом.' \
                        '\n\nЧто вы можете сделать:' \

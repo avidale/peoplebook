@@ -60,6 +60,7 @@ class Database:
     def _update_cache(self, force=False):
         if not force and (datetime.now() - self._cache_time).total_seconds() < self.cache_ttl_seconds:
             return
+        self.update_spaces_cache()
         logger.info('updating database cache...')
         self._cache_time = datetime.now()
 
@@ -82,10 +83,13 @@ class Database:
                 participations, keys=['tg_id', 'space']
             )
         )
+
+    def update_spaces_cache(self):
         self._cached_spaces: Dict[str, SpaceConfig] = {
             record['key']: SpaceConfig.from_record(record)
             for record in self.mongo_spaces.find({})
         }
+
 
     def is_at_least_guest(self, user_object):
         return self.is_guest(user_object) or self.is_friend(user_object) \
