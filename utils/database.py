@@ -128,7 +128,7 @@ class Database:
 
     def is_friend(self, user_object):
         mem = self._get_cached_mongo_membership(user_object)
-        if mem.get('is_friend'):
+        if mem.get('is_member'):
             return True
         if mem.get('is_friend'):
             return True

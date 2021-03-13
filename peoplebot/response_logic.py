@@ -83,13 +83,15 @@ def respond(message: Message, database: Database, sender: BaseSender, space_cfg:
         if not uo.get('username'):
             # todo: ask new users to provide usernames
             return
+        # todo: add tg_id into the user filter
 
         user_filter = {'username': uo['username'], 'space': space_cfg.key}
         if space_cfg.member_chat_id and message.chat.id == space_cfg.member_chat_id:
             print('adding user {} to the community members'.format(user_filter))
             database.mongo_membership.update_one(user_filter, {'$set': {'is_member': True}}, upsert=True)
         elif space_cfg.guest_chat_id and message.chat.id == space_cfg.guest_chat_id:
-            database.mongo_membership.update_one(user_filter, {'$set': {'is_guest': True}}, upsert=True)
+            # the semantic of "guest_chat" has changed: its members are "friends", which is more than just guests
+            database.mongo_membership.update_one(user_filter, {'$set': {'is_friend': True}}, upsert=True)
             print('adding user {} to the community guests'.format(user_filter))
         do_wachter_check(
             user_object=uo,
