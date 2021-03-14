@@ -4,6 +4,7 @@ import telebot
 from flask import Blueprint, request
 from typing import Dict
 
+from config import ADMIN_UID
 from utils.database import Database
 from utils.messaging import BaseSender, TelegramSender
 from utils.spaces import SpaceConfig
@@ -99,10 +100,6 @@ class Multiverse:
             bot.edited_message_handler(func=lambda message: True, content_types=ALL_CONTENT_TYPES)(
                 self.make_message_handler(space_name=space_name, edited=True)
             )
-            # todo: remove this if the common processor works fine
-            # self.app.route(self.bot_url_suffix(space_name), methods=['POST'])(
-            #     self.make_updates_processor(bot, function_suffix=space_name)
-            # )
             logger.info(f'have created a bot for space {space.key}')
             # self.app.route("/" + self.restart_webhook_url)(self.telegram_web_hook)
         self.add_custom_handlers()
@@ -111,5 +108,6 @@ class Multiverse:
         for space_name, bot in self.bots_dict.items():
             bot.remove_webhook()
             url = self.base_url + self.bot_url_suffix(space_name)
-            bot.set_webhook(url)
-            logger.info(f'have created a bot webhook for space {space_name} at {url}')
+            result = bot.set_webhook(url)
+            bot.send_message(chat_id=ADMIN_UID, text=f'Меня передеплоили!\n{result}')
+            logger.info(f'have created a bot webhook for space {space_name} at {url} with result {result}')
