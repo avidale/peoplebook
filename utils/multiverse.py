@@ -33,7 +33,10 @@ class Multiverse:
 
         self.app = Blueprint('bot_app', __name__)
         self.bot_url_prefix = bot_url_prefix  # todo: move it into the blueprint
-        self.app.route(f'/{self.bot_url_prefix}<bot_token>', methods=['POST'])(
+
+        url = f'/{self.bot_url_prefix}<bot_token>'
+        logger.info(f'multiverse: creating a general route for all bots at {url}')
+        self.app.route(url, methods=['POST'])(
             self.common_updates_processor
         )
 
@@ -65,6 +68,7 @@ class Multiverse:
         return updates_processor
 
     def common_updates_processor(self, bot_token):
+        logger.info(f'A common updates processor has been called at {bot_token}')
         bot = self.token2bot.get(bot_token)
         if not bot:
             return 'bot not found!', 404
@@ -95,9 +99,10 @@ class Multiverse:
             bot.edited_message_handler(func=lambda message: True, content_types=ALL_CONTENT_TYPES)(
                 self.make_message_handler(space_name=space_name, edited=True)
             )
-            self.app.route(self.bot_url_suffix(space_name), methods=['POST'])(
-                self.make_updates_processor(bot, function_suffix=space_name)
-            )
+            # todo: remove this if the common processor works fine
+            # self.app.route(self.bot_url_suffix(space_name), methods=['POST'])(
+            #     self.make_updates_processor(bot, function_suffix=space_name)
+            # )
             logger.info(f'have created a bot for space {space.key}')
             # self.app.route("/" + self.restart_webhook_url)(self.telegram_web_hook)
         self.add_custom_handlers()
