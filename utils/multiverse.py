@@ -60,15 +60,8 @@ class Multiverse:
     def add_custom_handlers(self):
         pass
 
-    def make_updates_processor(self, bot, function_suffix):
-        def updates_processor():
-            bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
-            return "!", 200
-        # this hack is for Flask that uses __name__ as a lookup key
-        updates_processor.__name__ = updates_processor.__name__ + '__' + function_suffix
-        return updates_processor
-
     def common_updates_processor(self, bot_token):
+        """ This is an updates processor for all bots, including the ones initialized at rutime """
         logger.info(f'A common updates processor has been called at {bot_token}')
         bot = self.token2bot.get(bot_token)
         if not bot:
