@@ -1,5 +1,8 @@
 import re
 
+import sentry_sdk
+import telebot
+
 from utils.database import Database
 from utils.dialogue_management import Context
 
@@ -25,6 +28,8 @@ FORBIDDEN_SPACE_NAMES = {
     'main',
     'meta',
     'prices',
+    'me',
+    'settings',
 }
 
 INTENT_SET_TITLE = 'create_a_space__set_title'
@@ -92,7 +97,8 @@ def space_creation(ctx: Context, database: Database):
                                '\nОстался последний и самый сложный шаг. ' \
                                'Вы должны написать боту @BotFather и создать через него нового бота ' \
                                '- админа для вашего сообщества, придумав ему имя и юзернейм.' \
-                               '\nПосле этого пришлите мне токен, который даст вам BotFather.'.format(url)
+                               '\nПосле этого пришлите мне токен, который даст вам BotFather.' \
+                               '\nТокен выглядит примерно как 1234567890:ABcDefGHIjKLmnopQRStuvWxYZ'.format(url)
                 ctx.expected_intent = INTENT_SET_BOT_TOKEN
                 ctx.the_update = {'$set': {'space_to_create': space_to_create}}
             except Exception:
@@ -100,18 +106,28 @@ def space_creation(ctx: Context, database: Database):
                                'Пожалуйста, обратитесь к админу - @cointegrated.'
                 ctx.suggests.append('Назад')
     elif ctx.last_expected_intent == INTENT_SET_BOT_TOKEN:
-        key = space_to_create.get('key')
         ctx.intent = INTENT_SET_BOT_TOKEN
-        database.mongo_spaces.update_one({'key': key}, {'$set': {'bot_token': ctx.text}})
+        token = ctx.text
+        try:
+            bot = telebot.TeleBot(token)
+            un = bot.get_me().username
+        except Exception as e:
+            sentry_sdk.capture_exception(e)
+            ctx.response = 'Простите, что-то пошло не так. Попробуйте ввести токен ещё раз. ' \
+                           '\nЕсли ошибка повторится, пожалуйста, напишите @ointegrated.'
+            ctx.expected_intent = INTENT_SET_BOT_TOKEN
+            return ctx
+        key = space_to_create.get('key')
+
+        database.mongo_spaces.update_one({'key': key}, {'$set': {'bot_token': token, 'bot_username': un}})
         database.update_spaces_cache()
 
         from peoplebot.new_main import MULTIVERSE
         MULTIVERSE.init_spaces()
         MULTIVERSE.create_bots()
-        # todo: maybe force adding a route
         MULTIVERSE.set_web_hooks()
         ctx.response = 'Всё готово! ' \
-                       'Теперь переходите к созданному вами боту и начинайте управлять вашим сообществом.' \
+                       f'Теперь переходите к созданному вами боту @{un} и начинайте управлять вашим сообществом.' \
                        '\n\nЧто вы можете сделать:' \
                        '\n - Написать боту, чтобы понять, как он работает;' \
                        '\n - Добавить бота в группу в Telegram. ' \
@@ -122,7 +138,6 @@ def space_creation(ctx: Context, database: Database):
                        '\n - Заполнить через бота свою страничку в пиплбуке;' \
                        '\n - Пройти по ссылке выше и заполнить настройки сообщества;' \
                        '\n\nЕсли что-то будет непонятно, пишите @cointegrated.'
-        # todo: ask for bot's username
         # todo: add a scenario of filling the peoplebook
         # todo: add a scenario of adding members
         # todo: add a scenario of creating events

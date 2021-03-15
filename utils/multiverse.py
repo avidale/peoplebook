@@ -1,4 +1,6 @@
 import logging
+
+import sentry_sdk
 import telebot
 
 from flask import Blueprint, request
@@ -78,29 +80,38 @@ class Multiverse:
     def create_bots(self, timeout_between_messages=0.3):
         """ Setup a telegram bot for each space """
         for space_name, space in self.spaces_dict.items():
-            if not space.bot_token:
-                logger.info(f'for space {space.key} no bot token exists, skipping it')
-                continue
-            bot = telebot.TeleBot(token=space.bot_token)
-            self.bots_dict[space_name] = bot
-            self.token2bot[space.bot_token] = bot
-            sender = TelegramSender(space=space, bot=bot, timeout=timeout_between_messages)
-            self.senders_dict[space_name] = sender
+            try:
+                if not space.bot_token:
+                    logger.info(f'for space {space.key} no bot token exists, skipping it')
+                    continue
+                bot = telebot.TeleBot(token=space.bot_token)
+                self.bots_dict[space_name] = bot
+                self.token2bot[space.bot_token] = bot
+                sender = TelegramSender(space=space, bot=bot, timeout=timeout_between_messages)
+                self.senders_dict[space_name] = sender
 
-            bot.message_handler(func=lambda message: True, content_types=ALL_CONTENT_TYPES)(
-                self.make_message_handler(space_name=space_name, edited=False)
-            )
-            bot.edited_message_handler(func=lambda message: True, content_types=ALL_CONTENT_TYPES)(
-                self.make_message_handler(space_name=space_name, edited=True)
-            )
-            logger.info(f'have created a bot for space {space.key}')
-            # self.app.route("/" + self.restart_webhook_url)(self.telegram_web_hook)
+                bot.message_handler(func=lambda message: True, content_types=ALL_CONTENT_TYPES)(
+                    self.make_message_handler(space_name=space_name, edited=False)
+                )
+                bot.edited_message_handler(func=lambda message: True, content_types=ALL_CONTENT_TYPES)(
+                    self.make_message_handler(space_name=space_name, edited=True)
+                )
+                logger.info(f'have created a bot for space {space.key}')
+            except Exception as e:
+                sentry_sdk.capture_exception(e)
+                continue
         self.add_custom_handlers()
 
     def set_web_hooks(self):
         for space_name, bot in self.bots_dict.items():
-            bot.remove_webhook()
-            url = self.base_url + self.bot_url_suffix(space_name)
-            result = bot.set_webhook(url)
-            bot.send_message(chat_id=ADMIN_UID, text=f'Меня передеплоили!\n{result}')
-            logger.info(f'have created a bot webhook for space {space_name} at {url} with result {result}')
+            try:
+                bot.remove_webhook()
+                url = self.base_url + self.bot_url_suffix(space_name)
+                result = bot.set_webhook(url)
+                # not all bots can write to admin, so skip it
+                # bot.send_message(chat_id=ADMIN_UID, text=f'Меня передеплоили!\n{result}')
+                un = bot.get_me().username
+                logger.info(f'Created a webhook for bot {un} for space {space_name} at {url} with result {result}')
+            except Exception as e:
+                sentry_sdk.capture_exception(e)
+                continue
