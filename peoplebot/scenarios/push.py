@@ -5,8 +5,9 @@ from utils.dialogue_management import Context
 
 
 def try_queued_messages(ctx: Context, database: Database):
+    # todo: use tg_id instead of username if possible
     queue = list(database.message_queue.find({
-        'username': ctx.user_object['username'],
+        'username': ctx.user_object.get('username'),
         'fresh': True,
         'space': ctx.space.key,
     }))

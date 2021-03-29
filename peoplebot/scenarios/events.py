@@ -72,7 +72,7 @@ def make_invitation(invitation, database: Database, user_tg_id, space: SpaceConf
     suggests = ['Да', 'Нет', 'Пока не знаю']
     intent = EventIntents.INVITE
     database.update_user_object(
-        username_or_id=invitation['username'],
+        username_or_id=invitation.get('tg_id') or invitation.get('username'),
         space_name=space.key,
         change={'$set': {'event_code': event_code}},
     )
@@ -545,7 +545,7 @@ def try_event_creation(ctx: Context, database: Database):
                     who = 'Клуба'
                 ctx.response = f'Действительно пригласить всех членов {who} на встречу "{event_code}"?'
                 ctx.suggests.extend(['Да', 'Нет'])
-        elif ctx.last_intent in {'INVITE_EVERYONE', 'INVITE_EVERYONE_COMMUNITY'} \
+        elif ctx.last_intent in {'INVITE_EVERYONE', 'INVITE_EVERYONE_COMMUNITY', 'INVITE_EVERYONE_GUESTS'} \
                 and matchers.is_like_no(ctx.text_normalized):
             ctx.intent = 'INVITE_EVERYONE_NOT_CONFIRM'
             ctx.response = 'Ладно.'
@@ -909,10 +909,16 @@ def try_event_edition(ctx: Context, database: Database):
 
 
 def daily_event_management(database: Database, sender: BaseSender, space: SpaceConfig):
-    all_users = {
+    users = list(database.mongo_users.find({'space': space.key}))
+    username2user = {
         u['username']: u
-        for u in database.mongo_users.find({'space': space.key})
+        for u in users
         if u.get('username') is not None
+    }
+    id2user = {
+        u['tg_id']: u
+        for u in users
+        if u.get('tg_id') is not None
     }
     # find all the future events
     future_events = []
@@ -946,7 +952,8 @@ def daily_event_management(database: Database, sender: BaseSender, space: SpaceC
         )
         open_invitations = [
             inv for inv in (list(hold_invitations) + list(not_sent_invitations) + list(not_answered_invitations))
-            if inv['username'] in all_users  # if not, we just cannot send anything
+            if inv.get('username') is not None and inv['username'] in username2user
+            or inv.get('tg_id') is not None and inv['tg_id'] in id2user  # if not, we just cannot send anything
         ]
         # for every open invitation, decide whether to remind (soon-ness -> reminder probability)
         for inv in open_invitations:
@@ -961,15 +968,15 @@ def daily_event_management(database: Database, sender: BaseSender, space: SpaceC
             if random.random() <= remind_probability:
                 # todo: make a custom header (with days to event)
                 sent_invitation_to_user(
-                    username=inv['username'],
+                    username=inv.get('username'),
                     tg_id=inv.get('tg_id'),
                     event_code=event['code'], database=database, sender=sender,
                     space=space,
                 )
                 time.sleep(BATCH_MESSAGE_TIMEOUT)
         for invitation in sure_invitations:
-            user_account = database.mongo_users.find_one(
-                {'username': invitation['username'], 'space': space.key}
+            user_account = database.find_user(
+                space_name=space.key, username=invitation.get('username'), tg_id=invitation.get('tg_id')
             )
             if user_account is None:
                 continue
@@ -990,7 +997,7 @@ def daily_event_management(database: Database, sender: BaseSender, space: SpaceC
                 suggests = ['Сообщить об оплате'] + make_standard_suggests(database=database, user_object=user_account)
                 if sender(text=text, database=database, suggests=suggests, user_id=user_account['tg_id']):
                     database.update_user_object(
-                        username_or_id=invitation['username'],
+                        username_or_id=invitation.get('tg_id') or invitation.get('username'),
                         space_name=space.key,
                         change={
                             '$set': {
@@ -1011,7 +1018,7 @@ def daily_event_management(database: Database, sender: BaseSender, space: SpaceC
                 suggests = make_standard_suggests(database=database, user_object=user_account)
                 if sender(text=text, database=database, suggests=suggests, user_id=user_account['tg_id']):
                     database.update_user_object(
-                        username_or_id=invitation['username'],
+                        username_or_id=invitation.get('tg_id') or invitation.get('username'),
                         space_name=space.key,
                         change={
                             '$set': {
@@ -1061,15 +1068,15 @@ def daily_event_management(database: Database, sender: BaseSender, space: SpaceC
             )
 
 
-def get_name(username, database: Database, space: SpaceConfig):
-    uo = database.mongo_users.find_one({'username': username, 'space': space.key})
+def get_name(username, tg_id, database: Database, space: SpaceConfig):
+    uo = database.find_user(space_name=space.key, username=username, tg_id=tg_id)
     if uo is None:
         return 'не в боте'
     return '{} {}'.format(uo.get('first_name', '-'), uo.get('last_name', '-'))
 
 
-def get_membership(username, database, invitor=None):
-    if database.is_at_least_member({'username': username}):
+def get_membership(username, tg_id, database, invitor=None):
+    if database.is_at_least_member({'username': username, 'tg_id': tg_id}):
         return 'Член клуба'
     else:
         if invitor is None:
@@ -1082,16 +1089,19 @@ def event_to_df(event_code, database, space: SpaceConfig):
     event_members = list(database.mongo_participations.find({'code': event_code, 'space': space.key}))
     rows = [
         [
-            get_name(em['username'], database=database, space=space),
-            get_membership(em['username'], database, em.get('invitor')),
+            get_name(username=em.get('username'), tg_id=em.get('tg_id'), database=database, space=space),
+            get_membership(
+                username=em.get('username'), tg_id=em.get('tg_id'), database=database, invitor=em.get('invitor')
+            ),
             'Да',
             InvitationStatuses.translate(em['status'], em.get('payment_status')),
             em.get('payment_details', '-'),
-            em['username'],
+            em.get('username'),
+            em.get('tg_id')
         ]
         for em in event_members
     ]
-    columns = ['Имя Фамилия', 'Статус', 'Приглашен', 'Согласился', 'Оплата', 'Контакт']
+    columns = ['Имя Фамилия', 'Статус', 'Приглашен', 'Согласился', 'Оплата', 'Контакт', 'User ID']
 
     df = pd.DataFrame(rows, columns=columns).sort_values('Имя Фамилия')
     return df
