@@ -44,6 +44,7 @@ def about_peoplebook():
 
 @app.route('/')  # todo: stop serving the links without space
 @app.route('/<space>')
+@app.route('/', subdomain='<space>')
 @login_required
 def home(space=cfg.DEFAULT_SPACE):
     if not check_space(space):
@@ -68,6 +69,7 @@ def home(space=cfg.DEFAULT_SPACE):
 
 @app.route('/history/<period>')
 @app.route('/<space>/history/<period>')
+@app.route('/history/<period>', subdomain='<space>')
 @login_required
 def history(period, space=cfg.DEFAULT_SPACE):
     if not check_space(space):
@@ -88,6 +90,7 @@ def history(period, space=cfg.DEFAULT_SPACE):
 
 @app.route('/event/<event_code>')
 @app.route('/<space>/event/<event_code>')
+@app.route('/event/<event_code>', subdomain='<space>')
 @login_required
 def peoplebook_for_event(event_code, space=cfg.DEFAULT_SPACE):
     if not check_space(space):
@@ -109,6 +112,7 @@ def peoplebook_for_event(event_code, space=cfg.DEFAULT_SPACE):
 
 @app.route('/members')
 @app.route('/<space>/members')
+@app.route('/members', subdomain='<space>')
 @login_required
 def peoplebook_for_all_members(space=cfg.DEFAULT_SPACE):
     if not check_space(space):
@@ -140,6 +144,7 @@ def peoplebook_for_all_members(space=cfg.DEFAULT_SPACE):
 @app.route('/<space>/members_and_guests')
 @app.route('/all')
 @app.route('/<space>/all')
+@app.route('/all', subdomain='<space>')
 def peoplebook_for_all_members_and_guests(space=cfg.DEFAULT_SPACE):
     space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
     if not space_cfg:
@@ -177,6 +182,7 @@ def peoplebook_for_all_members_and_guests(space=cfg.DEFAULT_SPACE):
 
 @app.route('/person/<username>')
 @app.route('/<space>/person/<username>')
+@app.route('/person/<username>', subdomain='<space>')
 @login_required
 def peoplebook_for_person(username, space=cfg.DEFAULT_SPACE):
     if not check_space(space):
@@ -202,6 +208,7 @@ def peoplebook_for_person(username, space=cfg.DEFAULT_SPACE):
 
 @app.route('/me')
 @app.route('/<space>/me')
+@app.route('/me', subdomain='<space>')
 @login_required
 def my_profile(space=cfg.DEFAULT_SPACE):
     if not check_space(space):
@@ -214,7 +221,8 @@ def my_profile(space=cfg.DEFAULT_SPACE):
 
 # вход по ссылке
 @app.route("/login_link")
-def login_link():
+@app.route('/login_link', subdomain='<space>')
+def login_link(space=None):
     try:
         user_object = get_users()[1][request.args.get('bot_info')]
     except KeyError:
@@ -230,6 +238,7 @@ def login_link():
 
 # заглушка для неавторизавнных пользователей
 @app.route("/login")
+@app.route('/login', subdomain='<space>')
 def login():
     if not current_user.is_authenticated:
         return render_template('login.html')
@@ -238,6 +247,7 @@ def login():
 
 
 @app.route("/logout")
+@app.route('/logout', subdomain='<space>')
 def logout():
     logout_user()
     return redirect(request.referrer)

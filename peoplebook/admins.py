@@ -113,6 +113,7 @@ class ChatSettingsForm(FlaskForm):
 
 
 @admin_bp.route('/<space>/details', methods=['GET', 'POST'])
+@admin_bp.route('/details', methods=['GET', 'POST'], subdomain='<space>')
 def space_details(space):
     db: Database = current_app.database
     space_cfg = db.get_space(space)
@@ -148,6 +149,7 @@ def space_details(space):
 
 
 @admin_bp.route('/<space>/chats', methods=['GET', 'POST'])
+@admin_bp.route('/chats', methods=['GET', 'POST'], subdomain='<space>')
 def chats_page(space):
     db: Database = current_app.database
     space_cfg = db.get_space(space)

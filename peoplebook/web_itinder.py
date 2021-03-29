@@ -24,6 +24,7 @@ def get_pb_dict(space=cfg.DEFAULT_SPACE):
 
 @itinder_bp.route('/similarity', methods=['POST', 'GET'])
 @itinder_bp.route('/<space>/similarity', methods=['POST', 'GET'])
+@itinder_bp.route('/similarity', methods=['POST', 'GET'], subdomain='<space>')
 @login_required
 def similarity_page(one=None, another=None, space=cfg.DEFAULT_SPACE):
     if not check_space(space):
@@ -86,6 +87,7 @@ def similarity_page(one=None, another=None, space=cfg.DEFAULT_SPACE):
 
 
 @itinder_bp.route('/similarity/<one>/<another>', methods=['POST', 'GET'])
+@itinder_bp.route('/similarity/<one>/<another>', methods=['POST', 'GET'], subdomain='<space>')
 @itinder_bp.route('/<space>/similarity/<one>/<another>', methods=['POST', 'GET'])
 @login_required
 def similarity_page_parametrized(one, another, space=cfg.DEFAULT_SPACE):
@@ -93,6 +95,7 @@ def similarity_page_parametrized(one, another, space=cfg.DEFAULT_SPACE):
 
 
 @itinder_bp.route('/itinder_search', methods=['POST', 'GET'])
+@itinder_bp.route('/itinder_search', methods=['POST', 'GET'], subdomain='<space>')
 @itinder_bp.route('/<space>/itinder_search', methods=['POST', 'GET'])
 @login_required
 def search_page(text=None, space=cfg.DEFAULT_SPACE):
@@ -125,6 +128,7 @@ def search_page(text=None, space=cfg.DEFAULT_SPACE):
 
 
 @itinder_bp.route('/itinder')
+@itinder_bp.route('/itinder', subdomain='<space>')
 @itinder_bp.route('/<space>/itinder')
 @login_required
 def itinder(space=cfg.DEFAULT_SPACE):
@@ -140,6 +144,7 @@ def itinder(space=cfg.DEFAULT_SPACE):
 
 
 @itinder_bp.route('/most_similar', methods=['POST', 'GET'])
+@itinder_bp.route('/most_similar', methods=['POST', 'GET'], subdomain='<space>')
 @itinder_bp.route('/<space>/most_similar', methods=['POST', 'GET'])
 @login_required
 def most_similar_page(username=None, space=cfg.DEFAULT_SPACE):
@@ -173,12 +178,14 @@ def most_similar_page(username=None, space=cfg.DEFAULT_SPACE):
 
 
 @itinder_bp.route('/most_similar/<username>', methods=['POST', 'GET'])
+@itinder_bp.route('/most_similar/<username>', methods=['POST', 'GET'], subdomain='<space>')
 @itinder_bp.route('/<space>/most_similar/<username>', methods=['POST', 'GET'])
 def most_similar_page_parametrized(username, space=cfg.DEFAULT_SPACE):
     return most_similar_page(username=username, space=space)
 
 
 @itinder_bp.route('/least_similar', methods=['POST', 'GET'])
+@itinder_bp.route('/least_similar', methods=['POST', 'GET'], subdomain='<space>')
 @itinder_bp.route('/<space>/least_similar', methods=['POST', 'GET'])
 @itinder_bp.route('/<space>/least_similar/<username>', methods=['POST', 'GET'])
 @login_required
@@ -212,12 +219,14 @@ def least_similar_page(username=None, space=cfg.DEFAULT_SPACE):
 
 
 @itinder_bp.route('/least_similar/<username>', methods=['POST', 'GET'])
+@itinder_bp.route('/least_similar/<username>', methods=['POST', 'GET'], subdomain='<space>')
 @itinder_bp.route('/<space>/least_similar/<username>', methods=['POST', 'GET'])
 def least_similar_page_parametrized(username, space=cfg.DEFAULT_SPACE):
     return least_similar_page(username=username, space=space)
 
 
 @itinder_bp.route('/search', methods=['POST', 'GET'])
+@itinder_bp.route('/search', methods=['POST', 'GET'], subdomain='<space>')
 @itinder_bp.route('/<space>/search', methods=['POST', 'GET'])
 @login_required
 def search(space=cfg.DEFAULT_SPACE):
