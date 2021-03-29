@@ -4,6 +4,10 @@ FROM python:3.7-slim-buster
 # STEP 2: Copy the source code in the current directory to the container.  Store it in a folder named /app.
 ADD . /app
 
+RUN apt-get update \
+&& apt-get install gcc -y \
+&& apt-get clean
+
 # STEP 3: Set working directory to /app so we can execute commands in it
 WORKDIR /app
 
