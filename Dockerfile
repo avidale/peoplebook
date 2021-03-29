@@ -5,7 +5,7 @@ FROM python:3.7-slim-buster
 ADD . /app
 
 RUN apt-get update \
-&& apt-get install gcc -y \
+&& apt-get install gcc g++ -y \
 && apt-get clean
 
 # STEP 3: Set working directory to /app so we can execute commands in it
