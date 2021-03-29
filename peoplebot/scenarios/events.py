@@ -156,6 +156,13 @@ def try_invitation(ctx: Context, database: Database):
     return ctx
 
 
+def add_admin_invite_buttons(ctx: Context, database: Database):
+    if database.is_admin(ctx.user_object):
+        ctx.suggests.append('Пригласить всех членов клуба')
+        ctx.suggests.append('Пригласить всех членов сообщества')
+        ctx.suggests.append('Пригласить всех членов и гостей сообщества')
+
+
 def try_event_usage(ctx: Context, database: Database):
     if not database.is_at_least_guest(ctx.user_object):
         return ctx
@@ -215,10 +222,7 @@ def try_event_usage(ctx: Context, database: Database):
             ctx.intent = 'EVENT_CHOOSE_SUCCESS'
             ctx.the_update = {'$set': {'event_code': event_code}}
             ctx.response = render_full_event(ctx, database, the_event)
-            if database.is_admin(ctx.user_object):
-                ctx.suggests.append('Пригласить всех членов клуба')
-                ctx.suggests.append('Пригласить всех членов сообщества')
-                ctx.suggests.append('Пригласить всех членов и гостей сообщества')
+            add_admin_invite_buttons(ctx=ctx, database=database)
     elif event_code is not None and (
             ctx.text == '/engage' or re.match('^(участвовать|принять участие)( в этой встрече)?$', ctx.text_normalized)
     ):
@@ -515,15 +519,14 @@ def try_event_creation(ctx: Context, database: Database):
             database.mongo_events.insert_one(event_to_create)
             ctx.the_update = {'$set': {'event_code': event_to_create['code']}}
             ctx.response = 'Хорошо, дата встречи будет "{}". '.format(ctx.text) + '\nВстреча успешно создана!'
-            ctx.suggests.append('Пригласить всех членов клуба')
-            ctx.suggests.append('Пригласить всех членов сообщества')
+            add_admin_invite_buttons(ctx=ctx, database=database)
     elif event_code is not None:  # this event is context-independent, triggers at any time just by text
         if re.match('пригласить (всех|весь).*', ctx.text_normalized) \
-                or ctx.text == '/invite_club' or ctx.text == '/invite_community':
+                or ctx.text in {'/invite_club', '/invite_community', '/invite_community_and_guests'}:
             # todo: deduplicate this as well
             the_event = database.mongo_events.find_one({'code': event_code, 'space': ctx.space.key})
             community = 'сообществ' in ctx.text_normalized or 'community' in ctx.text
-            large = 'членов и гостей сообщества' in ctx.text_normalized
+            large = 'членов и гостей сообщества' in ctx.text_normalized or 'community_and_guests' in ctx.text
             if the_event is None:
                 ctx.intent = 'EVENT_INVITE_NOT_FOUND'
                 ctx.response = 'Извините, события "{}" не найдено. Выберите другое.'.format(event_code)
@@ -618,6 +621,7 @@ EVENT_EDITION_COMMANDS = '\n'.join(
         "/remove_event - удалить событие и отменить все приглашения",
         "/invite_club - пригласить всех членов КЛУБА",
         "/invite_community - пригласить всех членов СООБЩЕСТВА",
+        "/invite_community_and_guests - пригласить всех членов СООБЩЕСТВА и его прежних ГОСТЕЙ",
         "/invitation_statuses - посмотреть статусы приглашений",
         "/invitation_statuses_excel - выгрузить статусы приглашений",
         "/report_others_payment - сообщить о статусе оплаты участника",
