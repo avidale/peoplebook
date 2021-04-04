@@ -21,4 +21,4 @@ ENV PORT=5000
 EXPOSE 5000
 
 # STEP 7: Run Flask!
-CMD ["python", "main.py", "--nobot"]
+CMD ["python", "main.py"]
