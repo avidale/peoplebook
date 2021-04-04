@@ -24,3 +24,12 @@ jobs:
     - name: Test with pytest
       run: |
         pytest --cov=peoplebot --cov=utils --cov-fail-under=39
+  deploy_caprover:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+    - name: Invoke deployment hook
+      uses: distributhor/workflow-webhook@v1
+      env:
+        webhook_url: "${{ secrets.DEPLOY_WEBHOOK_URL }}"
+        webhook_secret: "no secret"
