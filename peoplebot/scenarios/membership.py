@@ -45,7 +45,7 @@ def _add_friend(ctx: Context, database: Database):
         existing = database.mongo_membership.find_one({'username': login, 'space': ctx.space.key})
         if existing is not None and existing.get('is_member'):
             resp = resp + '\n@{} уже является членом СООБЩЕСТВА и даже КЛУБА.'.format(login)
-        elif existing is not None and existing.get('is_guest'):
+        elif existing is not None and existing.get('is_friend'):
             resp = resp + '\n@{} уже является членом СООБЩЕСТВА (но не КЛУБА).'.format(login)
         else:
             database.mongo_membership.update_one(
