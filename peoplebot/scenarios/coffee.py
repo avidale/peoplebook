@@ -54,10 +54,10 @@ def daily_random_coffee(database: Database, sender: BaseSender, space: SpaceConf
             str_uid_to_username[key]: [str_uid_to_username[value] for value in values]
             for key, values in last_matches['matches'].items()
         }
-        sender(
-            text='вот какие матчи сегодня: {}'.format(converted_matches),
-            user_id=ADMIN_UID, database=database, notify_on_error=False
-        )
+        # sender(
+        #     text='вот какие матчи сегодня: {}'.format(converted_matches),
+        #     user_id=ADMIN_UID, database=database, notify_on_error=False
+        # )
         for username, matches in converted_matches.items():
             user_obj = database.mongo_users.find_one({'username': username, 'space': space.key})
             if user_obj is None:
