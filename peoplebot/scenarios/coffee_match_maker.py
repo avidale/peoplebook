@@ -1,10 +1,14 @@
 import random
 
 from collections import defaultdict, Counter
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from utils.database import Database
 from utils.spaces import SpaceConfig
+
+
+def days_since(x):
+    return (datetime.now() - datetime.fromisoformat(x)) / timedelta(days=1)
 
 
 def generate_pairs(users):
@@ -32,7 +36,11 @@ def generate_good_pairs(database: Database, space: SpaceConfig, now, decay=0.5):
     free_users = [
         str(user['tg_id'])
         for user in database.mongo_users.find({'wants_next_coffee': True, 'space': space.key})
-        if not user.get('deactivated', False)
+        if (
+            not user.get('deactivated', False)
+            and user.get('last_activity')
+            and days_since(user['last_activity']) <= 31
+        )
     ]
     # we deliberately use all the spaces here to avoid same pairs across different spaces
     prev_coffee_pairs = list(database.mongo_coffee_pairs.find({}))
