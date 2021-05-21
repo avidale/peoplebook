@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from utils.matchers import fast_normalize
 from utils.messaging import BaseSender
 from utils.spaces import SpaceConfig
@@ -38,4 +40,5 @@ class Context:
             the_update['$set'] = {}
         the_update['$set']['last_intent'] = self.intent
         the_update['$set']['last_expected_intent'] = self.expected_intent
+        the_update['$set']['last_activity'] = str(datetime.now())
         return the_update
