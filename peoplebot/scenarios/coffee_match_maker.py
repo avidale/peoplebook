@@ -84,7 +84,7 @@ def generate_good_pairs(database: Database, space: SpaceConfig, now, decay=0.99,
         for u1, peers in matching['matches'].items():
             for u2 in peers:
                 repeatedness[(u1, u2)] += decay ** lag
-    best_score = sum(repeatedness.values())  # total sum is definitely more that a partial sum
+    best_score = sum(repeatedness.values()) + 100500 # total sum is definitely more that a partial sum
     best_pair = None
     for i in range(attempts):
         matching = generate_greedy_pairs(free_users, repeatedness)
