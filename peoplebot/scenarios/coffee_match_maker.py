@@ -1,4 +1,5 @@
 import random
+import pandas as pd
 
 from collections import defaultdict, Counter
 from datetime import datetime, timedelta
@@ -11,9 +12,10 @@ def days_since(x):
     return (datetime.now() - datetime.fromisoformat(x)) / timedelta(days=1)
 
 
-def generate_pairs(users):
+def generate_pairs(users, shuffle=True):
     free_users = [u for u in users]
-    random.shuffle(free_users)
+    if shuffle:
+        random.shuffle(free_users)
     user_to_matches = defaultdict(list)
     for i in range(0, len(free_users)-1, 2):
         user_to_matches[free_users[i]] = [free_users[i + 1]]
@@ -24,6 +26,32 @@ def generate_pairs(users):
     return user_to_matches
 
 
+def generate_greedy_pairs(free_users, repeatedness, q=0.03):
+    # generate pairs by repeatedly connecting the least familiar pair
+    reps = []
+    for u1 in free_users:
+        for u2 in free_users:
+            if u1 < u2:
+                reps.append({'u1': u1, 'u2': u2, 'r': repeatedness.get((u1, u2), 0)})
+    reps = pd.DataFrame.from_records(reps)
+
+    order = []
+
+    while reps.shape[0] > 0:
+        # sample a pair from the least familiar ones
+        row = reps[reps.r <= reps.r.quantile(q)].sample(1).iloc[0]
+        order.append(row.u1)
+        order.append(row.u2)
+        reps = reps[(reps.u1 != row.u1) & (reps.u1 != row.u2) & (reps.u2 != row.u1) & (reps.u2 != row.u2)]
+
+    for u in free_users:
+        if u not in order:
+            order.append(u)
+
+    pairs = generate_pairs(order, shuffle=False)
+    return pairs
+
+
 def evaluate_pairs(matching, repeatedness):
     loss = 0
     for u1, peers in matching.items():
@@ -32,7 +60,8 @@ def evaluate_pairs(matching, repeatedness):
     return loss
 
 
-def generate_good_pairs(database: Database, space: SpaceConfig, now, decay=0.5):
+def generate_good_pairs(database: Database, space: SpaceConfig, now, decay=0.99, attempts=100):
+    # 0.99 per day = 0.7 per month = 0.02 per year
     free_users = [
         str(user['tg_id'])
         for user in database.mongo_users.find({'wants_next_coffee': True, 'space': space.key})
@@ -45,22 +74,23 @@ def generate_good_pairs(database: Database, space: SpaceConfig, now, decay=0.5):
     # we deliberately use all the spaces here to avoid same pairs across different spaces
     prev_coffee_pairs = list(database.mongo_coffee_pairs.find({}))
     repeatedness = Counter()
-    for matching in prev_coffee_pairs[::-1]:
-        if 'date' in matching:
+    for matching in prev_coffee_pairs[::-1]:  # from current to old
+        if 'date' not in matching:
             lag = 30
         else:
             prev_date = datetime.strptime(matching['date'], "%Y-%m-%d %H:%M:%S.%f")
             diff = now - prev_date
-            lag = diff.total_seconds / (60*60*24*7)
+            lag = diff.total_seconds() / (60*60*24*7)
         for u1, peers in matching['matches'].items():
             for u2 in peers:
                 repeatedness[(u1, u2)] += decay ** lag
-    best_score = 100500
+    best_score = sum(repeatedness.values())  # total sum is definitely more that a partial sum
     best_pair = None
-    for i in range(100):
-        matching = generate_pairs(free_users)
+    for i in range(attempts):
+        matching = generate_greedy_pairs(free_users, repeatedness)
         score = evaluate_pairs(matching, repeatedness)
         if score < best_score:
             best_score = score
             best_pair = matching
+    print(best_score)
     return best_pair
