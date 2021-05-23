@@ -8,7 +8,7 @@ from utils.messaging import BaseSender
 from utils.spaces import SpaceConfig
 from utils import matchers
 
-from peoplebot.scenarios.coffee_match_maker import generate_good_pairs
+from peoplebot.scenarios.coffee_match_maker import generate_good_pairs, days_since
 from peoplebot.scenarios.peoplebook_auth import make_pb_url
 
 from config import ADMIN_UID, BATCH_MESSAGE_TIMEOUT
@@ -35,6 +35,15 @@ def get_coffee_score(text):
 
 
 def daily_random_coffee(database: Database, sender: BaseSender, space: SpaceConfig, force_restart=False):
+    # do a cleanup: cut all inactive users from coffee until they deliberately decide to turn in
+    for user in database.mongo_users.find({'wants_next_coffee': True, 'space': space.key}):
+        if user.get('deactivated') or not user.get('last_activity') or days_since(user['last_activity']) <= 31:
+            database.update_user_object(
+                username_or_id=user.get('tg_id') or user.get('username'),
+                space_name=space.key,
+                change={'$set': {'wants_next_coffee': False}},
+            )
+
     if force_restart or datetime.today().weekday() == 5:  # on saturday, we recalculate the matches
         now = datetime.utcnow()
         user_to_matches = generate_good_pairs(database, space=space, now=now)
