@@ -130,7 +130,43 @@ def peoplebook_for_all_members(space=cfg.DEFAULT_SPACE):
             '$match': {'is_member': True, 'space': space_cfg.key}
         }
     ]))
-    profiles = [p for rp in raw_profiles for p in rp.get('profiles', []) if p.get('space') == space_cfg.key]
+    profiles = [
+        p for rp in raw_profiles for p in rp.get('profiles', [])
+        if p.get('space') == space_cfg.key and rp.get('tg_id')
+    ]
+    return render_template(
+        'backend_peoplebook.html',
+        title='Члены клуба {}'.format(space_cfg.title),
+        profiles=profiles,
+        space_cfg=space_cfg,
+        user=current_user,
+    )
+
+
+@app.route('/community')
+@app.route('/<space>/community')
+@app.route('/community', subdomain='<space>')
+@login_required
+def peoplebook_for_community(space=cfg.DEFAULT_SPACE):
+    if not check_space(space):
+        return SPACE_NOT_FOUND
+    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+    raw_profiles = list(mongo_membership.aggregate([
+        {
+            '$lookup': {
+                'from': 'peoplebook',
+                'localField': 'tg_id',
+                'foreignField': 'tg_id',
+                'as': 'profiles'
+            }
+        }, {
+            '$match': {'space': space_cfg.key}
+        }
+    ]))
+    profiles = [
+        p for rp in raw_profiles for p in rp.get('profiles', [])
+        if p.get('space') == space_cfg.key and rp.get('tg_id') and (rp.get('is_member') or rp.get('is_guest'))
+    ]
     return render_template(
         'backend_peoplebook.html',
         title='Члены клуба {}'.format(space_cfg.title),
@@ -167,7 +203,10 @@ def peoplebook_for_all_members_and_guests(space=cfg.DEFAULT_SPACE):
                 '$match': {'space': space_cfg.key},
             },
         ]))
-        profiles = [p for rp in raw_profiles for p in rp.get('profiles', []) if p.get('space') == space]
+        profiles = [
+            p for rp in raw_profiles for p in rp.get('profiles', [])
+            if p.get('space') == space and rp.get('tg_id')
+        ]
     else:
         profiles = list(mongo_peoplebook.find({'space': space}))
 
