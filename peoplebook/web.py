@@ -169,7 +169,7 @@ def peoplebook_for_community(space=cfg.DEFAULT_SPACE):
     ]
     return render_template(
         'backend_peoplebook.html',
-        title='Члены клуба {}'.format(space_cfg.title),
+        title='Члены Сообщества {}'.format(space_cfg.title),
         profiles=profiles,
         space_cfg=space_cfg,
         user=current_user,
@@ -212,7 +212,7 @@ def peoplebook_for_all_members_and_guests(space=cfg.DEFAULT_SPACE):
 
     return render_template(
         'backend_peoplebook.html',
-        title='Сообщество {}'.format(space_cfg.title),
+        title='Сообщество и гости {}'.format(space_cfg.title),
         profiles=profiles,
         space_cfg=space_cfg,
         user=current_user,
