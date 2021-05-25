@@ -165,7 +165,7 @@ def peoplebook_for_community(space=cfg.DEFAULT_SPACE):
     ]))
     profiles = [
         p for rp in raw_profiles for p in rp.get('profiles', [])
-        if p.get('space') == space_cfg.key and rp.get('tg_id') and (rp.get('is_member') or rp.get('is_guest'))
+        if p.get('space') == space_cfg.key and rp.get('tg_id') and (rp.get('is_member') or rp.get('is_friend'))
     ]
     return render_template(
         'backend_peoplebook.html',
