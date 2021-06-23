@@ -4,6 +4,11 @@
   <title> Peoplebook Space: сайт и бот для управления вашим сообществом  </title>
 {% endblock %}
 
+{% block base_js %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+{% endblock %}
+
 {% block content %}
 
 <section class="section">
@@ -21,14 +26,77 @@
         <br>
         <u>Пиплбот</u> - это бот в Telegram, управляющий вашим сообществом. Он умеет много чего:
         <div class="content">
-        <ul>
-            <li>Еженедельно соединяет участников в случайные пары для random coffee.</li>
-            <li>Помогает организовывать встречи: рассылает приглашения, напоминает о деталях и изменениях, просит оплатить участие.</li>
-            <li>Встречает участников в чате, просит представиться, и сохраняет представление в пиплбук.</li>
-            <li>Управляет списком участников сообщества с присвоением разных статусов: гость, член, привилегированный член, админ.</li>
-            <li>Отвечает на популярные вопросы участников (уже скоро!)</li>
-            <li>Анализирует активность в чатах сообщества (уже скоро!)</li>
-        </ul>
+            <div class="accordion" id="accordionExample">
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                    Eженедельно соединяет участников в случайные пары для random coffee.
+                  </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+                  <div class="accordion-body">
+                      Каждую неделю пользователи, подписавшиеся на RC, собираются в случайные пары.
+                      Профиль своей пары можно посмотреть в так называемом пиплбуке (профайл, который заполняется также через бота, а потом доступен как веб-страничка).
+                      В течение недели бот высылает напоминание.
+                      В любой момент можно отписаться.
+                      <table>
+                          <tr>
+                            <td><img src="/static/images/screenshots/coffee1.png" width="400px"></td>
+                            <td><img src="/static/images/screenshots/coffee2.png" width="400px"></td>
+                        </tr>
+                      </table>
+                  </div>
+                </div>
+              </div>
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="headingTwo">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                    Помогает организовывать встречи: рассылает приглашения, напоминает о деталях и изменениях, просит оплатить участие.
+                  </button>
+                </h2>
+                <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
+                  <div class="accordion-body">
+                      Админы могут создавать мероприятия и приглашать туда участников (поштучно или из списков).
+                      Участники получают приглашения и подтверждают их.
+                      Потом бот регулярно напоминает о встрече.
+                      <table>
+                          <tr>
+                            <td><img src="/static/images/screenshots/event1.png" width="400px"></td>
+                            <td><img src="/static/images/screenshots/event2.png" width="400px"></td>
+                        </tr>
+                      </table>
+                  </div>
+                </div>
+              </div>
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="headingThree">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                    Встречает участников в чате, просит представиться, и сохраняет представление в пиплбук.
+                  </button>
+                </h2>
+              </div>
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="headingFour">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                    Управляет списком участников сообщества с присвоением разных статусов: гость, член, привилегированный член, админ.
+                  </button>
+                </h2>
+              </div>
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="headingFive">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                    Отвечает на популярные вопросы участников (уже скоро!)
+                  </button>
+                </h2>
+              </div>
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="headingSix">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                    Анализирует активность в чатах сообщества (уже скоро!)
+                  </button>
+                </h2>
+              </div>
+            </div>
         </div>
         Все эти фичи включаются через админку бота по вашему желанию.
     </div>
