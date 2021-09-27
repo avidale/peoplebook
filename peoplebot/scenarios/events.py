@@ -295,37 +295,49 @@ def try_event_usage(ctx: Context, database: Database):
             ctx.intent = 'EVENT_INVITE_UNAUTHORIZED'
     elif ctx.last_expected_intent == 'EVENT_INVITE_LOGIN':
         ctx.intent = 'EVENT_INVITE_LOGIN'
-        the_login = ctx.text.strip().strip('@').lower()
         event_code = ctx.user_object.get('event_code')
         if event_code is None:
             ctx.response = 'Почему-то не удалось получить код события, сообщите @{}'.format(ctx.space.owner_username)
-        elif not matchers.is_like_telegram_login(the_login):
-            f = 'Текст "{}" не похож на логин в телеграме. Если хотите попробовать снова, нажмите /invite опять.'
-            ctx.response = f.format(the_login)
-        else:
-            user_account = database.mongo_users.find_one({'username': the_login, 'space': ctx.space.key})
 
-            status = add_invitation_to_a_user(
-                database=database,
-                tg_id=(user_account or {}).get('tg_id'),
-                username=the_login,
-                event_code=event_code,
-                space=ctx.space,
-                invitor=ctx.username,
-                sender=ctx.sender,
-            )
+        response_lines = []
+        for the_login in re.split('[\\s,;]+', ctx.text.strip()):
+            the_login = the_login.strip().strip('@').lower()
+            if not the_login:
+                continue
 
-            if status == 'приглашение уже было сделано':
-                ctx.response = 'Пользователь @{} уже получал приглашение на эту встречу!'.format(the_login)
+            if not matchers.is_like_telegram_login(the_login):
+                f = 'Текст "{}" не похож на логин в телеграме. Если хотите попробовать снова, нажмите /invite опять.'
+                response_lines.append(f.format(the_login))
             else:
-                r = 'Юзер @{} был добавлен в список участников встречи!'.format(the_login)
-                if status == 'не в боте':
-                    r = r + '\nПередайте ему/ей ссылку на меня (@{}), '.format(ctx.space.bot_username) + \
-                        'чтобы подтвердить участие и заполнить пиплбук (увы, бот не может писать первым).'
-                elif status == 'не получилось':
-                    r = r + '\nНе получилось отправить ему/ей сообщение с приглашением. ' \
-                            'Пожалуйста, сделайте это самостоятельно и попросите написать мне. Спасибо!'
-                ctx.response = r
+                user_account = database.mongo_users.find_one({'username': the_login, 'space': ctx.space.key})
+
+                status = add_invitation_to_a_user(
+                    database=database,
+                    tg_id=(user_account or {}).get('tg_id'),
+                    username=the_login,
+                    event_code=event_code,
+                    space=ctx.space,
+                    invitor=ctx.username,
+                    sender=ctx.sender,
+                )
+
+                if status == 'приглашение уже было сделано':
+                    response_lines.append('Пользователь @{} уже получал приглашение на эту встречу!'.format(the_login))
+                else:
+                    r = 'Юзер @{} был добавлен в список участников встречи!'.format(the_login)
+                    if status == 'не в боте':
+                        r = r + '\nПередайте ему/ей ссылку на меня (@{}), '.format(ctx.space.bot_username) + \
+                            'чтобы подтвердить участие и заполнить пиплбук (увы, бот не может писать первым).'
+                    elif status == 'не получилось':
+                        r = r + '\nНе получилось отправить ему/ей сообщение с приглашением. ' \
+                                'Пожалуйста, сделайте это самостоятельно и попросите написать мне. Спасибо!'
+                    response_lines.append(r)
+        if len(response_lines) == 0:
+            ctx.response = 'Не удалось найти логинов в тексте, который вы отправили. ' \
+                           'Пожалуйста, попробуйте ещё раз с другим текстом.'
+        else:
+            ctx.response = '\n\n'.join(response_lines)
+
     return ctx
 
 

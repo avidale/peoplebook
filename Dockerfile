@@ -1,12 +1,15 @@
 # STEP 1: Install base image. Optimized for Python.
 FROM python:3.7-slim-buster
 
-# STEP 2: Copy the source code in the current directory to the container.  Store it in a folder named /app.
-ADD . /app
-
 RUN apt-get update \
 && apt-get install gcc g++ -y \
 && apt-get clean
+
+# pre-install the basic requirements to make everything faster
+RUN pip install flask pandas numpy pytelegrambotapi pymorphy2 pymorphy2-dicts openpyxl gunicorn textdistance nltk scikit-learn requests
+
+# STEP 2: Copy the source code in the current directory to the container.  Store it in a folder named /app.
+ADD . /app
 
 # STEP 3: Set working directory to /app so we can execute commands in it
 WORKDIR /app
