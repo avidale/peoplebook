@@ -33,7 +33,7 @@ class Database:
         self._setup_collections()
         self.cache_ttl_seconds = cache_ttl_seconds
         self._cache_time = datetime.now()
-        self._update_cache(force=True)
+        self.update_cache(force=True)
 
     def _setup_client(self, mongo_url):
         self._mongo_client = MongoClient(mongo_url)
@@ -57,7 +57,7 @@ class Database:
         self.mongo_chat_members = self._mongo_db.get_collection('chat_members')
         self.mongo_chats = self._mongo_db.get_collection('chats')
 
-    def _update_cache(self, force=False):
+    def update_cache(self, force=False):
         if not force and (datetime.now() - self._cache_time).total_seconds() < self.cache_ttl_seconds:
             return
         self.update_spaces_cache()
@@ -127,7 +127,7 @@ class Database:
         tg_id = user_object.get('tg_id') or 'anonymous'
         username = normalize_username(user_object.get('username') or 'anonymous')
         space = user_object.get('space') or DEFAULT_SPACE
-        self._update_cache()
+        self.update_cache()
         mem = self._cached_mongo_membership.get((tg_id, space), {})
         if not mem:
             mem = self._cached_mongo_membership.get((username, space), {})
@@ -173,7 +173,7 @@ class Database:
         return self.get_space(space_name=space_name)
 
     def get_space(self, space_name) -> SpaceConfig:
-        self._update_cache()
+        self.update_cache()
         return self._cached_spaces.get(space_name)
 
     @property

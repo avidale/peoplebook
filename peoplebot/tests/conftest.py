@@ -82,7 +82,7 @@ def mocked_db(mocked_space_dict):
     )
     db.mongo_users.insert_one({'tg_id': 123, 'space': test_space_id})
     db.mongo_spaces.insert_one(mocked_space_dict)
-    db._update_cache(force=True)
+    db.update_cache(force=True)
     return db
 
 

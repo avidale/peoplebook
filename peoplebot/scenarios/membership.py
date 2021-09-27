@@ -57,11 +57,14 @@ def _add_friend(ctx: Context, database: Database):
     ctx.response = resp
 
 
+new_admin = re.compile('(сделай админом|дай админку|добавь в админы) (?P<un>@[a-zA-Z0-9_]+)$')
+remove_club_member = re.compile('(удали(ть))( из клуба)? (?P<un>@[a-zA-Z0-9_]+)( из клуба)?$')
+remove_community_member = re.compile('(удали(ть))( из сообщества)? (?P<un>@[a-zA-Z0-9_]+)( из сообщества)?$')
+
+
 def try_membership_management(ctx: Context, database: Database):
     if not database.is_at_least_member(ctx.user_object):
         return ctx
-
-    new_admin = '(сделай админом|дай админку|добавь в админы) (?P<un>@[a-zA-Z0-9_]+)$'
 
     # todo: add guest management
     if not database.is_admin(ctx.user_object):
@@ -125,6 +128,57 @@ def try_membership_management(ctx: Context, database: Database):
                 ctx.space.admins.append(un)
                 database.mongo_spaces.update_one({'key': ctx.space.key}, {'$set': {'admins': ctx.space.admins}})
                 ctx.response = f'Окей, делаю @{un} админом данного сообщества!'
+
+    elif re.match(remove_club_member, ctx.text) or re.match(remove_community_member, ctx.text):
+        from_club = True
+        ctx.intent = 'REMOVE_FROM_CLUB'
+        if not re.match(remove_club_member, ctx.text) and re.match(remove_community_member, ctx.text):
+            from_club = False
+            ctx.intent = 'REMOVE_FROM_COMMUNITY'
+
+        un = re.match(remove_club_member, ctx.text).groupdict().get('un')
+        if not un:
+            ctx.response = 'Не понял, кого вы хотите удалить, простите.'
+        else:
+            un = normalize_username(un)
+            status = database.get_top_status({'username': un})
+
+            if status in {'admin', 'member'} or status == 'friend' and not from_club:
+                remove_from = 'из клуба' if from_club else 'из сообщества'
+                if status == 'admin':
+                    text_status = 'админ'
+                elif status == 'member':
+                    text_status = 'член клуба'
+                else:
+                    text_status = 'член сообщества'
+                ctx.response = f'У пользователя @{un} статус "{text_status}". ' \
+                               f'Вы действительно хотите удалить его{remove_from}?'
+                ctx.suggests.insert(0, 'да')
+                ctx.expected_intent = ctx.intent + '__CONFIRM'
+                ctx.the_update = {'$set': {'removal': {'user': un, 'status': status, 'from_club': from_club}}}
+            else:
+                ctx.response = 'Не удалось убедиться, что '
+
+    elif ctx.last_intent in {'REMOVE_FROM_CLUB__CONFIRM', 'REMOVE_FROM_COMMUNITY__CONFIRM'} \
+            and matchers.is_like_yes(ctx.text_normalized) and ctx.user_object.get('removal'):
+        mem = ctx.user_object['removal']
+        ctx.intent = ctx.last_intent.split('__')[0] + '__EXECUTE'
+        if mem['status'] == 'admin':
+            ctx.space.admins = [u for u in ctx.space.admins if u != mem["user"]]
+            database.mongo_spaces.update_one({'key': ctx.space.key}, {'$set': {'admins': ctx.space.admins}})
+
+        the_update = {'is_member': False}
+        if not mem['from_club']:
+            the_update['is_friend'] = False
+        database.mongo_membership.update_many(
+            {'username': mem['user'], 'space': ctx.space.key},
+            {'$set': the_update},
+            upsert=False
+        )
+        ctx.the_update = {'$unset': {'removal': ''}}
+        database.update_cache(force=True)
+        ctx.response = f'Юзер @{mem["user"]} был успешно удалён. Но сообщить об этом ему/ей вам надо самостоятельно.'
+
     return ctx
 
 
