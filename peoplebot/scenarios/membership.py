@@ -152,17 +152,17 @@ def try_membership_management(ctx: Context, database: Database):
                 else:
                     text_status = 'член сообщества'
                 ctx.response = f'У пользователя @{un} статус "{text_status}". ' \
-                               f'Вы действительно хотите удалить его{remove_from}?'
+                               f'Вы действительно хотите удалить его {remove_from}?'
                 ctx.suggests.insert(0, 'да')
                 ctx.expected_intent = ctx.intent + '__CONFIRM'
                 ctx.the_update = {'$set': {'removal': {'user': un, 'status': status, 'from_club': from_club}}}
             else:
                 ctx.response = 'Не удалось убедиться, что '
 
-    elif ctx.last_intent in {'REMOVE_FROM_CLUB__CONFIRM', 'REMOVE_FROM_COMMUNITY__CONFIRM'} \
+    elif ctx.last_expected_intent in {'REMOVE_FROM_CLUB__CONFIRM', 'REMOVE_FROM_COMMUNITY__CONFIRM'} \
             and matchers.is_like_yes(ctx.text_normalized) and ctx.user_object.get('removal'):
         mem = ctx.user_object['removal']
-        ctx.intent = ctx.last_intent.split('__')[0] + '__EXECUTE'
+        ctx.intent = ctx.last_expected_intent
         if mem['status'] == 'admin':
             ctx.space.admins = [u for u in ctx.space.admins if u != mem["user"]]
             database.mongo_spaces.update_one({'key': ctx.space.key}, {'$set': {'admins': ctx.space.admins}})
