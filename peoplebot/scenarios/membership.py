@@ -189,6 +189,8 @@ def try_add_new_member_to_open_community(ctx: Context, database: Database):
     if not ctx.space.anyone_can_enter:
         return ctx
 
+    # todo: ask a codeword, if it is provided
+
     database.mongo_membership.update_one(
         {'username': ctx.username, 'tg_id': ctx.tg_id,  'space': ctx.space.key},
         {'$set': {'is_member': True}},
@@ -201,6 +203,8 @@ def try_add_new_member_to_open_community(ctx: Context, database: Database):
                    'задавайте их человеку, который поделился с вами данным ботом. ' \
                    '\nС техническими вопросами по работе бота можно обращаться к @cointegrated.\n\n'
     ctx.response += ctx.space.get_text_help_authorized(user_object=ctx.user_object)
+
+    return ctx
 
 
 def members_to_file(database: Database, space: SpaceConfig):
