@@ -182,6 +182,27 @@ def try_membership_management(ctx: Context, database: Database):
     return ctx
 
 
+def try_add_new_member_to_open_community(ctx: Context, database: Database):
+    if database.is_at_least_member(ctx.user_object):
+        # if a user is already a member, no action is required
+        return ctx
+    if not ctx.space.anyone_can_enter:
+        return ctx
+
+    database.mongo_membership.update_one(
+        {'username': ctx.username, 'tg_id': ctx.tg_id,  'space': ctx.space.key},
+        {'$set': {'is_member': True}},
+        upsert=True
+    )
+
+    ctx.intent = 'SELF_ADD_TO_OPEN_MEMBERSHIP'
+    ctx.response = 'Вы успешно добавились в сообщество! ' \
+                   '\nЕсли у вас есть какие-то вопросы по существу, ' \
+                   'задавайте их человеку, который поделился с вами данным ботом. ' \
+                   '\nС техническими вопросами по работе бота можно обращаться к @cointegrated.\n\n'
+    ctx.response += ctx.space.get_text_help_authorized(user_object=ctx.user_object)
+
+
 def members_to_file(database: Database, space: SpaceConfig):
     users = list(database.mongo_users.find({'space': space.key}))
     pb = {u['username']: u for u in database.mongo_peoplebook.find({'space': space.key})}

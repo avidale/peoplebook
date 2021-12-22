@@ -45,7 +45,12 @@ class SpaceSettingsForm(FlaskForm):
     bot_username = StringField('Логин телеграм-бота сообщества', validators=[DataRequired()])
     peoplebook_is_public = BooleanField(
         'Пиплбук публично доступен',
-        description='Если поставить эту галочку, пиплбук сможет увидеть любой пользователь'
+        description='Если поставить эту галочку, пиплбук сможет увидеть любой пользователь.'
+    )
+    anyone_can_enter = BooleanField(
+        'Открытый вход в сообщество',
+        description='Если поставить эту галочку, любой пользователь Telegram, написавший боту, '
+                    'получает доступ к сообществу (может заполнять пиплбук, участвовать в random coffee, и т.п.).'
     )
     member_chat_id = StringField(
         'Id чата клуба',

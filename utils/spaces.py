@@ -34,6 +34,7 @@ class SpaceConfig:
             title,
             bot_token=None,
             bot_username=None,
+            anyone_can_enter=False,
             peoplebook_is_public=False,
             member_chat_id=None,
             guest_chat_id=None,
@@ -57,6 +58,7 @@ class SpaceConfig:
         self.title = title
         self.bot_token = bot_token
         self.bot_username = bot_username
+        self.anyone_can_enter = anyone_can_enter,
         self.peoplebook_is_public = peoplebook_is_public
         self.member_chat_id = member_chat_id
         self.guest_chat_id = guest_chat_id
