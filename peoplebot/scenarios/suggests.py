@@ -8,7 +8,7 @@ def make_standard_suggests(database: Database, user_object):
     suggests = []
     space = database.get_space_for_user(user_object)
 
-    if database.is_at_least_guest(user_object):
+    if database.is_at_least_guest(user_object) or space.anyone_can_enter:
         if space.supports(FeatureName.EVENTS):
             suggests.append('Покажи встречи')
         if space.supports(FeatureName.PEOPLEBOOK):

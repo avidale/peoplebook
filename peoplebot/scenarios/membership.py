@@ -2,6 +2,7 @@ import pandas as pd
 import re
 
 from config import DEFAULT_SPACE
+from peoplebot.scenarios.suggests import make_standard_suggests
 from utils import matchers
 
 from utils.database import Database
@@ -196,6 +197,7 @@ def try_add_new_member_to_open_community(ctx: Context, database: Database):
         {'$set': {'is_member': True}},
         upsert=True
     )
+    database.update_cache(force=True)
 
     ctx.intent = 'SELF_ADD_TO_OPEN_MEMBERSHIP'
     ctx.response = 'Вы успешно добавились в сообщество! ' \
@@ -203,6 +205,7 @@ def try_add_new_member_to_open_community(ctx: Context, database: Database):
                    'задавайте их человеку, который поделился с вами данным ботом. ' \
                    '\nС техническими вопросами по работе бота можно обращаться к @cointegrated.\n\n'
     ctx.response += ctx.space.get_text_help_authorized(user_object=ctx.user_object)
+    ctx.suggests.extend(make_standard_suggests(database=database, user_object=ctx.user_object))
 
     return ctx
 
