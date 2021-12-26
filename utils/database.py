@@ -180,14 +180,20 @@ class Database:
     def db(self):
         return self._mongo_db
 
-    def update_user_object(self, username_or_id, space_name, change, use_id=False):
+    def update_user_object(self, username_or_id, space_name, change, use_id=None):
         filters = {
             'space': space_name,
         }
-        if use_id:
+        if use_id is True:
             filters['tg_id'] = username_or_id
-        else:
+        elif use_id is False:
             filters['username'] = username_or_id
+        else:
+            # choose the key based on the data type
+            if isinstance(username_or_id, str) and not username_or_id.isnumeric():
+                filters['username'] = username_or_id
+            else:
+                filters['tg_id'] = username_or_id
         self.mongo_users.update_one(filters, change or {})
 
     def add_member(self, tg_id, space_name):

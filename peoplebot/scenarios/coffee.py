@@ -35,14 +35,28 @@ def get_coffee_score(text):
 
 
 def daily_random_coffee(database: Database, sender: BaseSender, space: SpaceConfig, force_restart=False):
+    from peoplebot.scenarios.suggests import make_standard_suggests
     # do a cleanup: cut all inactive users from coffee until they deliberately decide to turn in
     for user in database.mongo_users.find({'wants_next_coffee': True, 'space': space.key}):
-        if user.get('deactivated') or not user.get('last_activity') or days_since(user['last_activity']) <= 31:
+        if user.get('deactivated') or not user.get('last_activity') or days_since(user['last_activity']) >= 31:
             database.update_user_object(
                 username_or_id=user.get('tg_id') or user.get('username'),
                 space_name=space.key,
                 change={'$set': {'wants_next_coffee': False}},
             )
+            if days_since(user['last_activity']) >= 31:
+                time.sleep(BATCH_MESSAGE_TIMEOUT)
+                if user.get('tg_id'):
+                    suggests = make_standard_suggests(database=database, user_object=user)
+                    r = 'Добрый вечер! Поскольку вы месяц ничего не писали в бота, ' \
+                        'я не могу определить, получаете ли вы мои сообщения.' \
+                        '\nПоэтому на этой неделе я не стал ставить вас в пару Random Coffee.' \
+                        'Чтобы снова начать участвовать в Random Coffee со следующей неделе, ' \
+                        'нажмите "хочу участвовать в кофе" заново.\n'
+                    if space.text_after_messages:
+                        r += space.text_after_messages
+                    sender(user_id=user.get('tg_id'), text=r, database=database, suggests=suggests,
+                           reset_intent=True, intent='turn_coffee_off_by_timeout')
 
     if force_restart or datetime.today().weekday() == 5:  # on saturday, we recalculate the matches
         now = datetime.utcnow()
