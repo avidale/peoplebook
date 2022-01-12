@@ -92,6 +92,9 @@ class SpaceSettingsForm(FlaskForm):
         'Через сколько минут удалять из чата не представившихся участников (0 - не удалять)',
     )
 
+    feature_coffee_on = BooleanField('Включить функцию Random Coffee')
+    feature_peoplebook_on = BooleanField('Включить функцию Peoplebook')
+
     submit = SubmitField('Обновить данные')
 
 

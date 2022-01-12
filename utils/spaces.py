@@ -52,6 +52,9 @@ class SpaceConfig:
             public_chat_greeting_text=None,
             add_whois_to_peoplebook=False,
             kick_timeout=None,
+            feature_coffee_on=True,
+            feature_events_on=False,
+            feature_peoplebook_on=True,
             **other_data
     ):
         self.key = key
@@ -83,6 +86,11 @@ class SpaceConfig:
         self.add_whois_to_peoplebook = add_whois_to_peoplebook
         self.kick_timeout = kick_timeout  # None means no kick
 
+        # features
+        self.feature_coffee_on = feature_coffee_on
+        self.feature_peoplebook_on = feature_peoplebook_on
+        self.feature_events_on = feature_events_on
+
         self.other_data = other_data
 
     def __str__(self):
@@ -92,14 +100,14 @@ class SpaceConfig:
     def from_record(cls, record):
         return cls(**record)
 
-    def supports(self, feature):
+    def supports(self, feature) -> bool:
         # todo: make it configurable
         if feature == FeatureName.COFFEE:
-            return True
+            return bool(self.feature_coffee_on)
         elif feature == FeatureName.EVENTS:
-            return self.key in {'kv', 'phoenix'}
+            return self.key in {'kv', 'phoenix'} or bool(self.feature_events_on)
         elif feature == FeatureName.PEOPLEBOOK:
-            return True
+            return bool(self.feature_peoplebook_on)
         else:
             return True
 

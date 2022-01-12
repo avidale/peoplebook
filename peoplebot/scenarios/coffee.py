@@ -5,7 +5,7 @@ from datetime import datetime
 from utils.database import Database
 from utils.dialogue_management import Context
 from utils.messaging import BaseSender
-from utils.spaces import SpaceConfig
+from utils.spaces import SpaceConfig, FeatureName
 from utils import matchers
 
 from peoplebot.scenarios.coffee_match_maker import generate_good_pairs, days_since
@@ -57,6 +57,10 @@ def daily_random_coffee(database: Database, sender: BaseSender, space: SpaceConf
                         r += space.text_after_messages
                     sender(user_id=user.get('tg_id'), text=r, database=database, suggests=suggests,
                            reset_intent=True, intent='turn_coffee_off_by_timeout')
+
+    # exit if the random coffee feature is currently off
+    if not space.supports(FeatureName.COFFEE):
+        return
 
     if force_restart or datetime.today().weekday() == 5:  # on saturday, we recalculate the matches
         now = datetime.utcnow()
