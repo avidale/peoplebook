@@ -50,7 +50,7 @@ def do_wachter_check(
             }
             waiting = database.mongo_chat_waiting_list.find_one(waiting_filter)
             if waiting is None:
-                print('asking user for whois')
+                logger.info('asking user for whois')
                 sender(
                     text=get_public_chat_intro_text(space=space_cfg, chat_data=chat_data),
                     reply_to=message,
@@ -59,11 +59,11 @@ def do_wachter_check(
                 )
                 database.mongo_chat_waiting_list.insert_one(waiting_filter)
             else:
-                print('not asking user for whois because alredy asked')
+                logger.info('not asking user for whois because alredy asked')
                 # the bot has already greeted this user
                 pass
         elif not validate_whois_text(message.text):
-            print('failed whois')
+            logger.info('failed whois')
             sender(
                 text=get_public_chat_failed_greeting_text(space=space_cfg, chat_data=chat_data),
                 reply_to=message,
@@ -71,7 +71,7 @@ def do_wachter_check(
                 intent='reply_whois_failed'
             )
         else:
-            print('processing the whois')
+            logger.info('processing the whois')
             database.mongo_whois.insert_one({
                 'text': message.text,
                 'tg_id': message.from_user.id,
@@ -90,7 +90,7 @@ def do_wachter_check(
                 }
             )
             if fill_none(chat_data.add_whois_to_peoplebook, space_cfg.add_whois_to_peoplebook):
-                print('trying adding to peoplebook from whois (if it is empty)')
+                logger.info('trying adding to peoplebook from whois (if it is empty)')
                 add_peoplebook_from_whois(
                     message=message,
                     database=database,
@@ -98,18 +98,18 @@ def do_wachter_check(
                     bot=bot,
                 )
             if adding_policy == MembershipStatus.NONE:
-                print('do not add user of the chat to the club due to empty adding policy')
+                logger.info('do not add user of the chat to the club due to empty adding policy')
                 pass
             elif adding_policy == MembershipStatus.GUEST:
                 database.add_guest(tg_id=message.from_user.id, space_name=space_cfg.key)
-                print('make user of the chat a guest due to adding policy')
+                logger.info('make user of the chat a guest due to adding policy')
             elif adding_policy == MembershipStatus.FRIEND:
                 database.add_friend(tg_id=message.from_user.id, space_name=space_cfg.key)
-                print('make user of the chat a "friend" (unprivileged member) due to adding policy')
+                logger.info('make user of the chat a "friend" (unprivileged member) due to adding policy')
             else:
                 # member or admin or owner => just member
                 database.add_member(tg_id=message.from_user.id, space_name=space_cfg.key)
-                print('make user of the chat a member due to adding policy')
+                logger.info('make user of the chat a member due to adding policy')
             sender(
                 text=get_public_chat_greeting_text(space=space_cfg, chat_data=chat_data),
                 reply_to=message,
@@ -119,7 +119,7 @@ def do_wachter_check(
     else:
         # todo: don't print it
         pass
-        print('user {} is already a member of community {}'.format(user_object.get('username'), space_cfg.key))
+        logger.info('user {} is already a member of community {}'.format(user_object.get('username'), space_cfg.key))
 
 
 def kick_all_space(
