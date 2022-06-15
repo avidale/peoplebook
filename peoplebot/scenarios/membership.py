@@ -59,6 +59,7 @@ def _add_friend(ctx: Context, database: Database):
 
 
 new_admin = re.compile('(сделай админом|дай админку|добавь в админы) (?P<un>@[a-zA-Z0-9_]+)$')
+remove_admin = re.compile('(отними админку|убери из админов) (?P<un>@[a-zA-Z0-9_]+)$')
 remove_club_member = re.compile('(удали(ть))( из клуба)? (?P<un>@[a-zA-Z0-9_]+)( из клуба)?$')
 remove_community_member = re.compile('(удали(ть))( из сообщества)? (?P<un>@[a-zA-Z0-9_]+)( из сообщества)?$')
 
@@ -129,6 +130,20 @@ def try_membership_management(ctx: Context, database: Database):
                 ctx.space.admins.append(un)
                 database.mongo_spaces.update_one({'key': ctx.space.key}, {'$set': {'admins': ctx.space.admins}})
                 ctx.response = f'Окей, делаю @{un} админом данного сообщества!'
+
+    elif re.match(remove_admin, ctx.text):
+        ctx.intent = 'ADMINS_REMOVE'
+        un = re.match(remove_admin, ctx.text).groupdict().get('un')
+        if not un:
+            ctx.response = 'Не понял, кого убрать из админов, простите.'
+        else:
+            un = normalize_username(un)
+            if un not in ctx.space.admins:
+                ctx.response = f'@{un} уже и так не админ!'
+            else:
+                ctx.space.admins.remove(un)
+                database.mongo_spaces.update_one({'key': ctx.space.key}, {'$set': {'admins': ctx.space.admins}})
+                ctx.response = f'Окей, убираю @{un} из админов данного сообщества!'
 
     elif re.match(remove_club_member, ctx.text) or re.match(remove_community_member, ctx.text):
         from_club = True
