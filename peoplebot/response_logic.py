@@ -54,7 +54,13 @@ def respond(message: Message, database: Database, sender: BaseSender, space_cfg:
         logger.info(f'got a message from public chat {message.chat}')
         if not message.from_user or not message.chat.id:
             return
-        uo = get_or_insert_user(tg_user=message.from_user, space_name=space_cfg.key, database=database)
+        if message.content_type == 'new_chat_members' and message.new_chat_members:
+            tg_user = message.new_chat_members[0]
+            # todo: loop over multiple new chat members, if necessary
+            logger.info(f'the message is about the new added user {tg_user}')
+        else:
+            tg_user = message.from_user
+        uo = get_or_insert_user(tg_user=tg_user, space_name=space_cfg.key, database=database)
         chat_data = update_chat_data(
             db=database,
             chat_id=message.chat.id,

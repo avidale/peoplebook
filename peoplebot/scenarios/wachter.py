@@ -1,3 +1,4 @@
+import logging
 import time
 from datetime import datetime
 from telebot import TeleBot
@@ -14,6 +15,10 @@ from utils.wachter_utils import get_public_chat_intro_text, get_public_chat_gree
 from utils import wachter_utils
 
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+
 def do_wachter_check(
         user_object,
         database: Database,
@@ -27,9 +32,9 @@ def do_wachter_check(
     adding_policy = fill_none(chat_data.add_chat_members_to_community, space_cfg.add_chat_members_to_community)
     require_whois = fill_none(chat_data.require_whois, space_cfg.require_whois)
     if adding_policy == MembershipStatus.NONE and not require_whois:
-        print('this space|chat does not add chat members to community and does not require whois; skipping wachter')
+        logger.info('this space|chat does not add chat members to community and does not require whois; skipping wachter')
         return
-    print(
+    logger.info(
         f'starting trying wachter check for chat {chat_data.title} '
         f'and user {user_object.get("username")} with status {database.get_top_status(user_object)}'
     )
