@@ -32,7 +32,8 @@ def do_wachter_check(
     adding_policy = fill_none(chat_data.add_chat_members_to_community, space_cfg.add_chat_members_to_community)
     require_whois = fill_none(chat_data.require_whois, space_cfg.require_whois)
     if adding_policy == MembershipStatus.NONE and not require_whois:
-        logger.info('this space|chat does not add chat members to community and does not require whois; skipping wachter')
+        logger.info('this space|chat does not add chat members to community and does not require whois; '
+                    'skipping wachter')
         return
     logger.info(
         f'starting trying wachter check for chat {chat_data.title} '
