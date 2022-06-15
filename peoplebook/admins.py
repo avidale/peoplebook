@@ -145,6 +145,7 @@ def space_details(space):
             if hasattr(space_cfg, k)
         }
         db.mongo_spaces.update_one({'key': space_cfg.key}, {'$set': update_dict})
+        db.update_cache()
         update_status = 'Изменения успешно сохранены!'
 
     return render_template(

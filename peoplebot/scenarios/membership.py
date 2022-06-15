@@ -195,6 +195,11 @@ def try_membership_management(ctx: Context, database: Database):
         database.update_cache(force=True)
         ctx.response = f'Юзер @{mem["user"]} был успешно удалён. Но сообщить об этом ему/ей вам надо самостоятельно.'
 
+    elif ctx.text_normalized in {'освежись', 'refresh'}:
+        ctx.intent = 'UPDATE_CACHE'
+        ctx.response = 'Обновляю кэш!'
+        database.update_cache(force=True)
+
     return ctx
 
 
