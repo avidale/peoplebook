@@ -55,6 +55,7 @@ class SpaceConfig:
             feature_coffee_on=True,
             feature_events_on=False,
             feature_peoplebook_on=True,
+            db=None,  # a global database object
             **other_data
     ):
         self.key = key
@@ -92,13 +93,14 @@ class SpaceConfig:
         self.feature_events_on = feature_events_on
 
         self.other_data = other_data
+        self.db = db
 
     def __str__(self):
         return self.key
 
     @classmethod
-    def from_record(cls, record):
-        return cls(**record)
+    def from_record(cls, record, db):
+        return cls(**record, db=db)
 
     def supports(self, feature) -> bool:
         # todo: make it configurable
@@ -146,4 +148,4 @@ def get_space_config(mongo_db, space_name) -> Optional[SpaceConfig]:
     raw_config = collection.find_one({'key': space_name})
     if not raw_config:
         return None
-    return SpaceConfig.from_record(raw_config)
+    return SpaceConfig.from_record(raw_config, db=mongo_db)

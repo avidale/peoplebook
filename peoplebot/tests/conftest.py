@@ -88,7 +88,7 @@ def mocked_db(mocked_space_dict):
 
 @pytest.fixture()
 def mocked_space(mocked_space_dict):
-    return SpaceConfig.from_record(mocked_space_dict)
+    return SpaceConfig.from_record(mocked_space_dict, db=None)
 
 
 @pytest.fixture()

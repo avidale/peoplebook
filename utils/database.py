@@ -86,7 +86,7 @@ class Database:
 
     def update_spaces_cache(self):
         self._cached_spaces: Dict[str, SpaceConfig] = {
-            record['key']: SpaceConfig.from_record(record)
+            record['key']: SpaceConfig.from_record(record, db=self)
             for record in self.mongo_spaces.find({})
         }
 
@@ -103,6 +103,9 @@ class Database:
     def is_admin(self, user_object):
         username = normalize_username(user_object.get('username') or 'anonymous')
         space_name = user_object.get('space') or DEFAULT_SPACE
+        return self.username_is_admin(username=username, space_name=space_name)
+
+    def username_is_admin(self, username, space_name):
         if space_name not in self._cached_spaces:
             return False
         space = self._cached_spaces[space_name]

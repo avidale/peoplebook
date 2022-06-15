@@ -88,7 +88,7 @@ def space_creation(ctx: Context, database: Database):
             space_to_create['key'] = key
             try:
                 # test that the space can be created
-                new_space = SpaceConfig.from_record(space_to_create)
+                new_space = SpaceConfig.from_record(space_to_create, db=database)
                 database.mongo_spaces.insert_one(space_to_create)
                 url = '/admin/{}/details'.format(new_space.key)
                 url = make_pb_url(url, user_tg_id=ctx.user_object['tg_id'])

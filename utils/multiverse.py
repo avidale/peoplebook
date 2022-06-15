@@ -47,7 +47,7 @@ class Multiverse:
         """ Create/update a config for each space """
         self.spaces_dict = {}
         for raw_config in self.db.mongo_spaces.find({}):
-            space = SpaceConfig.from_record(raw_config)
+            space = SpaceConfig.from_record(raw_config, db=self.db)
             self.spaces_dict[space.key] = space
             logger.info(f'creating a space: {space.key}')
 

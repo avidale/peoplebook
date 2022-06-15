@@ -97,6 +97,11 @@
                     <a class="navbar-item is-right" href="/{{ space_cfg.key }}/me" >
                       <p>Мой профиль</p>
                     </a>
+                    {% if space_cfg.database and space_cfg.database.username_is_admin(user.username, space_cfg.key) %}
+                        <a class="navbar-item is-right" href="/admin/{{ space_cfg.key }}/details" >
+                          <p>Админка</p>
+                        </a>
+                    {% endif %}
                     <a class="navbar-item is-right" href="{{ url_for('logout') }}" >
                       <p>Выйти</p>
                     </a>
