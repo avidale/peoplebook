@@ -55,59 +55,60 @@ def respond(message: Message, database: Database, sender: BaseSender, space_cfg:
         if not message.from_user or not message.chat.id:
             return
         if message.content_type == 'new_chat_members' and message.new_chat_members:
-            tg_user = message.new_chat_members[0]
-            # todo: loop over multiple new chat members, if necessary
-            logger.info(f'the message is about the new added user {tg_user}')
+            tg_users = message.new_chat_members
+            logger.info(f'the message is about the new added users {tg_users}')
         else:
-            tg_user = message.from_user
-        uo = get_or_insert_user(tg_user=tg_user, space_name=space_cfg.key, database=database)
-        chat_data = update_chat_data(
-            db=database,
-            chat_id=message.chat.id,
-            space=space_cfg.key,
-            raw_data=serialize(message.chat),
-        )
-        update_chat_stats(user_object=uo, db=database, chat_id=message.chat.id)
-
-        # tag everyone in the chat
-        words = set(message.text.split()) if message.text else set()
-        if words.intersection({
-            '/all', '@all',
-            '/channel', '@channel',
-            '/everyone', '@everyone',
-            '/all@{}'.format(space_cfg.bot_username),
-            '/channel@{}'.format(space_cfg.bot_username),
-            '/everyone@{}'.format(space_cfg.bot_username),
-        }):
-            sender(
-                text=tag_everyone(db=database, chat_id=message.chat.id),
-                reply_to=message,
-                database=database,
-                intent='tag_all',
+            tg_users = [message.from_user]
+        # repeat the procedure for all new members, if necessary
+        for tg_user in tg_users:
+            uo = get_or_insert_user(tg_user=tg_user, space_name=space_cfg.key, database=database)
+            chat_data = update_chat_data(
+                db=database,
+                chat_id=message.chat.id,
+                space=space_cfg.key,
+                raw_data=serialize(message.chat),
             )
+            update_chat_stats(user_object=uo, db=database, chat_id=message.chat.id)
 
-        if not uo.get('username'):
-            # todo: ask new users to provide usernames
-            return
-        # todo: add tg_id into the user filter
+            # tag everyone in the chat
+            words = set(message.text.split()) if message.text else set()
+            if words.intersection({
+                '/all', '@all',
+                '/channel', '@channel',
+                '/everyone', '@everyone',
+                '/all@{}'.format(space_cfg.bot_username),
+                '/channel@{}'.format(space_cfg.bot_username),
+                '/everyone@{}'.format(space_cfg.bot_username),
+            }):
+                sender(
+                    text=tag_everyone(db=database, chat_id=message.chat.id),
+                    reply_to=message,
+                    database=database,
+                    intent='tag_all',
+                )
 
-        user_filter = {'username': uo['username'], 'space': space_cfg.key}
-        if space_cfg.member_chat_id and message.chat.id == space_cfg.member_chat_id:
-            print('adding user {} to the community members'.format(user_filter))
-            database.mongo_membership.update_one(user_filter, {'$set': {'is_member': True}}, upsert=True)
-        elif space_cfg.guest_chat_id and message.chat.id == space_cfg.guest_chat_id:
-            # the semantic of "guest_chat" has changed: its members are "friends", which is more than just guests
-            database.mongo_membership.update_one(user_filter, {'$set': {'is_friend': True}}, upsert=True)
-            print('adding user {} to the community guests'.format(user_filter))
-        do_wachter_check(
-            user_object=uo,
-            database=database,
-            space_cfg=space_cfg,
-            message=message,
-            bot=bot,
-            sender=sender,
-            chat_data=chat_data,
-        )
+            if not uo.get('username'):
+                # todo: ask new users to provide usernames
+                return
+            # todo: add tg_id into the user filter
+
+            user_filter = {'username': uo['username'], 'space': space_cfg.key}
+            if space_cfg.member_chat_id and message.chat.id == space_cfg.member_chat_id:
+                print('adding user {} to the community members'.format(user_filter))
+                database.mongo_membership.update_one(user_filter, {'$set': {'is_member': True}}, upsert=True)
+            elif space_cfg.guest_chat_id and message.chat.id == space_cfg.guest_chat_id:
+                # the semantic of "guest_chat" has changed: its members are "friends", which is more than just guests
+                database.mongo_membership.update_one(user_filter, {'$set': {'is_friend': True}}, upsert=True)
+                print('adding user {} to the community guests'.format(user_filter))
+            do_wachter_check(
+                user_object=uo,
+                database=database,
+                space_cfg=space_cfg,
+                message=message,
+                bot=bot,
+                sender=sender,
+                chat_data=chat_data,
+            )
         return
 
     logger.info('TMP 2')
