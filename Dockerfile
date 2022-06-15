@@ -7,6 +7,7 @@ RUN apt-get update \
 
 # pre-install the basic requirements to make everything faster
 RUN pip install flask pandas numpy pytelegrambotapi pymorphy2 pymorphy2-dicts openpyxl gunicorn textdistance nltk scikit-learn requests
+RUN pip install attrs sentry-sdk razdel pyyaml pytest pymongo pyemd mongomock gensim flask-wtf flask-login dnspython cloudinary autolink
 
 # STEP 2: Copy the source code in the current directory to the container.  Store it in a folder named /app.
 ADD . /app
