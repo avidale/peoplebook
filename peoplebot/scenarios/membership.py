@@ -60,8 +60,8 @@ def _add_friend(ctx: Context, database: Database):
 
 new_admin = re.compile('(сделай админом|дай админку|добавь в админы) (?P<un>@[a-zA-Z0-9_]+)$')
 remove_admin = re.compile('(отними админку|убери из админов) (?P<un>@[a-zA-Z0-9_]+)$')
-remove_club_member = re.compile('(удали(ть))( из клуба)? (?P<un>@[a-zA-Z0-9_]+)( из клуба)?$')
-remove_community_member = re.compile('(удали(ть))( из сообщества)? (?P<un>@[a-zA-Z0-9_]+)( из сообщества)?$')
+remove_club_member = re.compile('(удали(ть)?)( из клуба)? (?P<un>@[a-zA-Z0-9_]+)( из клуба)?$')
+remove_community_member = re.compile('(удали(ть)?)( из сообщества)? (?P<un>@[a-zA-Z0-9_]+)( из сообщества)?$')
 
 
 def try_membership_management(ctx: Context, database: Database):
