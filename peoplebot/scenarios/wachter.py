@@ -52,7 +52,7 @@ def do_wachter_check(
             if waiting is None:
                 logger.info('asking user for whois')
                 sender(
-                    text=get_public_chat_intro_text(space=space_cfg, chat_data=chat_data),
+                    text=get_public_chat_greeting_text(space=space_cfg, chat_data=chat_data),
                     reply_to=message,
                     database=database,
                     intent='ask_whois',
@@ -111,7 +111,7 @@ def do_wachter_check(
                 database.add_member(tg_id=message.from_user.id, space_name=space_cfg.key)
                 logger.info('make user of the chat a member due to adding policy')
             sender(
-                text=get_public_chat_greeting_text(space=space_cfg, chat_data=chat_data),
+                text=get_public_chat_intro_text(space=space_cfg, chat_data=chat_data),
                 reply_to=message,
                 database=database,
                 intent='reply_whois'
