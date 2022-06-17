@@ -3,6 +3,9 @@ import logging
 import os
 import sentry_sdk
 
+if os.environ.get('SENTRY_DSN'):
+    sentry_sdk.init(os.environ['SENTRY_DSN'])
+
 from fatherbot.main import father_bot, father_bot_bp, set_father_webhook
 from peoplebot.new_main import MULTIVERSE, BASE_URL
 from utils.global_database import DATABASE
@@ -14,10 +17,6 @@ from peoplebook.admins import admin_bp
 from peoplebook.profile_searcher import ProfileSearcher, load_ft
 
 logging.basicConfig(level=logging.INFO)
-
-
-if os.environ.get('SENTRY_DSN'):
-    sentry_sdk.init(os.environ.get('SENTRY_DSN'))
 
 
 def run_bot_and_book():

@@ -1,5 +1,8 @@
 import random
 import re
+
+import sentry_sdk
+
 from utils.database import Database
 from utils.dialogue_management import Context
 from utils import matchers
@@ -152,7 +155,8 @@ def try_peoplebook_management(ctx: Context, database: Database):
         ctx.intent = PB.PEOPLEBOOK_SET_PHOTO
         try:
             photo_url = photo_url_from_message(message=ctx.message, bot=ctx.bot)
-        except Exception:
+        except Exception as e:
+            sentry_sdk.capture_exception(e)
             ctx.response = 'Произошла какая-то ошибка при загрузке фото. ' \
                            'Попробуйте загрузить фото на хостинг самостоятельно и скинуть мне его URL'
         else:

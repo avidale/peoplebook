@@ -101,7 +101,8 @@ def space_creation(ctx: Context, database: Database):
                                '\nТокен выглядит примерно как 1234567890:ABcDefGHIjKLmnopQRStuvWxYZ'.format(url)
                 ctx.expected_intent = INTENT_SET_BOT_TOKEN
                 ctx.the_update = {'$set': {'space_to_create': space_to_create}}
-            except Exception:
+            except Exception as e:
+                sentry_sdk.capture_exception(e)
                 ctx.response = 'Что-то пошло не так при добавлении сообщества, простите. ' \
                                'Пожалуйста, обратитесь к админу - @cointegrated.'
                 ctx.suggests.append('Назад')

@@ -1,5 +1,7 @@
 import time
 
+import sentry_sdk
+
 from utils.spaces import SpaceConfig
 from utils.telegram import render_markup, make_unique
 from utils.database import LoggedMessage
@@ -105,6 +107,7 @@ class TelegramSender(BaseSender):
                 time.sleep(self.timeout)
             return True
         except Exception as e:
+            sentry_sdk.capture_exception(e)
             error = '\n'.join([
                 'Ошибка при отправке сообщения!',
                 'Текст: {}'.format(text[:1000]),
