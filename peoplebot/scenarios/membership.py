@@ -161,7 +161,13 @@ def try_membership_management(ctx: Context, database: Database):
             ctx.intent = 'REMOVE_FROM_COMMUNITY'
         logger.debug(f'removal from: {ctx.intent}')
 
-        un = re.match(remove_club_member, text).groupdict().get('un')
+        # why isn't this error captured by regex?
+        un = re.match(remove_club_member, text) or re.match(remove_community_member, text)
+        if un:
+            un = un.groupdict()
+        if un:
+            un = un.get('un')
+        logger.debug(f'removal username: {un}')
         if not un:
             logger.debug(f'removal not matched')
             ctx.response = 'Не понял, кого вы хотите удалить, простите.'
