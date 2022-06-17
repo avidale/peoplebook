@@ -1,7 +1,7 @@
 import time
 
 from utils.spaces import SpaceConfig
-from utils.telegram import render_markup
+from utils.telegram import render_markup, make_unique
 from utils.database import LoggedMessage
 
 
@@ -75,7 +75,7 @@ class TelegramSender(BaseSender):
             reset_intent=False,
     ):
         try:
-            markup = render_markup(suggests)
+            markup = render_markup(make_unique(suggests))
             if user_id is not None:
                 for chunk in split_message(text):
                     self.bot.send_message(user_id, chunk, reply_markup=markup, parse_mode='html')
