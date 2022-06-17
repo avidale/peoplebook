@@ -13,6 +13,7 @@ from utils.matchers import normalize_username
 from utils.spaces import SpaceConfig
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 def _add_member(ctx: Context, database: Database, club_name='сообщества'):
