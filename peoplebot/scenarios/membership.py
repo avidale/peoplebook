@@ -67,10 +67,12 @@ remove_community_member = re.compile('(удали(ть)?)( из сообщест
 def try_membership_management(ctx: Context, database: Database):
     if not database.is_at_least_member(ctx.user_object):
         return ctx
-
     # todo: add guest management
     if not database.is_admin(ctx.user_object):
         return ctx
+
+    text = ctx.text.lower().strip()
+
     # member management
     if re.match('(добавь|добавить)( нов(ых|ого))? (члена|членов)( в)? клуба?', ctx.text_normalized):
         ctx.intent = 'MEMBER_ADD_INIT'
@@ -131,7 +133,7 @@ def try_membership_management(ctx: Context, database: Database):
                 database.mongo_spaces.update_one({'key': ctx.space.key}, {'$set': {'admins': ctx.space.admins}})
                 ctx.response = f'Окей, делаю @{un} админом данного сообщества!'
 
-    elif re.match(remove_admin, ctx.text):
+    elif re.match(remove_admin, text):
         ctx.intent = 'ADMINS_REMOVE'
         un = re.match(remove_admin, ctx.text).groupdict().get('un')
         if not un:
@@ -145,22 +147,23 @@ def try_membership_management(ctx: Context, database: Database):
                 database.mongo_spaces.update_one({'key': ctx.space.key}, {'$set': {'admins': ctx.space.admins}})
                 ctx.response = f'Окей, убираю @{un} из админов данного сообщества!'
 
-    elif re.match(remove_club_member, ctx.text) or re.match(remove_community_member, ctx.text):
+    elif re.match(remove_club_member, text) or re.match(remove_community_member, text):
         from_club = True
         ctx.intent = 'REMOVE_FROM_CLUB'
-        if not re.match(remove_club_member, ctx.text) and re.match(remove_community_member, ctx.text):
+        if not re.match(remove_club_member, text) and re.match(remove_community_member, text):
             from_club = False
             ctx.intent = 'REMOVE_FROM_COMMUNITY'
 
-        un = re.match(remove_club_member, ctx.text).groupdict().get('un')
+        un = re.match(remove_club_member, text).groupdict().get('un')
         if not un:
             ctx.response = 'Не понял, кого вы хотите удалить, простите.'
         else:
             un = normalize_username(un)
             status = database.get_top_status({'username': un})
 
+            remove_from = 'из клуба' if from_club else 'из сообщества'
+
             if status in {'admin', 'member'} or status == 'friend' and not from_club:
-                remove_from = 'из клуба' if from_club else 'из сообщества'
                 if status == 'admin':
                     text_status = 'админ'
                 elif status == 'member':
@@ -173,7 +176,7 @@ def try_membership_management(ctx: Context, database: Database):
                 ctx.expected_intent = ctx.intent + '__CONFIRM'
                 ctx.the_update = {'$set': {'removal': {'user': un, 'status': status, 'from_club': from_club}}}
             else:
-                ctx.response = 'Не удалось убедиться, что '
+                ctx.response = f'Не удалось убедиться, что {un} является членом, чтобы удалить его {remove_from}.'
 
     elif ctx.last_expected_intent in {'REMOVE_FROM_CLUB__CONFIRM', 'REMOVE_FROM_COMMUNITY__CONFIRM'} \
             and matchers.is_like_yes(ctx.text_normalized) and ctx.user_object.get('removal'):
