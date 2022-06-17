@@ -1,3 +1,5 @@
+import logging
+
 import pandas as pd
 import re
 
@@ -9,6 +11,8 @@ from utils.database import Database
 from utils.dialogue_management import Context
 from utils.matchers import normalize_username
 from utils.spaces import SpaceConfig
+
+logger = logging.getLogger(__name__)
 
 
 def _add_member(ctx: Context, database: Database, club_name='сообщества'):
@@ -150,20 +154,27 @@ def try_membership_management(ctx: Context, database: Database):
     elif re.match(remove_club_member, text) or re.match(remove_community_member, text):
         from_club = True
         ctx.intent = 'REMOVE_FROM_CLUB'
+        logger.debug('removal init')
         if not re.match(remove_club_member, text) and re.match(remove_community_member, text):
             from_club = False
             ctx.intent = 'REMOVE_FROM_COMMUNITY'
+        logger.debug(f'removal from: {ctx.intent}')
 
         un = re.match(remove_club_member, text).groupdict().get('un')
         if not un:
+            logger.debug(f'removal not matched')
             ctx.response = 'Не понял, кого вы хотите удалить, простите.'
         else:
+            logger.debug(f'removal: matched')
+            # todo: check why this does not work
             un = normalize_username(un)
             status = database.get_top_status({'username': un})
 
             remove_from = 'из клуба' if from_club else 'из сообщества'
+            logger.debug(f'removal: top status is {status}, from_club is {from_club}')
 
-            if status in {'admin', 'member'} or status == 'friend' and not from_club:
+            if status in {'admin', 'member'} or (status == 'friend' and not from_club):
+                logger.debug(f'removal: can lower status')
                 if status == 'admin':
                     text_status = 'админ'
                 elif status == 'member':
@@ -176,7 +187,9 @@ def try_membership_management(ctx: Context, database: Database):
                 ctx.expected_intent = ctx.intent + '__CONFIRM'
                 ctx.the_update = {'$set': {'removal': {'user': un, 'status': status, 'from_club': from_club}}}
             else:
+                logger.debug(f'removal: cannot lower status')
                 ctx.response = f'Не удалось убедиться, что {un} является членом, чтобы удалить его {remove_from}.'
+        logger.debug(f'removal exit')
 
     elif ctx.last_expected_intent in {'REMOVE_FROM_CLUB__CONFIRM', 'REMOVE_FROM_COMMUNITY__CONFIRM'} \
             and matchers.is_like_yes(ctx.text_normalized) and ctx.user_object.get('removal'):
