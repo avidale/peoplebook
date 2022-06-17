@@ -12,6 +12,8 @@ def render_markup(suggests=None, max_columns=3, initial_ratio=2):
 
 def make_unique(items):
     """ an inefficient way to preserve unique elements in a list"""
+    if not items:
+        return items
     new_items = []
     for item in items:
         exists = False
