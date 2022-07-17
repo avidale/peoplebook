@@ -124,7 +124,7 @@ class Database:
         elif self.is_guest(user_object=user_object):
             return 'guest'
         else:
-            return 'underdog'
+            return 'no_status'
 
     def _get_cached_mongo_membership(self, user_object) -> Dict:
         tg_id = user_object.get('tg_id') or 'anonymous'

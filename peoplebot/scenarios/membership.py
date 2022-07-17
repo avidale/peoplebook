@@ -156,7 +156,7 @@ def try_membership_management(ctx: Context, database: Database):
         from_club = True
         ctx.intent = 'REMOVE_FROM_CLUB'
         logger.debug('removal init')
-        if not re.match(remove_club_member, text) and re.match(remove_community_member, text):
+        if (not re.match(remove_club_member, text) and re.match(remove_community_member, text)) or 'клуб' not in text:
             from_club = False
             ctx.intent = 'REMOVE_FROM_COMMUNITY'
         logger.debug(f'removal from: {ctx.intent}')
@@ -195,7 +195,8 @@ def try_membership_management(ctx: Context, database: Database):
                 ctx.the_update = {'$set': {'removal': {'user': un, 'status': status, 'from_club': from_club}}}
             else:
                 logger.debug(f'removal: cannot lower status')
-                ctx.response = f'Не удалось убедиться, что {un} является членом, чтобы удалить его {remove_from}.'
+                ctx.response = f'Не удалось убедиться, что {un} является членом, чтобы удалить его {remove_from}. ' \
+                               f'Текущий статус: {status}; попытка удаления из внутреннего клуба: {from_club}.'
         logger.debug(f'removal exit')
 
     elif ctx.last_expected_intent in {'REMOVE_FROM_CLUB__CONFIRM', 'REMOVE_FROM_COMMUNITY__CONFIRM'} \
@@ -216,7 +217,10 @@ def try_membership_management(ctx: Context, database: Database):
         )
         ctx.the_update = {'$unset': {'removal': ''}}
         database.update_cache(force=True)
-        ctx.response = f'Юзер @{mem["user"]} был успешно удалён. Но сообщить об этом ему/ей вам надо самостоятельно.'
+        new_status = database.get_top_status(mem)
+        ctx.response = f'Юзер @{mem["user"]} был успешно удалён (статус понижен до {new_status}). ' \
+                       f'Но сообщить об этом ему/ей вам надо самостоятельно.' \
+                       f'\nТакже, возможно, вам нужно будет вручную удалить пользователя из чатов.'
 
     elif ctx.text_normalized in {'освежись', 'refresh'}:
         ctx.intent = 'UPDATE_CACHE'
