@@ -16,8 +16,7 @@ from peoplebook.web_flask import history_configs
 
 
 from utils.database import Database
-from utils.spaces import get_space_config
-
+from utils.spaces import get_space_config, SpaceConfig
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +38,7 @@ def check_space(space_name):
     return True
 
 
-def get_default_space() -> Tuple[Optional[str], List[str]]:
+def get_default_space() -> Tuple[Optional[SpaceConfig], List[SpaceConfig]]:
     """ Return the single default space, and the list of all spaces """
     db: Database = current_app.database
     username = get_current_username()
@@ -51,9 +50,9 @@ def get_default_space() -> Tuple[Optional[str], List[str]]:
     for space_name, space_config in db.all_spaces.items():
         uo = {'username': username, 'tg_id': int(current_user.id), 'space': space_name}
         if db.is_at_least_guest(uo):
-            all_spaces.append(space_name)
+            all_spaces.append(space_config)
         if db.is_at_least_member(uo):
-            member_spaces.append(space_name)
+            member_spaces.append(space_config)
     if len(member_spaces) == 1:
         default_space = member_spaces[0]
     elif len(all_spaces) == 1:
@@ -75,12 +74,11 @@ def home(space=None):
     if space is None:
         default_space, user_spaces = get_default_space()
         if default_space:
-            space = default_space
+            space = default_space.key
         elif user_spaces:
-            all_spaces = current_app.database.all_spaces
             return render_template(
                 'spaces_choice.html',
-                spaces_to_names={s: all_spaces[c].title for s in user_spaces},
+                spaces_to_names={s.key: s.title for s in user_spaces},
                 user=current_user,
             )
     if space is None:
