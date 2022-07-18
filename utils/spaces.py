@@ -52,6 +52,12 @@ class SpaceConfig:
             public_chat_greeting_text=None,
             add_whois_to_peoplebook=False,
             kick_timeout=None,
+
+            web_show_pb_club=False,
+            web_show_pb_community=True,
+            web_show_pb_event=False,
+            web_show_pb_all=True,
+
             feature_coffee_on=True,
             feature_events_on=False,
             feature_peoplebook_on=True,
@@ -86,6 +92,12 @@ class SpaceConfig:
         self.public_chat_greeting_text = public_chat_greeting_text  # after whois
         self.add_whois_to_peoplebook = add_whois_to_peoplebook
         self.kick_timeout = kick_timeout  # None means no kick
+
+        # access settings
+        self.web_show_pb_club = web_show_pb_club
+        self.web_show_pb_community = web_show_pb_community
+        self.web_show_pb_event = web_show_pb_event
+        self.web_show_pb_all = web_show_pb_all
 
         # features
         self.feature_coffee_on = feature_coffee_on

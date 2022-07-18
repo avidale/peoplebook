@@ -106,7 +106,10 @@ def home(space=None):
         )
 
     # otherwise, show the fullest peoplebook
-    return peoplebook_for_all_members_and_guests(space=space)
+    if space_cfg.web_show_pb_all:
+        return peoplebook_for_all_members_and_guests(space=space)
+    else:
+        return peoplebook_for_community(space=space)
 
 
 @app.route('/history/<period>')

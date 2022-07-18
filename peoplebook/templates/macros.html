@@ -83,12 +83,26 @@
                   <p>Пиплбук встречи</p>
                 </a>
             {% else%}
-                <a class="navbar-item" href="/{{ space_cfg.key }}/community">
-                  <p>Сообщество {{ space_cfg.title }}</p>
-                </a>
-                <a class="navbar-item" href="/{{ space_cfg.key }}/all">
-                  <p>Вообще все {{ space_cfg.title }}</p>
-                </a>
+                {% if space_cfg.web_show_pb_club %}
+                    <a class="navbar-item" href="/{{ space_cfg.key }}/members">
+                      <p>Члены клуба {{ space_cfg.title }}</p>
+                    </a>
+                {% endif %}
+                {% if space_cfg.web_show_pb_community %}
+                    <a class="navbar-item" href="/{{ space_cfg.key }}/community">
+                      <p>Сообщество {{ space_cfg.title }}</p>
+                    </a>
+                {% endif %}
+                {% if space_cfg.web_show_pb_all or (space_cfg.database and space_cfg.database.username_is_admin(user.username, space_cfg.key)) %}
+                    <a class="navbar-item" href="/{{ space_cfg.key }}/all">
+                        <p>Вообще все </p>
+                    </a>
+                {% endif %
+                {% if space_cfg.web_show_pb_event %}
+                    <a class="navbar-item" href="/{{ space_cfg.key }}/">
+                      <p>Пиплбук встречи</p>
+                    </a>
+                {% endif %}
             {% endif %}
             <a class="navbar-item" href="/{{ space_cfg.key }}/search">
               <p>Поиск</p>
