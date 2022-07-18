@@ -175,7 +175,7 @@ def try_membership_management(ctx: Context, database: Database):
             logger.debug(f'removal: matched')
             # todo: check why this does not work
             un = normalize_username(un)
-            status = database.get_top_status({'username': un})
+            status = database.get_top_status({'username': un, 'space': ctx.space.key})
 
             remove_from = 'из клуба' if from_club else 'из сообщества'
             logger.debug(f'removal: top status is {status}, from_club is {from_club}')
@@ -192,7 +192,9 @@ def try_membership_management(ctx: Context, database: Database):
                                f'Вы действительно хотите удалить его {remove_from}?'
                 ctx.suggests.insert(0, 'да')
                 ctx.expected_intent = ctx.intent + '__CONFIRM'
-                ctx.the_update = {'$set': {'removal': {'user': un, 'status': status, 'from_club': from_club}}}
+                ctx.the_update = {
+                    '$set': {'removal': {'user': un, 'status': status, 'from_club': from_club, 'space': ctx.space.key}}
+                }
             else:
                 logger.debug(f'removal: cannot lower status')
                 ctx.response = f'Не удалось убедиться, что {un} является членом, чтобы удалить его {remove_from}. ' \
