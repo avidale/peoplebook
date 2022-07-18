@@ -1,0 +1,21 @@
+{% extends 'basic_template.html' %}
+{% from 'macros.html' import peoplebook_profile, basic_nav with context %}
+
+{% block title %}
+  <title> Выберите сообщество </title>
+{% endblock %}
+
+{% block navbar %}
+  {{ nospace_nav(user) }}
+{% endblock %}
+
+{% block content %}
+<div id="root">
+  Вы связаны с несколькими сообществами:
+  <ul>
+    {% for space_name in spaces_to_names %}
+      <li><a href="/{{ space_name }}">{{ spaces_to_names[space_name] }}</a></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

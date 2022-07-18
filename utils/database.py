@@ -180,6 +180,11 @@ class Database:
         return self._cached_spaces.get(space_name)
 
     @property
+    def all_spaces(self) -> Dict[str, SpaceConfig]:
+        self.update_cache()
+        return copy.copy(self._cached_spaces)
+
+    @property
     def db(self):
         return self._mongo_db
 

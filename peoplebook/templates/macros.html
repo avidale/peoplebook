@@ -116,6 +116,22 @@
 {% endmacro %}
 
 
+{% macro nospace_nav(user=None) %}
+    <nav class="bd-navbar navbar has-shadow" role="navigation" aria-label="main navigation">
+        <div class="navbar-menu">
+            <div class="navbar-end">
+                {% if user and user.is_authenticated %}
+                    <a class="navbar-item is-right" href="{{ url_for('logout') }}" >
+                      <p>Выйти</p>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+{% endmacro %}
+
+
+
 {% macro basic_subhead() %}
     <div class="container">
         <h1 class="title" style="background-color:white; color:black; margin-left:0px"> Члены сообщества </h1>

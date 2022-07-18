@@ -1,3 +1,5 @@
+from typing import Tuple, List, Optional
+
 import pymongo
 from peoplebook.models import User
 
@@ -37,6 +39,28 @@ def check_space(space_name):
     return True
 
 
+def get_default_space() -> Tuple[Optional[str], List[str]]:
+    """ Return the single default space, and the list of all spaces """
+    db: Database = current_app.database
+    username = get_current_username()
+    default_space = None
+    member_spaces = []
+    all_spaces = []
+    if not username:
+        return default_space, all_spaces
+    for space_name, space_config in db.all_spaces.items():
+        uo = {'username': username, 'tg_id': int(current_user.id), 'space': space_name}
+        if db.is_at_least_guest(uo):
+            all_spaces.append(space_name)
+        if db.is_at_least_member(uo):
+            member_spaces.append(space_name)
+    if len(member_spaces) == 1:
+        default_space = member_spaces[0]
+    elif len(all_spaces) == 1:
+        default_space = all_spaces[0]
+    return default_space, all_spaces
+
+
 @app.route('/about')
 def about_peoplebook():
     return render_template('about.html')
@@ -49,6 +73,17 @@ def about_peoplebook():
 @login_required
 def home(space=None):
     if space is None:
+        default_space, user_spaces = get_default_space()
+        if default_space:
+            space = default_space
+        elif user_spaces:
+            all_spaces = current_app.database.all_spaces
+            return render_template(
+                'spaces_choice.html',
+                spaces_to_names={s: all_spaces[c].title for s in user_spaces},
+                user=current_user,
+            )
+    if space is None:
         space = cfg.DEFAULT_SPACE
     if not check_space(space):
         return redirect(url_for('about_peoplebook'))
@@ -58,7 +93,7 @@ def home(space=None):
     all_events = mongo_events.find({'space': space}).sort('date', pymongo.DESCENDING)
     for event in all_events:
         who_comes = list(mongo_participations.find({'code': event['code'], 'status': 'ACCEPT', 'space': space}))
-        if len(who_comes) >= 1:  # one participant is enough to show the event - but this may be revised
+        if len(who_comes) >= 3:  # one participant is enough to show the event - but this may be revised
             return peoplebook_for_event(event_code=event['code'], space=space)
 
     # if there is a special "current" event, show it (DEPRECATED)
