@@ -70,21 +70,24 @@
     <nav class="bd-navbar navbar has-shadow" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
             {% if space_cfg.key == 'kv' %}
-                <a class="navbar-item" href="/members">
+                <a class="navbar-item" href="/kv/members">
                   <p>Члены клуба</p>
                 </a>
-                <a class="navbar-item" href="/community">
+                <a class="navbar-item" href="/kv/community">
                   <p>Члены сообщества</p>
                 </a>
-                <a class="navbar-item" href="/all">
+                <a class="navbar-item" href="/kv/all">
                   <p>Вообще все</p>
                 </a>
-                <a class="navbar-item" href="/">
+                <a class="navbar-item" href="/kv">
                   <p>Пиплбук встречи</p>
                 </a>
             {% else%}
-                <a class="navbar-item" href="/{{ space_cfg.key }}/all">
+                <a class="navbar-item" href="/{{ space_cfg.key }}/community">
                   <p>Сообщество {{ space_cfg.title }}</p>
+                </a>
+                <a class="navbar-item" href="/{{ space_cfg.key }}/all">
+                  <p>Вообще все {{ space_cfg.title }}</p>
                 </a>
             {% endif %}
             <a class="navbar-item" href="/{{ space_cfg.key }}/search">

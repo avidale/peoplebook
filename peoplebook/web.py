@@ -44,18 +44,25 @@ def about_peoplebook():
 
 @app.route('/')  # todo: stop serving the links without space
 @app.route('/<space>')
+@app.route('/<space>/')
 @app.route('/', subdomain='<space>')
 @login_required
-def home(space=cfg.DEFAULT_SPACE):
+def home(space=None):
+    if space is None:
+        space = cfg.DEFAULT_SPACE
     if not check_space(space):
         return redirect(url_for('about_peoplebook'))
+    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
+
+    # if the space supports events, show the peoplebook for the last non-empty event
     all_events = mongo_events.find({'space': space}).sort('date', pymongo.DESCENDING)
     for event in all_events:
         who_comes = list(mongo_participations.find({'code': event['code'], 'status': 'ACCEPT', 'space': space}))
         if len(who_comes) >= 1:  # one participant is enough to show the event - but this may be revised
-            return peoplebook_for_event(event['code'])
-    space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
-    history_config = history_configs.get('key')
+            return peoplebook_for_event(event_code=event['code'], space=space)
+
+    # if there is a special "current" event, show it (DEPRECATED)
+    history_config = history_configs.get(space_cfg.key)
     if history_config and history_config.get('current'):
         return render_template(
             'peoplebook.html',
@@ -64,6 +71,8 @@ def home(space=cfg.DEFAULT_SPACE):
             space_cfg=space_cfg,
             user=current_user,
         )
+
+    # otherwise, show the fullest peoplebook
     return peoplebook_for_all_members_and_guests(space=space)
 
 
