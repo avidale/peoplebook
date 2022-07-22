@@ -277,7 +277,7 @@ def try_event_usage(ctx: Context, database: Database):
         if event_code is None:
             ctx.intent = 'EVENT_INVITE_WITHOUT_EVENT'
             ctx.response = 'Чтобы пригласить гостя, сначала нужно выбрать встречу'
-        elif database.is_at_least_member(user_object=ctx.user_object):
+        elif database.has_at_least_level(user_object=ctx.user_object, level=ctx.space.who_can_add_invite_to_events):
             the_event = database.mongo_events.find_one({'code': event_code, 'space': ctx.space.key})
             if the_event is None:
                 ctx.intent = 'EVENT_INVITE_NOT_FOUND'
@@ -291,7 +291,8 @@ def try_event_usage(ctx: Context, database: Database):
                 ctx.response = 'Хорошо! Сейчас пригласим гостя на встречу "{}".'.format(event_code)
                 ctx.response = ctx.response + '\nВведите Telegram логин человека, которого хотите пригласить.'
         else:
-            ctx.response = 'Вы не являетесь членом клуба, и поэтому не можете приглашать гостей. Сорян.'
+            ctx.response = 'У вас нет права приглашать гостей. Простите. ' \
+                           'Обратитесь к админу сообщества или человеку, пригласившему вас.'
             ctx.intent = 'EVENT_INVITE_UNAUTHORIZED'
     elif ctx.last_expected_intent == 'EVENT_INVITE_LOGIN':
         ctx.intent = 'EVENT_INVITE_LOGIN'
@@ -458,7 +459,7 @@ def try_parse_date(text):
 
 
 def try_event_creation(ctx: Context, database: Database):
-    if not database.is_admin(ctx.user_object):
+    if not database.has_at_least_level(user_object=ctx.user_object, level=ctx.space.who_can_create_events):
         return ctx
     event_code = ctx.user_object.get('event_code')
     if re.match('созда(ть|й) встречу', ctx.text_normalized):

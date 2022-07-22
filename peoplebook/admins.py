@@ -7,7 +7,7 @@ from wtforms.validators import DataRequired
 
 from utils.chat_data import ChatData
 from utils.database import Database
-from utils.spaces import MEMBERSHIP_STATUSES
+from utils.spaces import MEMBERSHIP_STATUSES, MEMBERSHIP_STATUSES_ALL
 from utils import wachter_utils
 
 from peoplebook.web import SPACE_NOT_FOUND, get_current_username
@@ -100,6 +100,22 @@ class SpaceSettingsForm(FlaskForm):
     web_show_pb_community = BooleanField('Отображать ссылку на пиплбук Сообщества (всех членов)')
     web_show_pb_event = BooleanField('Отображать ссылку на пиплбук ближайшего события')
     web_show_pb_all = BooleanField('Отображать ссылку на пиплбук вообще всех: членов, гостей, и бывших членов')
+
+    who_can_create_events = SelectField(
+        'Кто может создавать мероприятия',
+        choices=MEMBERSHIP_STATUSES_ALL,
+        description='Каждый уровень включает все последующие',
+    )
+    who_can_add_invite_to_events = SelectField(
+        'Кто может приглашать на мероприятия',
+        choices=MEMBERSHIP_STATUSES_ALL,
+        description='Каждый уровень включает все последующие',
+    )
+    who_can_use_random_coffee = SelectField(
+        'Кто может участвовать в Random Coffee',
+        choices=MEMBERSHIP_STATUSES_ALL,
+        description='Каждый уровень включает все последующие',
+    )
 
     submit = SubmitField('Обновить данные')
 

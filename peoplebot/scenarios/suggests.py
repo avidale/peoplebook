@@ -13,12 +13,16 @@ def make_standard_suggests(database: Database, user_object):
             suggests.append('Покажи встречи')
         if space.supports(FeatureName.PEOPLEBOOK):
             suggests.append('Мой пиплбук')
-        if space.supports(FeatureName.COFFEE):
+
+    if space.supports(FeatureName.COFFEE):
+        if database.has_at_least_level(user_object=user_object, level=space.who_can_use_random_coffee):
             suggests.append(TAKE_PART if not user_object.get('wants_next_coffee') else NOT_TAKE_PART)
 
-    if database.is_admin(user_object):
-        if space.supports(FeatureName.EVENTS):
+    if space.supports(FeatureName.EVENTS):
+        if database.has_at_least_level(user_object=user_object, level=space.who_can_create_events):
             suggests.append('Создать встречу')
+
+    if database.is_admin(user_object):
         suggests.append('Добавить членов сообщества')
         if space.community_is_split:
             suggests.append('Добавить членов клуба')

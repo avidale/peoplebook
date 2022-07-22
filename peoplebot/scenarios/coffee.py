@@ -150,7 +150,7 @@ def remind_about_coffee(
 
 
 def try_coffee_management(ctx: Context, database: Database):
-    if not database.is_at_least_guest(user_object=ctx.user_object):
+    if not database.has_at_least_level(user_object=ctx.user_object, level=ctx.space.who_can_use_random_coffee):
         return ctx
     coffee_score = get_coffee_score(ctx.text)
     if ctx.text == TAKE_PART or coffee_score == 1:
@@ -172,7 +172,7 @@ def try_coffee_management(ctx: Context, database: Database):
 
 
 def try_coffee_feedback_collection(ctx: Context, database: Database):
-    if not database.is_at_least_guest(user_object=ctx.user_object):
+    if not database.has_at_least_level(user_object=ctx.user_object, level=ctx.space.who_can_use_random_coffee):
         return ctx
     if ctx.last_intent in {INTENT_COFFEE_PUSH_FEEDBACK, INTENT_COFFEE_PUSH_REMIND}:
         if matchers.is_like_yes(ctx.text_normalized):

@@ -69,6 +69,7 @@ def generate_good_pairs(database: Database, space: SpaceConfig, now, decay=0.99,
             not user.get('deactivated', False)
             and user.get('last_activity')
             and days_since(user['last_activity']) <= 31
+            and database.has_at_least_level(user_object=user, level=space.who_can_use_random_coffee)
         )
     ]
     # we deliberately use all the spaces here to avoid same pairs across different spaces

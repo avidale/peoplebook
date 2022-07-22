@@ -12,11 +12,29 @@ class FeatureName:
 
 class MembershipStatus:
     NONE = 'none'
+    NO_STATUS = 'no_status'
+    ANYONE = 'anyone'
     GUEST = 'guest'
     FRIEND = 'friend'
     MEMBER = 'member'
     ADMIN = 'admin'
     OWNER = 'owner'
+
+    @classmethod
+    def is_at_least(cls, user_status, level):
+        if level in {cls.NO_STATUS, cls.ANYONE, cls.NONE}:
+            return True
+        if level == cls.OWNER:
+            return user_status in {cls.OWNER}
+        if level == cls.ADMIN:
+            return user_status in {cls.OWNER, cls.ADMIN}
+        if level == cls.MEMBER:
+            return user_status in {cls.OWNER, cls.ADMIN, cls.MEMBER}
+        if level == cls.FRIEND:
+            return user_status in {cls.OWNER, cls.ADMIN, cls.MEMBER, cls.FRIEND}
+        if level == cls.GUEST:
+            return user_status in {cls.OWNER, cls.ADMIN, cls.MEMBER, cls.FRIEND, cls.GUEST}
+        return False
 
 
 MEMBERSHIP_STATUSES = [
@@ -24,6 +42,14 @@ MEMBERSHIP_STATUSES = [
     (MembershipStatus.GUEST, 'Поднять до гостя сообщества'),
     (MembershipStatus.FRIEND, 'Поднять до простого члена сообщества'),
     (MembershipStatus.MEMBER, 'Поднять до привилегированного члена сообщества'),
+]
+
+MEMBERSHIP_STATUSES_ALL = [
+    (MembershipStatus.ANYONE, 'Кто угодно'),
+    (MembershipStatus.GUEST, 'Гость сообщества'),
+    (MembershipStatus.FRIEND, 'Простой член сообщества'),
+    (MembershipStatus.MEMBER, 'Привилегированный член сообщества (член Клуба)'),
+    (MembershipStatus.ADMIN, 'Админ сообщества'),
 ]
 
 
@@ -61,6 +87,11 @@ class SpaceConfig:
             feature_coffee_on=True,
             feature_events_on=False,
             feature_peoplebook_on=True,
+
+            who_can_create_events='admin',
+            who_can_add_invite_to_events='member',
+            who_can_use_random_coffee='guest',
+
             db=None,  # a global database object
             **other_data
     ):
@@ -103,6 +134,11 @@ class SpaceConfig:
         self.feature_coffee_on = feature_coffee_on
         self.feature_peoplebook_on = feature_peoplebook_on
         self.feature_events_on = feature_events_on
+
+        # feature access based on user level
+        self.who_can_create_events = who_can_create_events
+        self.who_can_add_invite_to_events = who_can_add_invite_to_events
+        self.who_can_use_random_coffee = who_can_use_random_coffee
 
         self.other_data = other_data
         self.db = db

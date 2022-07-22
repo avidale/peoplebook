@@ -10,7 +10,7 @@ from utils import matchers
 from utils.chat_data import ChatData
 from utils.events import InvitationStatuses
 from utils.matchers import normalize_username
-from utils.spaces import SpaceConfig
+from utils.spaces import SpaceConfig, MembershipStatus as MS
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +105,10 @@ class Database:
         space_name = user_object.get('space') or DEFAULT_SPACE
         return self.username_is_admin(username=username, space_name=space_name)
 
+    def has_at_least_level(self, user_object, level):
+        user_status = self.get_top_status(user_object)
+        return MS.is_at_least(user_status=user_status, level=level)
+
     def username_is_admin(self, username, space_name):
         if space_name not in self._cached_spaces:
             return False
@@ -114,17 +118,16 @@ class Database:
         return False
 
     def get_top_status(self, user_object):
-        # todo: use normalized status names
         if self.is_admin(user_object=user_object):
-            return 'admin'
+            return MS.ADMIN
         elif self.is_member(user_object=user_object):
-            return 'member'
+            return MS.MEMBER
         elif self.is_friend(user_object=user_object):
-            return 'friend'
+            return MS.FRIEND
         elif self.is_guest(user_object=user_object):
-            return 'guest'
+            return MS.GUEST
         else:
-            return 'no_status'
+            return MS.NO_STATUS
 
     def _get_cached_mongo_membership(self, user_object) -> Dict:
         tg_id = user_object.get('tg_id') or 'anonymous'
