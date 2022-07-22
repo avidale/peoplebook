@@ -94,6 +94,7 @@ class SpaceSettingsForm(FlaskForm):
 
     feature_coffee_on = BooleanField('Включить функцию Random Coffee')
     feature_peoplebook_on = BooleanField('Включить функцию Peoplebook')
+    feature_events_on = BooleanField('Включить функцию Мероприятия')
 
     web_show_pb_club = BooleanField('Отображать ссылку на пиплбук Клуба (привилегированных членов)')
     web_show_pb_community = BooleanField('Отображать ссылку на пиплбук Сообщества (всех членов)')
