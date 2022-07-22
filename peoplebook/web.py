@@ -7,7 +7,8 @@ import config as cfg
 from flask import render_template, abort, request, redirect, url_for
 from flask_login import login_required, login_user, logout_user, current_user
 
-from peoplebook.web_flask import app, get_users, get_profiles_for_event, get_current_username, check_space, get_default_space
+from peoplebook.web_flask import app, get_users, get_profiles_for_event, get_current_username, check_space, \
+    get_default_space
 from peoplebook.web_flask import mongo_events, mongo_participations, mongo_membership, mongo_peoplebook, mongo_db
 from peoplebook.web_flask import DATABASE
 from peoplebook.web_flask import history_configs
