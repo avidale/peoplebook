@@ -2,7 +2,7 @@ from flask import Blueprint, current_app, render_template, request
 from werkzeug.datastructures import MultiDict
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, BooleanField, SubmitField, TextAreaField, SelectField, IntegerField, HiddenField
+from wtforms import StringField, BooleanField, SubmitField, TextAreaField, SelectField, IntegerField, HiddenField, Field
 from wtforms.validators import DataRequired
 
 from utils.chat_data import ChatData
@@ -38,15 +38,16 @@ def ternary_to_bool(x):
         raise ValueError(f'Value {x} cannot be converted from ternary to boolean')
 
 
+class SeparatorField(Field):
+    pass
+
+
 class SpaceSettingsForm(FlaskForm):
-    # key,
+    # key
+    sep__key = SeparatorField('Ключевые настройки')
     title = StringField('Название сообщества', validators=[DataRequired()])
     bot_token = StringField('Токен телеграм-бота сообщества', validators=[DataRequired()])
     bot_username = StringField('Логин телеграм-бота сообщества', validators=[DataRequired()])
-    peoplebook_is_public = BooleanField(
-        'Пиплбук публично доступен',
-        description='Если поставить эту галочку, пиплбук сможет увидеть любой пользователь.'
-    )
     anyone_can_enter = BooleanField(
         'Открытый вход в сообщество',
         description='Если поставить эту галочку, любой пользователь Telegram, написавший боту, '
@@ -64,12 +65,14 @@ class SpaceSettingsForm(FlaskForm):
     # owner_uid = None,
     # owner_username = 'cointegrated',
     # admins = None,
+    sep__messages = SeparatorField('Настройка сообщений бота')
     text_help_authorized = TextAreaField('Сообщение-help для членов сообщества')
     text_help_guests = TextAreaField('Сообщение-help для гостей сообщества')
     text_help_unauthorized = TextAreaField('Сообщение-help для внешних пользователей')
     text_after_messages = TextAreaField('Прибаутка в собщениях бота')
 
     # wachter settings
+    sep__wachter = SeparatorField('Приветствие в общем чате')
     add_chat_members_to_community = SelectField(
         'До какого статуса поднимать участников чата',
         choices=MEMBERSHIP_STATUSES
@@ -92,15 +95,22 @@ class SpaceSettingsForm(FlaskForm):
         'Через сколько минут удалять из чата не представившихся участников (0 - не удалять)',
     )
 
+    sep__features = SeparatorField('Базовые функции')
     feature_coffee_on = BooleanField('Включить функцию Random Coffee')
     feature_peoplebook_on = BooleanField('Включить функцию Peoplebook')
     feature_events_on = BooleanField('Включить функцию Мероприятия')
 
+    sep__website = SeparatorField('Отображение сайта')
+    peoplebook_is_public = BooleanField(
+        'Пиплбук публично доступен',
+        description='Если поставить эту галочку, пиплбук сможет увидеть любой пользователь.'
+    )
     web_show_pb_club = BooleanField('Отображать ссылку на пиплбук Клуба (привилегированных членов)')
     web_show_pb_community = BooleanField('Отображать ссылку на пиплбук Сообщества (всех членов)')
     web_show_pb_event = BooleanField('Отображать ссылку на пиплбук ближайшего события')
     web_show_pb_all = BooleanField('Отображать ссылку на пиплбук вообще всех: членов, гостей, и бывших членов')
 
+    sep__access_levels = SeparatorField('Уровни доступа')
     who_can_create_events = SelectField(
         'Кто может создавать мероприятия',
         choices=MEMBERSHIP_STATUSES_ALL,
@@ -117,6 +127,7 @@ class SpaceSettingsForm(FlaskForm):
         description='Каждый уровень включает все последующие',
     )
 
+    sep__finish = SeparatorField('')
     submit = SubmitField('Обновить данные')
 
 

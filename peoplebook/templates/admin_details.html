@@ -22,7 +22,17 @@
         <form action="" method="post" novalidate>
             {{ form.hidden_tag() }}
             {% for field in form %}
-                {% if field.type != "CSRFTokenField" and field.type != "SubmitField" %}
+                {% if field.type == "SeparatorField" %}
+                    <hr>
+                    <div>
+                        {% if field.label %}
+                            <h2><b>{{ field.label }}</b></h2><br>
+                        {% endif %}
+                        {% if field.description %}
+                            <small>{{ field.description }}</small><br>
+                        {% endif %}
+                    </div>
+                {% elif field.type != "CSRFTokenField" and field.type != "SubmitField" %}
                     <div>
                         {{ field.label }}<br>
                         {% if field.description %}
@@ -32,7 +42,7 @@
                     </div>
                 {% endif %}
             {% endfor %}
-            <p>{{ form.submit() }}</p>
+            <p>{{ form.submit() }}</p><br>
         </form>
     </div>
 </section>
