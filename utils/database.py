@@ -109,12 +109,24 @@ class Database:
         user_status = self.get_top_status(user_object)
         return MS.is_at_least(user_status=user_status, level=level)
 
-    def username_is_admin(self, username, space_name):
+    def username_is_admin(self, username, space_name, uid=None):
         if space_name not in self._cached_spaces:
             return False
         space = self._cached_spaces[space_name]
         if username in space.admins:
             return True
+
+        # now try user_id
+        if uid is None and username.isdigit():
+            uid, username = int(username), None
+
+        if uid:
+            if uid == space.owner_uid:
+                return True
+            if not username:
+                user_object = self.find_user(space_name=space_name, username=None, tg_id=uid)
+                if user_object and user_object.get('username') in space.admins:
+                    return True
         return False
 
     def get_top_status(self, user_object):

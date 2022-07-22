@@ -114,7 +114,27 @@
                     <a class="navbar-item is-right" href="/{{ space_cfg.key }}/me" >
                       <p>Мой профиль</p>
                     </a>
-                    {% if space_cfg.database and space_cfg.database.username_is_admin(user.username, space_cfg.key) %}
+
+                    {% if spaces_to_names and spaces_to_names | length > 0 %}
+                        <div class="navbar-item has-dropdown is-hoverable">
+                            <a class="navbar-link">
+                              Сообщества
+                            </a>
+                            <div class="navbar-dropdown">
+                                {% for space_name in spaces_to_names %}
+                                  <a class="navbar-item" href="/{{ space_name }}">
+                                    {{ spaces_to_names[space_name] }}
+                                  </a>
+                                {% endfor %}
+                              <hr class="navbar-divider">
+                              <a class="navbar-item" href="/about">
+                                Создать своё
+                              </a>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {% if database and database.username_is_admin(user.id, space_cfg.key) %}
                         <a class="navbar-item is-right" href="/admin/{{ space_cfg.key }}/details" >
                           <p>Админка</p>
                         </a>

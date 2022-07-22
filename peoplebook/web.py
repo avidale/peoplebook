@@ -1,63 +1,23 @@
-from typing import Tuple, List, Optional
-
 import pymongo
 from peoplebook.models import User
 
 import logging
 import config as cfg
 
-from flask import render_template, abort, request, redirect, url_for, current_app
+from flask import render_template, abort, request, redirect, url_for
 from flask_login import login_required, login_user, logout_user, current_user
 
-from peoplebook.web_flask import app, get_users, get_profiles_for_event, get_current_username
+from peoplebook.web_flask import app, get_users, get_profiles_for_event, get_current_username, check_space, get_default_space
 from peoplebook.web_flask import mongo_events, mongo_participations, mongo_membership, mongo_peoplebook, mongo_db
 from peoplebook.web_flask import DATABASE
 from peoplebook.web_flask import history_configs
 
 
-from utils.database import Database
-from utils.spaces import get_space_config, SpaceConfig
+from utils.spaces import get_space_config
 
 logger = logging.getLogger(__name__)
 
 SPACE_NOT_FOUND = 'Сообщество не найдено', 404
-
-
-def check_space(space_name):
-    """ Check whether the current user is a member of the space """
-    db: Database = current_app.database
-    username = get_current_username()
-    if not username:
-        return False
-    uo = {'username': username, 'tg_id': int(current_user.id), 'space': space_name}
-    if not db.is_at_least_guest(uo):
-        logger.info(f'Rejecting the user {current_user.__dict__} '
-                    f'with id {current_user.id} and name {username} '
-                    f'from space {space_name}')
-        return False
-    return True
-
-
-def get_default_space() -> Tuple[Optional[SpaceConfig], List[SpaceConfig]]:
-    """ Return the single default space, and the list of all spaces """
-    db: Database = current_app.database
-    username = get_current_username()
-    default_space = None
-    member_spaces = []
-    all_spaces = []
-    if not username:
-        return default_space, all_spaces
-    for space_name, space_config in db.all_spaces.items():
-        uo = {'username': username, 'tg_id': int(current_user.id), 'space': space_name}
-        if db.is_at_least_guest(uo):
-            all_spaces.append(space_config)
-        if db.is_at_least_member(uo):
-            member_spaces.append(space_config)
-    if len(member_spaces) == 1:
-        default_space = member_spaces[0]
-    elif len(all_spaces) == 1:
-        default_space = all_spaces[0]
-    return default_space, all_spaces
 
 
 @app.route('/about')

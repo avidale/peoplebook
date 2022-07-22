@@ -1,4 +1,7 @@
+import logging
 import os
+from typing import Tuple, Optional, List
+
 import pymongo
 import random
 from autolink import linkify
@@ -7,16 +10,19 @@ from config import DEFAULT_SPACE
 from peoplebook.models import User
 import hashlib
 
-from flask import Flask
+from flask import Flask, current_app
 from flask_login import LoginManager, current_user
 
 from flask_wtf import CSRFProtect
 
+from utils.database import Database
 from utils.global_database import DATABASE, MONGO_URL
-
+from utils.spaces import SpaceConfig
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('APP_KEY')
+
+logger = logging.getLogger(__name__)
 
 # csrf for forms
 csrfp = CSRFProtect()
@@ -101,6 +107,43 @@ def get_profiles_for_event(event_code, space_id):
     return profiles
 
 
+def check_space(space_name):
+    """ Check whether the current user is a member of the space """
+    db: Database = current_app.database
+    username = get_current_username()
+    if not username:
+        return False
+    uo = {'username': username, 'tg_id': int(current_user.id), 'space': space_name}
+    if not db.is_at_least_guest(uo):
+        logger.info(f'Rejecting the user {current_user.__dict__} '
+                    f'with id {current_user.id} and name {username} '
+                    f'from space {space_name}')
+        return False
+    return True
+
+
+def get_default_space() -> Tuple[Optional[SpaceConfig], List[SpaceConfig]]:
+    """ Return the single default space, and the list of all spaces """
+    db: Database = current_app.database
+    username = get_current_username()
+    default_space = None
+    member_spaces = []
+    all_spaces = []
+    if not username:
+        return default_space, all_spaces
+    for space_name, space_config in db.all_spaces.items():
+        uo = {'username': username, 'tg_id': int(current_user.id), 'space': space_name}
+        if db.is_at_least_guest(uo):
+            all_spaces.append(space_config)
+        if db.is_at_least_member(uo):
+            member_spaces.append(space_config)
+    if len(member_spaces) == 1:
+        default_space = member_spaces[0]
+    elif len(all_spaces) == 1:
+        default_space = all_spaces[0]
+    return default_space, all_spaces
+
+
 @app.template_filter('linkify_filter')
 def linkify_filter(s):
     return linkify(s)
@@ -118,6 +161,15 @@ def add_nonempty_text():
             return False
         return len(text) >= min_len
     return dict(is_nonempty_text=is_nonempty_text)
+
+
+@app.context_processor
+def add_database_context():
+    default_space, user_spaces = get_default_space()
+    return dict(
+        database=current_app.database,
+        spaces_to_names={s.key: s.title for s in user_spaces},
+    )
 
 
 @app.template_filter('preprocess_profiles')

@@ -8,5 +8,13 @@
           <p>Настройки отдельных чатов</p>
         </a>
       </div>
+      <div class="navbar-end">
+          <a class="navbar-item is-right" href="/{{space.key}}">
+              <p>К сообществу</p>
+          </a>
+          <a class="navbar-item is-right" href="{{ url_for('logout') }}" >
+              <p>Выйти</p>
+          </a>
+      </div>
     </nav>
 {% endmacro %}
