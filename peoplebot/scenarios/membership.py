@@ -3,7 +3,7 @@ import logging
 import pandas as pd
 import re
 
-from config import DEFAULT_SPACE
+from config import DEFAULT_SPACE, DEMIURGE
 from peoplebot.scenarios.suggests import make_standard_suggests
 from utils import matchers
 
@@ -252,7 +252,7 @@ def try_add_new_member_to_open_community(ctx: Context, database: Database):
     ctx.response = 'Вы успешно добавились в сообщество! ' \
                    '\nЕсли у вас есть какие-то вопросы по существу, ' \
                    'задавайте их человеку, который поделился с вами данным ботом. ' \
-                   '\nС техническими вопросами по работе бота можно обращаться к @cointegrated.\n\n'
+                   f'\nС техническими вопросами по работе бота можно обращаться к @{DEMIURGE}.\n\n'
     ctx.response += ctx.space.get_text_help_authorized(user_object=ctx.user_object)
     ctx.suggests.extend(make_standard_suggests(database=database, user_object=ctx.user_object))
 

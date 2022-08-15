@@ -1,6 +1,6 @@
 from typing import Optional
 
-from config import DEFAULT_SPACE
+from config import DEFAULT_SPACE, DEMIURGE
 from peoplebot.scenarios.peoplebook_auth import make_pb_url
 
 
@@ -65,7 +65,7 @@ class SpaceConfig:
             member_chat_id=None,
             guest_chat_id=None,
             owner_uid=None,
-            owner_username='cointegrated',
+            owner_username=DEMIURGE,
             admins=None,
             text_help_authorized=None,  # todo: default one
             text_help_guests=None,  # todo: default one

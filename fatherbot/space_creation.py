@@ -3,6 +3,7 @@ import re
 import sentry_sdk
 import telebot
 
+from config import DEMIURGE
 from utils.database import Database
 from utils.dialogue_management import Context
 
@@ -41,7 +42,9 @@ def space_creation(ctx: Context, database: Database):
     space_to_create = ctx.user_object.get('space_to_create') or {}
     if not ctx.user_object.get('username'):
         ctx.intent = 'has_no_username'
-        ctx.response = 'Чтобы общаться со мной, пожалуйста, создайте себе юзернейм.'
+        ctx.response = 'Чтобы начать общаться со мной, пожалуйста, создайте себе юзернейм в Телеграме ' \
+                       '(Settings / Edit profile / Username, или нечто подобное).\n\n' \
+                       'Иметь username необходимо всем админам сообщества (и обычным пользователям тоже желательно).'
     elif ctx.text_normalized == CREATE_A_SPACE.lower():
         ctx.intent = 'create_a_space'
         ctx.response = 'Отлично! Начинаем добавление, это займёт три шага. ' \
@@ -103,8 +106,8 @@ def space_creation(ctx: Context, database: Database):
                 ctx.the_update = {'$set': {'space_to_create': space_to_create}}
             except Exception as e:
                 sentry_sdk.capture_exception(e)
-                ctx.response = 'Что-то пошло не так при добавлении сообщества, простите. ' \
-                               'Пожалуйста, обратитесь к админу - @cointegrated.'
+                ctx.response = f'Что-то пошло не так при добавлении сообщества, простите. ' \
+                               f'Пожалуйста, обратитесь к админу - @{DEMIURGE}.'
                 ctx.suggests.append('Назад')
     elif ctx.last_expected_intent == INTENT_SET_BOT_TOKEN:
         ctx.intent = INTENT_SET_BOT_TOKEN
@@ -138,7 +141,9 @@ def space_creation(ctx: Context, database: Database):
                        '\n - Добавить через бота членов в сообщество;' \
                        '\n - Заполнить через бота свою страничку в пиплбуке;' \
                        '\n - Пройти по ссылке выше и заполнить настройки сообщества;' \
-                       '\n\nЕсли что-то будет непонятно, пишите @cointegrated.'
+                       '\n\nОтветы на некоторые вопросы по администрированию сообщества есть в документе: ' \
+                       'https://docs.google.com/document/d/1Cly1nDVhRGeUOei-zdr4oGqKK5je9E-hTvhDq5jMkp4' \
+                       f'\n\nЕсли что-то будет непонятно, пишите @{DEMIURGE}.'
         # todo: add a scenario of filling the peoplebook
         # todo: add a scenario of adding members
         # todo: add a scenario of creating events
