@@ -352,6 +352,7 @@ def add_invitation_to_a_user(
     """ Add an invitation to mongo_participations and try sending the invitation
     resulting status is: one of
     - 'не удалось идентифицировать пользователя' (нет логина или айди)
+    - запрещено, т.к. пользователь не является членом сообщества
     - 'приглашение уже было сделано'
     - 'нет в боте' (приглашение создано, но не отправлено, т.к. юзера пока нет в боте)
     - 'не получилось' (приглашение создано, но не отправлено по какой-то другой причине)
@@ -367,6 +368,13 @@ def add_invitation_to_a_user(
         user_account = database.mongo_users.find_one({'tg_id': tg_id, 'space': space.key})
     if user_account and user_account.get('tg_id') and not tg_id:
         tg_id = user_account.get('tg_id')
+
+    # check whether external guests can be invited at all
+    if not space.can_external_guests_be_invited:
+        if not user_account or not database.is_at_least_friend(user_account):
+            status = 'приглашение запрещено (т.к. пользователь не является членом сообщества, ' \
+                     'и в вашем сообществе не разрешено приглашать гостей извне)'
+            return status
 
     existing_membership = database.find_membership(username=username, tg_id=tg_id, space_name=space.key)
     if existing_membership is None:

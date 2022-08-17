@@ -121,6 +121,9 @@ class SpaceSettingsForm(FlaskForm):
         choices=MEMBERSHIP_STATUSES_ALL,
         description='Каждый уровень включает все последующие',
     )
+    can_external_guests_be_invited = BooleanField(
+        'Можно ли приглашать на мероприятия гостей извне сообщества',
+    )
     who_can_use_random_coffee = SelectField(
         'Кто может участвовать в Random Coffee',
         choices=MEMBERSHIP_STATUSES_ALL,
