@@ -9,7 +9,8 @@ from flask_login import login_required, login_user, logout_user, current_user
 
 from peoplebook.web_flask import app, get_users, get_profiles_for_event, get_current_username, check_space, \
     get_default_space
-from peoplebook.web_flask import mongo_events, mongo_participations, mongo_membership, mongo_peoplebook, mongo_db
+from peoplebook.web_flask import mongo_events, mongo_participations, mongo_membership, mongo_peoplebook, mongo_db, \
+    mongo_peoplebook_users
 from peoplebook.web_flask import DATABASE
 from peoplebook.web_flask import history_configs
 
@@ -124,7 +125,7 @@ def peoplebook_for_all_members(space=cfg.DEFAULT_SPACE):
     if not check_space(space):
         return SPACE_NOT_FOUND
     space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
-    raw_profiles = list(mongo_membership.aggregate([
+    raw_profiles = list(mongo_peoplebook_users.aggregate([
         {
             '$lookup': {
                 'from': 'peoplebook',
@@ -133,12 +134,12 @@ def peoplebook_for_all_members(space=cfg.DEFAULT_SPACE):
                 'as': 'profiles'
             }
         }, {
-            '$match': {'is_member': True, 'space': space_cfg.key}
+            '$match': {'space': space_cfg.key}
         }
     ]))
     profiles = [
         p for rp in raw_profiles for p in rp.get('profiles', [])
-        if p.get('space') == space_cfg.key and rp.get('tg_id')
+        if DATABASE.is_at_least_member(rp) and p.get('space') == space_cfg.key and rp.get('tg_id')
     ]
     return render_template(
         'backend_peoplebook.html',
@@ -157,7 +158,7 @@ def peoplebook_for_community(space=cfg.DEFAULT_SPACE):
     if not check_space(space):
         return SPACE_NOT_FOUND
     space_cfg = get_space_config(mongo_db=mongo_db, space_name=space)
-    raw_profiles = list(mongo_membership.aggregate([
+    raw_profiles = list(mongo_peoplebook_users.aggregate([
         {
             '$lookup': {
                 'from': 'peoplebook',
@@ -171,7 +172,8 @@ def peoplebook_for_community(space=cfg.DEFAULT_SPACE):
     ]))
     profiles = [
         p for rp in raw_profiles for p in rp.get('profiles', [])
-        if p.get('space') == space_cfg.key and rp.get('tg_id') and (rp.get('is_member') or rp.get('is_friend'))
+        # if p.get('space') == space_cfg.key and rp.get('tg_id') and (rp.get('is_member') or rp.get('is_friend'))
+        if DATABASE.is_at_least_friend(rp) and p.get('space') == space
     ]
     return render_template(
         'backend_peoplebook.html',
@@ -196,7 +198,7 @@ def peoplebook_for_all_members_and_guests(space=cfg.DEFAULT_SPACE):
     if not current_user.is_authenticated and not space_cfg.peoplebook_is_public:
         return redirect(url_for('login', next=request.path))
     if space == cfg.DEFAULT_SPACE:
-        raw_profiles = list(mongo_membership.aggregate([
+        raw_profiles = list(mongo_peoplebook_users.aggregate([
             {
                 '$lookup': {
                     'from': 'peoplebook',
