@@ -91,17 +91,14 @@ def space_creation(ctx: Context, database: Database):
             space_to_create['key'] = key
             try:
                 # test that the space can be created
-                new_space = SpaceConfig.from_record(space_to_create, db=database)
                 database.mongo_spaces.insert_one(space_to_create)
-                url = '/admin/{}/details'.format(new_space.key)
-                url = make_pb_url(url, user_tg_id=ctx.user_object['tg_id'])
                 ctx.response = 'Сообщество успешно добавлено!' \
-                               '\nНастроить его вы можете <a href="{}">по этой ссылке</a>.' \
+                               '\nНастроить его вы можете по ссылке, которую я пришлю через пару сообщений.' \
                                '\nОстался последний и самый сложный шаг. ' \
                                'Вы должны написать боту @BotFather и создать через него нового бота ' \
                                '- админа для вашего сообщества, придумав ему имя и юзернейм.' \
                                '\nПосле этого пришлите мне токен, который даст вам BotFather.' \
-                               '\nТокен выглядит примерно как 1234567890:ABcDefGHIjKLmnopQRStuvWxYZ'.format(url)
+                               '\nТокен выглядит примерно как 1234567890:ABcDefGHI-jKLmnopQRStuvWxYZ'
                 ctx.expected_intent = INTENT_SET_BOT_TOKEN
                 ctx.the_update = {'$set': {'space_to_create': space_to_create}}
             except Exception as e:
@@ -112,13 +109,20 @@ def space_creation(ctx: Context, database: Database):
     elif ctx.last_expected_intent == INTENT_SET_BOT_TOKEN:
         ctx.intent = INTENT_SET_BOT_TOKEN
         token = ctx.text
+        if not isinstance(token, str) or not re.match('\\d+:[a-zA-Z]+-[a-zA-Z]+', token):
+            ctx.expected_intent = INTENT_SET_BOT_TOKEN
+            ctx.response = 'Кажется, то, что вы ввели - это не токен. ' \
+                           'У токена формат примерно такой: 1234567890:ABcDefGHI-jKLmnopQRStuvWxYZ. ' \
+                           '\nПожалуйста, попробуйте ввести токен еще раз.' \
+                           '\nЕсли вы запутались, напишите @сointegrated.'
+            return ctx
         try:
             bot = telebot.TeleBot(token)
             un = bot.get_me().username
         except Exception as e:
             sentry_sdk.capture_exception(e)
             ctx.response = 'Простите, что-то пошло не так. Попробуйте ввести токен ещё раз. ' \
-                           '\nЕсли ошибка повторится, пожалуйста, напишите @ointegrated.'
+                           '\nЕсли ошибка повторится, пожалуйста, напишите @сointegrated.'
             ctx.expected_intent = INTENT_SET_BOT_TOKEN
             return ctx
         key = space_to_create.get('key')
@@ -130,8 +134,12 @@ def space_creation(ctx: Context, database: Database):
         MULTIVERSE.init_spaces()
         MULTIVERSE.create_bots()
         MULTIVERSE.set_web_hooks()
+        url = '/admin/{}/details'.format(key)
+        url = make_pb_url(url, user_tg_id=ctx.user_object['tg_id'])
         ctx.response = 'Всё готово! ' \
                        f'Теперь переходите к созданному вами боту @{un} и начинайте управлять вашим сообществом.' \
+                       f'Для некоторых настроек сообщества (вид сообщений, приватность, и т.п.) ' \
+                       f'нужно будет пройти <a href="{url}">по этой ссылке</a>.' \
                        '\n\nЧто вы можете сделать:' \
                        '\n - Написать боту, чтобы понять, как он работает;' \
                        '\n - Добавить бота в группу в Telegram. ' \
