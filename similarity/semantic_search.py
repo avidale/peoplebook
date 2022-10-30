@@ -40,7 +40,9 @@ def extract_all_chunks(df):
     for i, row in tqdm(df.iterrows()):
         row = row.fillna('')
         texts = basic_nlu.split(
-            f'{row.activity}\n{row.topics}\n{row.first_name} {row.last_name}'
+            f'{row.get("activity", "")}'
+            f'\n{row.get("topics", "")}'
+            f'\n{row.get("first_name", "")} {row.get("last_name", "")}'
         )
         for text in texts:
             normalized = basic_nlu.fast_normalize(text, lemmatize=True, filter_pos=True)
