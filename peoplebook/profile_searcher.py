@@ -43,10 +43,11 @@ class ProfileSearcher:
         t = time.time()
         print('start getting searcher data')
         df = pd.DataFrame(records)
-        if 'topics' in df.columns:
-            df.topics.fillna('', inplace=True)
-        if 'activity' in df.columns:
-            df.activity.fillna('', inplace=True)
+        for c in ['first_name', 'last_name', 'activity', 'topics', 'fulltext', 'username']:
+            if c not in df.columns:
+                df[c] = ''
+        df.topics.fillna('', inplace=True)
+        df.activity.fillna('', inplace=True)
         self.df = df
 
         parts, owners, normals = extract_all_chunks(df)

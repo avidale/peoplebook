@@ -1,4 +1,5 @@
 import logging
+import time
 
 import sentry_sdk
 import telebot
@@ -6,7 +7,7 @@ import telebot
 from flask import Blueprint, request
 from typing import Dict
 
-from config import ADMIN_UID
+from config import ADMIN_UID, BATCH_MESSAGE_TIMEOUT
 from utils.database import Database
 from utils.messaging import BaseSender, TelegramSender
 from utils.spaces import SpaceConfig
@@ -112,6 +113,7 @@ class Multiverse:
                 # bot.send_message(chat_id=ADMIN_UID, text=f'Меня передеплоили!\n{result}')
                 un = bot.get_me().username
                 logger.info(f'Created a webhook for bot {un} for space {space_name} at {url} with result {result}')
+                time.sleep(BATCH_MESSAGE_TIMEOUT)
             except Exception as e:
                 sentry_sdk.capture_exception(e)
                 continue
