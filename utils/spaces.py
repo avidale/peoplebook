@@ -91,6 +91,7 @@ class SpaceConfig:
             who_can_create_events='admin',
             who_can_add_invite_to_events='member',
             can_external_guests_be_invited=True,
+            can_invite_themselves_to_event=True,
             who_can_use_random_coffee='guest',
 
             db=None,  # a global database object
@@ -140,6 +141,7 @@ class SpaceConfig:
         self.who_can_create_events = who_can_create_events
         self.who_can_add_invite_to_events = who_can_add_invite_to_events
         self.can_external_guests_be_invited = can_external_guests_be_invited
+        self.can_invite_themselves_to_event = can_invite_themselves_to_event
         self.who_can_use_random_coffee = who_can_use_random_coffee
 
         self.other_data = other_data

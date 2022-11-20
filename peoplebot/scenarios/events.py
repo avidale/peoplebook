@@ -226,12 +226,19 @@ def try_event_usage(ctx: Context, database: Database):
     elif event_code is not None and (
             ctx.text == '/engage' or re.match('^(участвовать|принять участие)( в этой встрече)?$', ctx.text_normalized)
     ):
-        ctx.intent = 'EVENT_ENGAGE'
-        database.mongo_participations.update_one(
-            event_user_filter,
-            {'$set': {'status': InvitationStatuses.ACCEPT}}, upsert=True
-        )
-        ctx.response = 'Теперь вы участвуете в мероприятии {}!'.format(event_code)
+        if ctx.space.can_invite_themselves_to_event \
+                or database.is_admin(ctx.user_object) \
+                or database.mongo_participations.find_one(event_user_filter) is not None:
+            ctx.intent = 'EVENT_ENGAGE'
+            database.mongo_participations.update_one(
+                event_user_filter,
+                {'$set': {'status': InvitationStatuses.ACCEPT}}, upsert=True
+            )
+            ctx.response = 'Теперь вы участвуете в мероприятии {}!'.format(event_code)
+        else:
+            ctx.intent = 'EVENT_ENGAGE_FORBIDDEN'
+            ctx.response = 'Вы не можете сами добавлять себя в мероприятия. ' \
+                           'Пожалуйста, попросите админов пригласить вас.'
     elif event_code is not None and (
             ctx.text == '/unengage' or re.match('^(не участвовать|покинуть встречу)$', ctx.text_normalized)
     ):

@@ -124,6 +124,9 @@ class SpaceSettingsForm(FlaskForm):
     can_external_guests_be_invited = BooleanField(
         'Можно ли приглашать на мероприятия гостей извне сообщества',
     )
+    can_invite_themselves_to_event = BooleanField(
+        'Могут ли не-админы сами добавлять себя на мероприятия (без приглашения)',
+    )
     who_can_use_random_coffee = SelectField(
         'Кто может участвовать в Random Coffee',
         choices=MEMBERSHIP_STATUSES_ALL,
