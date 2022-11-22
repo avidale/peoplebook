@@ -30,4 +30,3 @@ razdel
 scipy
 requests
 apscheduler
-

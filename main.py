@@ -56,6 +56,7 @@ def run_bot_and_book():
             scheduler = BackgroundScheduler()
             scheduler.add_job(do_wakeup, 'cron', hour=17, minute=00)  # I hope this is UTC
             scheduler.add_job(do_frequent_wakeup, 'interval', minutes=10)
+            scheduler.start()
 
         if not args.nosearch:
             ft = load_ft()
