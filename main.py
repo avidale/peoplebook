@@ -3,6 +3,10 @@ import logging
 import os
 import sentry_sdk
 
+from apscheduler.schedulers.background import BackgroundScheduler
+from frequent_wakeup import do_frequent_wakeup
+from wakeup import do_wakeup
+
 if os.environ.get('SENTRY_DSN'):
     sentry_sdk.init(os.environ['SENTRY_DSN'])
 
@@ -48,6 +52,11 @@ def run_bot_and_book():
             MULTIVERSE.set_web_hooks()
             app.register_blueprint(MULTIVERSE.app)
             set_father_webhook(BASE_URL)
+
+            scheduler = BackgroundScheduler()
+            scheduler.add_job(do_wakeup, 'cron', hour=17, minute=00)  # I hope this is UTC
+            scheduler.add_job(do_frequent_wakeup, 'interval', minutes=10)
+
         if not args.nosearch:
             ft = load_ft()
             searchers = {
