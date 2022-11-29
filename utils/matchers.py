@@ -43,8 +43,15 @@ def normalize_username(username):
     if not isinstance(username, str):
         return username
     if username is not None:
-        return username.lower().strip().strip('@')
+        username = username.lower().strip().strip('@')
+        for prefix in ['https://t.me/', 't.me/']:
+            if username.startswith(prefix):
+                username = username[len(prefix):]
+        return username
     return None
+
+
+assert normalize_username(' https://t.me/KOTIK   ') == 'kotik'
 
 
 def is_obscene(text):
