@@ -79,6 +79,8 @@ class ProfileSearcher:
         self.dissimilar_pairs = similarity_tools.assign_pairs(self.sims, n_pairs=20)
 
     def lookup(self, req_text, unicalize=True):
+        if not self.fitted:
+            return []
         smart_results = self.searcher.lookup(req_text)
         simple_results = self.simple_searcher.lookup(req_text, normalize_scores=False)
 
