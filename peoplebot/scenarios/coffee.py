@@ -136,7 +136,7 @@ def remind_about_coffee(
 
     response = None
     intent = None
-    if first_day_condition:
+    if first_day_condition:  # saturday
         response = 'На этой неделе вы пьёте кофе {}. {}'.format(with_whom, space.text_after_messages)
         intent = INTENT_COFFEE_PUSH_FIRST
     elif datetime.today().weekday() == 4:  # friday
