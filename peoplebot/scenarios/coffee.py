@@ -120,7 +120,7 @@ def remind_about_coffee(
 
     first_day_condition = force_restart or datetime.today().weekday() == 5   # saturday
 
-    if len(match_texts) == 0:  # no match was found
+    if len(match_texts) == 0:  # found no matches
         if first_day_condition:
             response = "Привет! К сожалению, на этой неделе для вас не нашлось собеседника random coffee." \
                        "\nПопробуйте обратиться в сообщество и привлечь больше участников в эту игру."
