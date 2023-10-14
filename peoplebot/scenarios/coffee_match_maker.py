@@ -13,6 +13,9 @@ def days_since(x):
 
 
 def generate_pairs(users, shuffle=True):
+    # from a list of users, create pairs by joining each i*2 with each i*2+1'th.
+    # if there is an odd number of users (but more than 1!),
+    # the first user is additionally paired with the last one
     free_users = [u for u in users]
     if shuffle:
         random.shuffle(free_users)
@@ -20,7 +23,7 @@ def generate_pairs(users, shuffle=True):
     for i in range(0, len(free_users)-1, 2):
         user_to_matches[free_users[i]] = [free_users[i + 1]]
         user_to_matches[free_users[i + 1]] = [free_users[i]]
-    if len(free_users) % 2 == 1:
+    if len(free_users) % 2 == 1 and len(free_users) > 1:
         user_to_matches[free_users[0]].append(free_users[-1])
         user_to_matches[free_users[-1]].append(free_users[0])
     return user_to_matches

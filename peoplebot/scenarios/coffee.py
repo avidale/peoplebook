@@ -20,6 +20,7 @@ TAKE_PART = 'Участвовать в следующем кофе'
 NOT_TAKE_PART = 'Не участвовать в следующем кофе'
 
 
+INTENT_COFFEE_PUSH_ALONE = 'coffee_push_alone'
 INTENT_COFFEE_PUSH_FIRST = 'coffee_push_first'
 INTENT_COFFEE_PUSH_REMIND = 'coffee_push_remind'
 INTENT_COFFEE_PUSH_FEEDBACK = 'coffee_push_feedback'
@@ -65,6 +66,7 @@ def daily_random_coffee(database: Database, sender: BaseSender, space: SpaceConf
     if force_restart or datetime.today().weekday() == 5:  # on saturday, we recalculate the matches
         now = datetime.utcnow()
         user_to_matches = generate_good_pairs(database, space=space, now=now)
+        # in case of a single active user, "user_to_matches" is expected to be empty
         database.mongo_coffee_pairs.insert_one(
             {'date': str(now), 'matches': user_to_matches, 'space': space.key}
         )
@@ -102,6 +104,8 @@ def daily_random_coffee(database: Database, sender: BaseSender, space: SpaceConf
 def remind_about_coffee(
         user_obj, matches, database: Database, sender: BaseSender, space: SpaceConfig, force_restart=False
 ):
+    # avoiding circular imports
+    from peoplebot.scenarios.suggests import make_standard_suggests
     user_id = user_obj['tg_id']
     match_texts = []
     for m in matches:
@@ -114,13 +118,25 @@ def remind_about_coffee(
         else:
             match_texts.append('@{}'.format(m))
 
+    first_day_condition = force_restart or datetime.today().weekday() == 5   # saturday
+
+    if len(match_texts) == 0:  # no match was found
+        if first_day_condition:
+            response = "Привет! К сожалению, на этой неделе для вас не нашлось собеседника random coffee." \
+                       "\nПопробуйте обратиться в сообщество и привлечь больше участников в эту игру."
+            intent = INTENT_COFFEE_PUSH_ALONE
+            suggests = make_standard_suggests(database=database, user_object=user_obj)
+            sender(user_id=user_id, text=response, database=database, suggests=suggests,
+                   reset_intent=True, intent=intent)
+        return
+
     with_whom = 'с {}'.format(match_texts[0])
     for next_match in match_texts[1:]:
         with_whom = with_whom + ' и c {}'.format(next_match)
 
     response = None
     intent = None
-    if force_restart or datetime.today().weekday() == 5:  # saturday
+    if first_day_condition:
         response = 'На этой неделе вы пьёте кофе {}. {}'.format(with_whom, space.text_after_messages)
         intent = INTENT_COFFEE_PUSH_FIRST
     elif datetime.today().weekday() == 4:  # friday
@@ -131,6 +147,7 @@ def remind_about_coffee(
         response = 'Напоминаю, что на этой неделе вы пьёте кофе {}.\n'.format(with_whom) + \
             '\nНадеюсь, вы уже договорились о встрече?	\U0001f609'
         intent = INTENT_COFFEE_PUSH_REMIND
+
     if response is not None:
         user_in_pb = database.find_peoplebook_profile(
             space_name=space.key,
@@ -142,8 +159,6 @@ def remind_about_coffee(
                                   'с пиплбуком даже незнакомому собеседнику проще будет начать с вами общение.' \
                                   '\nПожалуйста, когда будет время, напишите мне "мой пиплбук" ' \
                                   'и заполните свою страничку.{}'.format(space.text_after_messages)
-        # avoiding circular imports
-        from peoplebot.scenarios.suggests import make_standard_suggests
         suggests = make_standard_suggests(database=database, user_object=user_obj)
         sender(user_id=user_id, text=response, database=database, suggests=suggests,
                reset_intent=True, intent=intent)
