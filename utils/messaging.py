@@ -10,6 +10,8 @@ from utils.database import LoggedMessage
 MAX_LEN = 4000
 MESSAGE_SEPARATOR = '<NEW_MESSAGE>'
 
+POSTSCRIPTUM = f"""\n\n[Объявление! Бот и пиплбук будут работать до конца декабря 2025, а потом будут перманентно отключены. Все вопросы к @cointegrated.]"""
+
 
 def split_message(text, max_len=MAX_LEN, sep=MESSAGE_SEPARATOR):
     chunks = text.split(sep)
@@ -76,6 +78,9 @@ class TelegramSender(BaseSender):
             file_to_send=None,
             reset_intent=False,
     ):
+        if text is not None and POSTSCRIPTUM is not None:
+            text = f"{text}{POSTSCRIPTUM}"
+
         try:
             markup = render_markup(make_unique(suggests))
             if user_id is not None:
