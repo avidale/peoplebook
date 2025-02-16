@@ -1,4 +1,3 @@
-from peoplebot.new_main import MULTIVERSE
 from utils.database import Database
 from utils.dialogue_management import Context
 from config import DEMIURGE
@@ -11,6 +10,7 @@ def superpush_message_handler(ctx: Context, database: Database):
     if ctx.text.startswith(SUPERPUSH_COMMAND):
         ctx.intent = 'SUPERPUSH'
         if DEMIURGE is not None and ctx.username == DEMIURGE:
+            from peoplebot.new_main import MULTIVERSE
             to_send = ctx.text[len(SUPERPUSH_COMMAND) + 1:]
             if len(to_send) >= 5:
                 warning = 'Ваше сообщение поставлено в очередь на отправку ВСЕМ пользователям. Надеюсь, вы этого хотели!'
