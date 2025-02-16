@@ -18,6 +18,7 @@ from peoplebot.scenarios.peoplebook import try_peoplebook_management
 from peoplebot.scenarios.wachter import do_wachter_check, kick_all_space
 from peoplebot.scenarios.conversation import try_conversation, fallback
 from peoplebot.scenarios.dog_mode import doggy_style
+from peoplebot.scenarios.admin import superpush_message_handler
 from peoplebot.scenarios.push import try_queued_messages
 from peoplebot.scenarios.membership import try_membership_management, try_add_new_member_to_open_community
 from peoplebot.scenarios.coffee import try_coffee_management, try_coffee_feedback_collection
@@ -145,6 +146,7 @@ def respond(message: Message, database: Database, sender: BaseSender, space_cfg:
         try_coffee_feedback_collection,
         doggy_style,
         try_add_new_member_to_open_community,
+        superpush_message_handler,
         fallback,
     ]:
         ctx = handler(ctx, database=database)
