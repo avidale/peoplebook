@@ -24,15 +24,28 @@ SPACE_NOT_FOUND = 'Сообщество не найдено', 404
 
 @app.route('/about')
 def about_peoplebook():
+    print("entering the about handler")
     return render_template('about.html')
 
 
-@app.route('/')  # todo: stop serving the links without space
+@app.route('/sunset')
+def about_sunset():
+    return render_template('sunset.html', show_warning=False)
+
+
+@app.route('/')
 @app.route('/<space>')
 @app.route('/<space>/')
 @app.route('/', subdomain='<space>')
-@login_required
 def home(space=None):
+    """ Home page, and some space pages as well (they can serve as the home). """
+
+    if not current_user.is_authenticated:
+        if space is None:
+            return redirect(url_for('about_peoplebook'))
+        else:
+            return redirect(url_for('login'))
+
     if space is None:
         default_space, user_spaces = get_default_space()
         if default_space:

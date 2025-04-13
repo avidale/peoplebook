@@ -13,14 +13,16 @@ def superpush_message_handler(ctx: Context, database: Database):
             from peoplebot.new_main import MULTIVERSE
             to_send = ctx.text[len(SUPERPUSH_COMMAND) + 1:]
             if len(to_send) >= 5:
-                warning = 'Ваше сообщение поставлено в очередь на отправку ВСЕМ пользователям. Надеюсь, вы этого хотели!'
+                warning = 'Ваше сообщение поставлено в очередь на отправку ВСЕМ пользователям. ' \
+                          'Надеюсь, вы этого хотели!'
                 ctx.sender(text=warning, database=database, suggests=[], user_id=ctx.user_object['tg_id'])
                 result_text = do_superpush(database=database, message=to_send, multiverse=MULTIVERSE)
                 ctx.response = "Ваш суперпуш отправлен! Результаты вот:\n" + str(result_text)
             else:
                 ctx.response = 'Ваше сообщение слишком короткое. Непохоже на глобальный пуш, поэтому я его не отправил.'
         else:
-            ctx.response = f"Вы не являетесь суперадмином, и не можете отправлять такие пуши. Извините. Все вопросы к @{DEMIURGE}."
+            ctx.response = f"Вы не являетесь суперадмином, и не можете отправлять такие пуши. "\
+                           f"Извините. Все вопросы к @{DEMIURGE}."
 
     return ctx
 
@@ -33,7 +35,10 @@ def do_superpush(database: Database, message: str, multiverse: Multiverse) -> st
         n = 0
         for user_account in users:
             intent = 'GET_BROADCASTED_MESSAGE'
-            outcome = sender(text=message, database=database, suggests=["Ок"], user_id=user_account['tg_id'], reset_intent=True, intent=intent)
+            outcome = sender(
+                text=message, database=database, suggests=["Ок"], user_id=user_account['tg_id'],
+                reset_intent=True, intent=intent,
+            )
             n += int(outcome)
         results.append([space_key, len(users), n])
 
@@ -42,6 +47,3 @@ def do_superpush(database: Database, message: str, multiverse: Multiverse) -> st
         for x in results
     ])
     return result
-
-
-

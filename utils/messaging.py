@@ -10,7 +10,9 @@ from utils.database import LoggedMessage
 MAX_LEN = 4000
 MESSAGE_SEPARATOR = '<NEW_MESSAGE>'
 
-POSTSCRIPTUM = f"""\n\n[Объявление! Бот и пиплбук будут работать до конца декабря 2025, а потом будут перманентно отключены. Все вопросы к @cointegrated.]"""
+POSTSCRIPTUM = f"\n\n[Объявление! Бот и пиплбук будут работать до конца декабря 2025, " \
+               "а потом будут перманентно отключены." \
+               "\nПодробности: https://peoplebook.space/sunset."""
 
 
 def split_message(text, max_len=MAX_LEN, sep=MESSAGE_SEPARATOR):

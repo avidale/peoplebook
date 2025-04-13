@@ -29,9 +29,12 @@
 {% endblock %}
 
 <body>
+{% if show_warning is not false %}
 <div class="notification is-warning is-light">
-  <strong>Объявление!</strong> Бот и пиплбук будут работать до конца декабря 2025, а потом будут перманентно отключены. Все вопросы к @cointegrated.
+  <strong>Объявление!</strong> Бот и пиплбук будут работать до конца декабря 2025, а потом будут перманентно отключены.
+  Подробнее: <a href="https://peoplebook.space/sunset">https://peoplebook.space/sunset</a>.
 </div>
+{% endif %}
 {% block content %}
 {% endblock %}
 </body>
